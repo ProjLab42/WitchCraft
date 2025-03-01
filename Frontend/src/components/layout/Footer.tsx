@@ -11,7 +11,7 @@ export function Footer() {
         <div className="flex flex-col items-center gap-4 md:flex-row md:gap-6">
           <Link to="/" className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <span className="text-lg font-semibold">ResuMagic</span>
+            <span className="text-lg font-semibold">WitchCraft</span>
           </Link>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link to="/about" className="hover:text-foreground transition-colors">
@@ -47,7 +47,7 @@ export function Footer() {
             </a>
           </div>
           <div className="text-xs text-muted-foreground">
-            &copy; {currentYear} ResuMagic. All rights reserved.
+            &copy; {currentYear} WitchCraft. All rights reserved.
           </div>
         </div>
       </div>

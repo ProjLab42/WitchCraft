@@ -51,7 +51,7 @@ export default function Index() {
         <section className="px-6 py-20 md:py-32">
           <div className="container">
             <div className="mb-12 max-w-2xl">
-              <h2 className="mb-4 text-3xl font-bold md:text-4xl">Why choose ResuMagic?</h2>
+              <h2 className="mb-4 text-3xl font-bold md:text-4xl">Why choose WitchCraft?</h2>
               <p className="text-lg text-muted-foreground">
                 Our platform makes resume creation simple, efficient, and effective
               </p>
