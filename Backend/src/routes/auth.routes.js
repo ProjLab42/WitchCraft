@@ -1,25 +1,32 @@
 const express = require('express');
-const { body } = require('express-validator');
+const { check } = require('express-validator');
 const authController = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-// Validation middleware
-const registerValidation = [
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  body('name').notEmpty().withMessage('Name is required')
-];
+// Register user
+router.post(
+  '/register',
+  [
+    check('name', 'Name is required').notEmpty(),
+    check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Password must be at least 6 characters').isLength({ min: 6 })
+  ],
+  authController.register
+);
 
-const loginValidation = [
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').notEmpty().withMessage('Password is required')
-];
+// Login user
+router.post(
+  '/login',
+  [
+    check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Password is required').exists()
+  ],
+  authController.login
+);
 
-// Routes
-router.post('/register', registerValidation, authController.register);
-router.post('/login', loginValidation, authController.login);
-router.get('/me', authMiddleware, authController.getProfile);
+// Get user profile
+router.get('/profile', authMiddleware, authController.getProfile);
 
 module.exports = router;

@@ -2,6 +2,15 @@ const { validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign(
+    { userId }, // Ensure we use userId here to match what auth.middleware.js expects
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+};
+
 // Register a new user
 exports.register = async (req, res) => {
   try {
@@ -11,7 +20,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name } = req.body;
+    const { email, password, name, links, title, bio, location, profilePicture} = req.body;
 
     // Check if user already exists
     let user = await User.findOne({ email });
@@ -23,17 +32,18 @@ exports.register = async (req, res) => {
     user = new User({
       email,
       password,
-      name
+      name,
+      links: links || {}, // Make sure links are passed to the model
+      title,
+      bio,
+      location,
+      profilePicture
     });
 
     await user.save();
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user._id);
 
     res.status(201).json({
       token,
@@ -73,11 +83,7 @@ exports.login = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user._id);
 
     res.json({
       token,

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { connectDB } = require('../config/db');
+const { connectDB } = require('../src/config/db');
 require('dotenv').config();
 
 // Test CV document creation

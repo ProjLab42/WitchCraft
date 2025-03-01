@@ -357,7 +357,6 @@ function guessJobTitle(text, experiences) {
 }
 
 module.exports = {
-  parseResume,
   extractTextFromPdf,
   extractTextFromDocx,
   parseResumeText
