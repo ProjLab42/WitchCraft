@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,17 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Mock user data
 const mockUser = {
@@ -154,7 +165,10 @@ const DraggableSection = ({ title, children, isOpen, toggleOpen }) => {
 const DraggableItem = ({ item, type, onDrop }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'RESUME_ITEM',
-    item: { ...item, itemType: type },
+    item: { 
+      ...item, 
+      itemType: type
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -240,7 +254,7 @@ const DraggableItem = ({ item, type, onDrop }) => {
 };
 
 // Resume drop zone component
-const ResumeDropZone = ({ onDrop, resumeContent }) => {
+const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -248,6 +262,56 @@ const ResumeDropZone = ({ onDrop, resumeContent }) => {
       isOver: !!monitor.isOver(),
     }),
   }));
+
+  // Get all selected skills
+  const selectedSkills = resumeContent.selectedSkills || [];
+
+  // Group sections by type
+  const groupedSections = resumeContent.sections.reduce((acc, section) => {
+    if (!acc[section.itemType]) {
+      acc[section.itemType] = [];
+    }
+    acc[section.itemType].push(section);
+    return acc;
+  }, {});
+  
+  // Create ordered sections array
+  let allSections = [];
+  
+  // If we have a custom order, use it
+  if (resumeContent.sectionOrder && resumeContent.sectionOrder.length > 0) {
+    resumeContent.sectionOrder.forEach(sectionType => {
+      if (sectionType === 'skills' && selectedSkills.length > 0) {
+        allSections.push(['skills', selectedSkills]);
+      } else if (groupedSections[sectionType]) {
+        allSections.push([sectionType, groupedSections[sectionType]]);
+      }
+    });
+    
+    // Add any sections that might not be in the order yet
+    Object.entries(groupedSections).forEach(([type, items]) => {
+      if (!resumeContent.sectionOrder.includes(type)) {
+        allSections.push([type, items]);
+      }
+    });
+    
+    // Add skills if not already added
+    if (!resumeContent.sectionOrder.includes('skills') && selectedSkills.length > 0) {
+      allSections.push(['skills', selectedSkills]);
+    }
+  } else {
+    // Default ordering if no custom order exists
+    allSections = [...Object.entries(groupedSections)];
+    if (selectedSkills.length > 0) {
+      allSections.push(['skills', selectedSkills]);
+    }
+  }
+
+  // Handle drag end for reordering
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    reorderSections(result.source.index, result.destination.index);
+  };
 
   return (
     <div 
@@ -280,119 +344,127 @@ const ResumeDropZone = ({ onDrop, resumeContent }) => {
         </div>
         
         {/* Resume content sections */}
-        {resumeContent.sections.length === 0 ? (
+        {allSections.length === 0 ? (
           <p className="text-center text-gray-400 py-12">Add resume sections by dragging them here</p>
         ) : (
           <div>
-            {/* Group sections by type and render them in proper order */}
-            {['experience', 'education', 'skills', 'projects', 'certifications'].map(sectionType => {
-              const sections = resumeContent.sections.filter(s => s.itemType === sectionType);
-              if (sections.length === 0) return null;
-              
-              return (
-                <div key={sectionType} className="mb-6">
-                  <h2 className="text-lg font-bold text-gray-800 border-b pb-1 mb-3 capitalize">{sectionType}</h2>
-                  
-                  {sections.map((section, index) => (
-                    <div key={section.id || index} className="mb-4 group relative">
-                      {sectionType === 'experience' && (
-                        <div className="mb-3">
-                          <div className="flex justify-between">
-                            <h3 className="font-semibold">{section.company}</h3>
-                            <span className="text-gray-600 text-sm">{section.period}</span>
-                          </div>
-                          <div className="text-gray-700 font-medium">{section.title}</div>
-                          {section.description && (
-                            <p className="text-sm text-gray-600 mt-1">{section.description}</p>
-                          )}
-                          {section.bulletPoints && section.bulletPoints.length > 0 && (
-                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
-                              {section.bulletPoints.map(bp => (
-                                <li key={bp.id}>{bp.text}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-                      
-                      {sectionType === 'education' && (
-                        <div className="mb-3">
-                          <div className="flex justify-between">
-                            <h3 className="font-semibold">{section.institution}</h3>
-                            <span className="text-gray-600 text-sm">{section.year}</span>
-                          </div>
-                          <div className="text-gray-700 font-medium">{section.degree}</div>
-                          {section.description && (
-                            <p className="text-sm text-gray-600 mt-1">{section.description}</p>
-                          )}
-                          {section.bulletPoints && section.bulletPoints.length > 0 && (
-                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
-                              {section.bulletPoints.map(bp => (
-                                <li key={bp.id}>{bp.text}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-                      
-                      {sectionType === 'skills' && (
-                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm mr-2 mb-2">
-                          {section.name}
-                        </span>
-                      )}
-                      
-                      {sectionType === 'projects' && (
-                        <div className="mb-3">
-                          <h3 className="font-semibold">{section.name}</h3>
-                          <p className="text-sm text-gray-600">{section.description}</p>
-                          {section.link && (
-                            <a href={section.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-                              View Project
-                            </a>
-                          )}
-                          {section.bulletPoints && section.bulletPoints.length > 0 && (
-                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
-                              {section.bulletPoints.map(bp => (
-                                <li key={bp.id}>{bp.text}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-                      
-                      {sectionType === 'certifications' && (
-                        <div className="mb-3">
-                          <div className="flex justify-between">
-                            <h3 className="font-semibold">{section.name}</h3>
-                            <span className="text-gray-600 text-sm">{section.date}</span>
-                          </div>
-                          <div className="text-gray-700">{section.issuer}</div>
-                          {section.credentialId && (
-                            <div className="text-xs text-gray-500">Credential ID: {section.credentialId}</div>
-                          )}
-                          {section.bulletPoints && section.bulletPoints.length > 0 && (
-                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
-                              {section.bulletPoints.map(bp => (
-                                <li key={bp.id}>{bp.text}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100"
-                        onClick={() => removeSection(resumeContent.sections.indexOf(section))}
+            {/* Render all sections including skills */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="resume-sections">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
+                    {allSections.map(([sectionType, items], sectionIndex) => (
+                      <Draggable 
+                        key={`section-${sectionType}`} 
+                        draggableId={`section-${sectionType}`} 
+                        index={sectionIndex}
                       >
-                        <Trash size={14} />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className="mb-6 group relative"
+                          >
+                            {/* Section header with drag handle */}
+                            <div 
+                              {...provided.dragHandleProps}
+                              className="flex items-center cursor-move"
+                            >
+                              <h2 className="text-lg font-bold text-gray-800 border-b pb-1 mb-3 capitalize flex-grow">
+                                {sectionType}
+                              </h2>
+                            </div>
+                            
+                            {/* Section items */}
+                            {sectionType === 'skills' ? (
+                              <div className="text-gray-700 text-sm">
+                                {(items as Array<{id: string, name: string}>).map((skill, index) => (
+                                  <span key={skill.id}>
+                                    {skill.name}
+                                    {index < (items as Array<{id: string, name: string}>).length - 1 ? ' | ' : ''}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              (items as Array<any>).map((item, itemIndex) => (
+                                <div key={item.id || `item-${itemIndex}`} className="mb-4 group relative">
+                                  {sectionType === 'experience' && (
+                                    <div className="mb-3">
+                                      <div className="flex justify-between items-baseline">
+                                        <h3 className="font-semibold text-gray-800">{item.company}</h3>
+                                        <span className="text-gray-600 text-sm">{item.period}</span>
+                                      </div>
+                                      <div className="text-gray-700 font-medium">{item.title}</div>
+                                      {item.description && (
+                                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {sectionType === 'education' && (
+                                    <div className="mb-3">
+                                      <div className="flex justify-between items-baseline">
+                                        <h3 className="font-semibold text-gray-800">{item.institution}</h3>
+                                        <span className="text-gray-600 text-sm">{item.year}</span>
+                                      </div>
+                                      <div className="text-gray-700 font-medium">{item.degree}</div>
+                                      {item.description && (
+                                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {sectionType === 'projects' && (
+                                    <div className="mb-3">
+                                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                      <p className="text-sm text-gray-600">{item.description}</p>
+                                      {item.link && (
+                                        <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                                          View Project
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {sectionType === 'certifications' && (
+                                    <div className="mb-3">
+                                      <div className="flex justify-between items-baseline">
+                                        <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                        <span className="text-gray-600 text-sm">{item.date}</span>
+                                      </div>
+                                      <div className="text-gray-700">{item.issuer}</div>
+                                      {item.credentialId && (
+                                        <div className="text-xs text-gray-500">Credential ID: {item.credentialId}</div>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeSection(resumeContent.sections.indexOf(item));
+                                    }}
+                                  >
+                                    <Trash size={14} />
+                                  </Button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         )}
       </div>
@@ -417,6 +489,9 @@ export default function Editor() {
   
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   
+  // Add state for selected skills
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  
   // Resume content to be built with dragged items
   const [resumeContent, setResumeContent] = useState({
     personalInfo: {
@@ -426,15 +501,64 @@ export default function Editor() {
       location: mockUser.location,
       links: mockUser.links
     },
-    sections: []
+    sections: [],
+    selectedSkills: [],
+    sectionOrder: []
   });
   
+  // Define the reorderSections function
+  const reorderSections = (sourceIndex, destinationIndex) => {
+    setResumeContent(prev => {
+      // Get current section types from allSections
+      const sectionTypes = [...prev.sectionOrder];
+      
+      // If sectionOrder is empty, initialize it from current sections
+      if (sectionTypes.length === 0) {
+        // Get unique section types from sections
+        const uniqueTypes = [...new Set(prev.sections.map(section => section.itemType))];
+        
+        // Add skills if they exist
+        if (prev.selectedSkills?.length > 0 && !uniqueTypes.includes('skills')) {
+          uniqueTypes.push('skills');
+        }
+        
+        // Use these types as initial order
+        sectionTypes.push(...uniqueTypes);
+      }
+      
+      // Perform the reordering
+      const [removed] = sectionTypes.splice(sourceIndex, 1);
+      sectionTypes.splice(destinationIndex, 0, removed);
+      
+      // Return updated state with new section order
+      return {
+        ...prev,
+        sectionOrder: sectionTypes
+      };
+    });
+    
+    toast.success("Sections reordered");
+  };
+  
   const handleDrop = (item) => {
-    setResumeContent(prev => ({
-      ...prev,
-      sections: [...prev.sections, item]
-    }));
-    toast.success(`Added ${item.itemType} to resume`);
+    setResumeContent(prev => {
+      // Add the item to sections
+      const updatedSections = [...prev.sections, item];
+      
+      // Update section order if needed
+      let updatedOrder = [...prev.sectionOrder];
+      if (!updatedOrder.includes(item.itemType)) {
+        updatedOrder.push(item.itemType);
+      }
+      
+      return {
+        ...prev,
+        sections: updatedSections,
+        sectionOrder: updatedOrder
+      };
+    });
+    
+    toast.success(`Added ${item.itemType} item to resume`);
   };
   
   const removeSection = (index) => {
@@ -442,13 +566,233 @@ export default function Editor() {
       ...prev,
       sections: prev.sections.filter((_, i) => i !== index)
     }));
-    toast.success("Section removed from resume");
+    toast.success("Item removed from resume");
   };
   
   const handleExport = (format: 'pdf' | 'docx') => {
     toast.success(`Exporting resume as ${format.toUpperCase()}...`);
     // In a real implementation, this would call an API to generate the file
   };
+
+  // Function to add a new experience
+  const addExperience = () => {
+    const newExperience = {
+      id: `exp-${Date.now()}`,
+      title: "New Position",
+      company: "Company Name",
+      period: "Start - End",
+      description: "Description of your role and responsibilities",
+      bulletPoints: []
+    };
+    
+    setResumeContent(prev => ({
+      ...prev,
+      sections: [...prev.sections, {
+        itemType: 'experience',
+        ...newExperience
+      }]
+    }));
+    
+    toast.success("Added new experience");
+  };
+
+  // Function to add a new education entry
+  const addEducation = () => {
+    const newEducation = {
+      id: `edu-${Date.now()}`,
+      degree: "Degree Name",
+      institution: "Institution Name",
+      year: "Graduation Year",
+      description: "Description of your studies",
+      bulletPoints: []
+    };
+    
+    setResumeContent(prev => ({
+      ...prev,
+      sections: [...prev.sections, {
+        itemType: 'education',
+        ...newEducation
+      }]
+    }));
+    
+    toast.success("Added new education");
+  };
+
+  // Toggle skill selection
+  const toggleSkill = (skill) => {
+    setResumeContent(prev => {
+      const isSelected = prev.selectedSkills.some(s => s.id === skill.id);
+      let updatedSkills;
+      let updatedOrder = [...prev.sectionOrder];
+      
+      if (isSelected) {
+        // Remove skill
+        updatedSkills = prev.selectedSkills.filter(s => s.id !== skill.id);
+        
+        // Remove skills from order if no skills left
+        if (updatedSkills.length === 0 && updatedOrder.includes('skills')) {
+          updatedOrder = updatedOrder.filter(type => type !== 'skills');
+        }
+      } else {
+        // Add skill
+        updatedSkills = [...prev.selectedSkills, skill];
+        
+        // Add skills to order if not already there
+        if (!updatedOrder.includes('skills')) {
+          updatedOrder.push('skills');
+        }
+      }
+      
+      return {
+        ...prev,
+        selectedSkills: updatedSkills,
+        sectionOrder: updatedOrder
+      };
+    });
+  };
+
+  // Create a new AddSkillDialog component
+  const AddSkillDialog = ({ onAdd }) => {
+    const [skillName, setSkillName] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
+    
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (skillName.trim()) {
+        onAdd(skillName);
+        setSkillName("");
+        setIsOpen(false);
+      }
+    };
+    
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="sm" className="w-full mt-2">
+            <Plus size={16} className="mr-2" />
+            Add Skill
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Skill</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="skill-name" className="text-right">
+                  Skill Name
+                </Label>
+                <Input
+                  id="skill-name"
+                  value={skillName}
+                  onChange={(e) => setSkillName(e.target.value)}
+                  className="col-span-3"
+                  placeholder="e.g. JavaScript, Project Management"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Add Skill</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  // Update the addSkill function to use the new dialog
+  const addSkill = (skillName) => {
+    const newSkill = {
+      id: `skill-${Date.now()}`,
+      name: skillName
+    };
+    
+    // Add to mock user skills
+    mockUser.sections.skills.push(newSkill);
+    
+    // Force re-render
+    setOpenSections({...openSections});
+    
+    toast.success("Added new skill");
+  };
+
+  // Function to add a new project
+  const addProject = () => {
+    const newProject = {
+      id: `proj-${Date.now()}`,
+      name: "New Project",
+      description: "Description of your project",
+      link: "",
+      bulletPoints: []
+    };
+    
+    setResumeContent(prev => ({
+      ...prev,
+      sections: [...prev.sections, {
+        itemType: 'project',
+        ...newProject
+      }]
+    }));
+    
+    toast.success("Added new project");
+  };
+
+  // Function to add a new certification
+  const addCertification = () => {
+    const newCertification = {
+      id: `cert-${Date.now()}`,
+      name: "New Certification",
+      issuer: "Issuing Organization",
+      date: "Issue Date",
+      expirationDate: "Expiration Date",
+      credentialId: "",
+      bulletPoints: []
+    };
+    
+    setResumeContent(prev => ({
+      ...prev,
+      sections: [...prev.sections, {
+        itemType: 'certification',
+        ...newCertification
+      }]
+    }));
+    
+    toast.success("Added new certification");
+  };
+
+  // Add this at the top of your Editor component to catch errors
+  const [error, setError] = useState(null);
+
+  // Add error boundary to your component
+  useEffect(() => {
+    const handleError = (error) => {
+      console.error("Error in Editor component:", error);
+      setError(error.message);
+      // Prevent white screen by showing an error message
+      toast.error("Something went wrong. Please try again.");
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  // Add this to your component's JSX to show errors instead of white screen
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h2 className="text-xl font-bold text-red-500">Something went wrong</h2>
+        <p className="text-gray-600 mt-2">Please refresh the page and try again</p>
+        <Button 
+          className="mt-4" 
+          onClick={() => window.location.reload()}
+        >
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -518,7 +862,7 @@ export default function Editor() {
                 {mockUser.sections.experience.map(exp => (
                   <DraggableItem key={exp.id} item={exp} type="experience" onDrop={handleDrop} />
                 ))}
-                <Button variant="ghost" size="sm" className="w-full mt-2">
+                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addExperience}>
                   <Plus size={16} className="mr-2" />
                   Add Experience
                 </Button>
@@ -533,7 +877,7 @@ export default function Editor() {
                 {mockUser.sections.education.map(edu => (
                   <DraggableItem key={edu.id} item={edu} type="education" onDrop={handleDrop} />
                 ))}
-                <Button variant="ghost" size="sm" className="w-full mt-2">
+                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addEducation}>
                   <Plus size={16} className="mr-2" />
                   Add Education
                 </Button>
@@ -545,15 +889,21 @@ export default function Editor() {
                 isOpen={openSections.skills}
                 toggleOpen={() => toggleSection('skills')}
               >
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   {mockUser.sections.skills.map(skill => (
-                    <DraggableItem key={skill.id} item={skill} type="skills" onDrop={handleDrop} />
+                    <div key={skill.id} className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        id={`skill-${skill.id}`}
+                        checked={resumeContent.selectedSkills?.some(s => s.id === skill.id)}
+                        onChange={() => toggleSkill(skill)}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`skill-${skill.id}`}>{skill.name}</label>
+                    </div>
                   ))}
                 </div>
-                <Button variant="ghost" size="sm" className="w-full mt-2">
-                  <Plus size={16} className="mr-2" />
-                  Add Skill
-                </Button>
+                <AddSkillDialog onAdd={addSkill} />
               </DraggableSection>
               
               {/* Projects Section */}
@@ -565,7 +915,7 @@ export default function Editor() {
                 {mockUser.sections.projects.map(project => (
                   <DraggableItem key={project.id} item={project} type="projects" onDrop={handleDrop} />
                 ))}
-                <Button variant="ghost" size="sm" className="w-full mt-2">
+                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addProject}>
                   <Plus size={16} className="mr-2" />
                   Add Project
                 </Button>
@@ -580,7 +930,7 @@ export default function Editor() {
                 {mockUser.sections.certifications.map(cert => (
                   <DraggableItem key={cert.id} item={cert} type="certifications" onDrop={handleDrop} />
                 ))}
-                <Button variant="ghost" size="sm" className="w-full mt-2">
+                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addCertification}>
                   <Plus size={16} className="mr-2" />
                   Add Certification
                 </Button>
@@ -596,7 +946,12 @@ export default function Editor() {
                 </div>
                 <div className="flex-1 overflow-y-auto flex items-start justify-center">
                   {/* Paper-like resume container */}
-                  <ResumeDropZone onDrop={handleDrop} resumeContent={resumeContent} />
+                  <ResumeDropZone 
+                    onDrop={handleDrop} 
+                    resumeContent={resumeContent} 
+                    removeSection={removeSection}
+                    reorderSections={reorderSections}
+                  />
                 </div>
               </div>
             </div>
