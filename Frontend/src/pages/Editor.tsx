@@ -252,67 +252,150 @@ const ResumeDropZone = ({ onDrop, resumeContent }) => {
   return (
     <div 
       ref={drop} 
-      className={`mt-8 border-2 border-dashed ${isOver ? 'border-primary bg-primary/5' : 'border-gray-300'} rounded-md p-6 min-h-[400px] transition-colors`}
+      className={`mt-0 bg-white shadow-md border rounded-md paper-texture min-h-[600px] max-w-[612px] mx-auto transition-all ${isOver ? 'border-primary shadow-lg' : 'border-gray-100'}`}
     >
-      {resumeContent.sections.length === 0 ? (
-        <p className="text-center text-gray-400">Drop resume sections here</p>
-      ) : (
-        <div className="space-y-6">
-          {resumeContent.sections.map((section, index) => (
-            <div key={section.id || index} className="p-4 border rounded shadow-sm">
-              {section.itemType === 'experience' && (
-                <div>
-                  <h3 className="font-medium text-lg">{section.title}</h3>
-                  <div className="flex justify-between">
-                    <div className="text-sm">{section.company}</div>
-                    <div className="text-sm text-gray-600">{section.period}</div>
-                  </div>
-                  {section.description && (
-                    <div className="text-sm mt-1">{section.description}</div>
-                  )}
-                </div>
-              )}
-              {section.itemType === 'education' && (
-                <div>
-                  <h3 className="font-medium text-lg">{section.degree}</h3>
-                  <div className="flex justify-between">
-                    <div className="text-sm">{section.institution}</div>
-                    <div className="text-sm text-gray-600">{section.year}</div>
-                  </div>
-                </div>
-              )}
-              {section.itemType === 'projects' && (
-                <div>
-                  <h3 className="font-medium text-lg">{section.name}</h3>
-                  <div className="text-sm mt-1">{section.description}</div>
-                </div>
-              )}
-              {section.itemType === 'skills' && (
-                <div>
-                  <h3 className="font-medium">{section.name}</h3>
-                </div>
-              )}
-              {section.itemType === 'certifications' && (
-                <div>
-                  <h3 className="font-medium text-lg">{section.name}</h3>
-                  <div className="flex justify-between">
-                    <div className="text-sm">{section.issuer}</div>
-                    <div className="text-sm text-gray-600">{section.date}</div>
-                  </div>
-                </div>
-              )}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6 absolute top-2 right-2 opacity-0 group-hover:opacity-100"
-                onClick={() => removeSection(index)}
-              >
-                <Trash size={14} />
-              </Button>
-            </div>
-          ))}
+      <div className="p-8">
+        {/* Professional header */}
+        <div className="text-center mb-6 pb-4 border-b">
+          <h1 className="text-2xl font-bold text-gray-800">{resumeContent.personalInfo.name}</h1>
+          <p className="text-gray-600 font-medium">{resumeContent.personalInfo.title}</p>
+          
+          <div className="flex justify-center gap-6 text-sm text-gray-500 mt-2">
+            {resumeContent.personalInfo.email && (
+              <span className="flex items-center gap-1">
+                {resumeContent.personalInfo.email}
+              </span>
+            )}
+            {resumeContent.personalInfo.location && (
+              <span className="flex items-center gap-1">
+                {resumeContent.personalInfo.location}
+              </span>
+            )}
+            {resumeContent.personalInfo.links?.linkedin && (
+              <span className="flex items-center gap-1">
+                {resumeContent.personalInfo.links.linkedin}
+              </span>
+            )}
+          </div>
         </div>
-      )}
+        
+        {/* Resume content sections */}
+        {resumeContent.sections.length === 0 ? (
+          <p className="text-center text-gray-400 py-12">Add resume sections by dragging them here</p>
+        ) : (
+          <div>
+            {/* Group sections by type and render them in proper order */}
+            {['experience', 'education', 'skills', 'projects', 'certifications'].map(sectionType => {
+              const sections = resumeContent.sections.filter(s => s.itemType === sectionType);
+              if (sections.length === 0) return null;
+              
+              return (
+                <div key={sectionType} className="mb-6">
+                  <h2 className="text-lg font-bold text-gray-800 border-b pb-1 mb-3 capitalize">{sectionType}</h2>
+                  
+                  {sections.map((section, index) => (
+                    <div key={section.id || index} className="mb-4 group relative">
+                      {sectionType === 'experience' && (
+                        <div className="mb-3">
+                          <div className="flex justify-between">
+                            <h3 className="font-semibold">{section.company}</h3>
+                            <span className="text-gray-600 text-sm">{section.period}</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">{section.title}</div>
+                          {section.description && (
+                            <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+                          )}
+                          {section.bulletPoints && section.bulletPoints.length > 0 && (
+                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
+                              {section.bulletPoints.map(bp => (
+                                <li key={bp.id}>{bp.text}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      
+                      {sectionType === 'education' && (
+                        <div className="mb-3">
+                          <div className="flex justify-between">
+                            <h3 className="font-semibold">{section.institution}</h3>
+                            <span className="text-gray-600 text-sm">{section.year}</span>
+                          </div>
+                          <div className="text-gray-700 font-medium">{section.degree}</div>
+                          {section.description && (
+                            <p className="text-sm text-gray-600 mt-1">{section.description}</p>
+                          )}
+                          {section.bulletPoints && section.bulletPoints.length > 0 && (
+                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
+                              {section.bulletPoints.map(bp => (
+                                <li key={bp.id}>{bp.text}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      
+                      {sectionType === 'skills' && (
+                        <span className="inline-block px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm mr-2 mb-2">
+                          {section.name}
+                        </span>
+                      )}
+                      
+                      {sectionType === 'projects' && (
+                        <div className="mb-3">
+                          <h3 className="font-semibold">{section.name}</h3>
+                          <p className="text-sm text-gray-600">{section.description}</p>
+                          {section.link && (
+                            <a href={section.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                              View Project
+                            </a>
+                          )}
+                          {section.bulletPoints && section.bulletPoints.length > 0 && (
+                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
+                              {section.bulletPoints.map(bp => (
+                                <li key={bp.id}>{bp.text}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      
+                      {sectionType === 'certifications' && (
+                        <div className="mb-3">
+                          <div className="flex justify-between">
+                            <h3 className="font-semibold">{section.name}</h3>
+                            <span className="text-gray-600 text-sm">{section.date}</span>
+                          </div>
+                          <div className="text-gray-700">{section.issuer}</div>
+                          {section.credentialId && (
+                            <div className="text-xs text-gray-500">Credential ID: {section.credentialId}</div>
+                          )}
+                          {section.bulletPoints && section.bulletPoints.length > 0 && (
+                            <ul className="text-sm text-gray-600 list-disc pl-5 mt-1">
+                              {section.bulletPoints.map(bp => (
+                                <li key={bp.id}>{bp.text}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100"
+                        onClick={() => removeSection(resumeContent.sections.indexOf(section))}
+                      >
+                        <Trash size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -505,19 +588,14 @@ export default function Editor() {
             </div>
             
             {/* Right side - Resume preview */}
-            <div className="hidden lg:block lg:w-1/2 p-8">
-              <div className="sticky top-8 h-[calc(100vh-12rem)]">
-                <div className="bg-white p-6 shadow-md h-full overflow-y-auto">
-                  <div className="text-center mb-6">
-                    <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
-                    <p>{resumeContent.personalInfo.title}</p>
-                    <div className="flex justify-center gap-4 text-sm mt-2">
-                      <span>{resumeContent.personalInfo.email}</span>
-                      <span>{resumeContent.personalInfo.location}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Droppable area for resume sections */}
+            <div className="hidden lg:block lg:w-1/2 p-8 bg-gray-100">
+              <div className="sticky top-8 h-[calc(100vh-12rem)] flex flex-col">
+                <div className="text-center mb-4">
+                  <h2 className="text-xl font-bold">Resume Preview</h2>
+                  <p className="text-sm text-gray-500">Drag items from the left panel</p>
+                </div>
+                <div className="flex-1 overflow-y-auto flex items-start justify-center">
+                  {/* Paper-like resume container */}
                   <ResumeDropZone onDrop={handleDrop} resumeContent={resumeContent} />
                 </div>
               </div>
