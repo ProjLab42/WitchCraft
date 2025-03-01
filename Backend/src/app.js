@@ -1,14 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const connectDB = require("./config/db");
 const dotenv = require("dotenv");
-
-// Import routes
-const authRoutes = require('./routes/auth.routes');
-const resumeRoutes = require('./routes/resume.routes');
-const templateRoutes = require('./routes/template.routes');
-const userRoutes = require('./routes/user.routes');
+const connectDB = require("./config/db");
 
 // Load env variables
 dotenv.config();
@@ -16,12 +10,29 @@ dotenv.config();
 // Connect to database
 connectDB();
 
+// Import routes
+const authRoutes = require('./routes/auth.routes');
+const resumeRoutes = require('./routes/resume.routes');
+const templateRoutes = require('./routes/template.routes');
+const userRoutes = require('./routes/user.routes');
+
+
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // Your frontend URL
+  credentials: true, // Allow cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add a health endpoint for testing
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
