@@ -1,120 +1,532 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ResumeForm } from "@/components/resume/ResumeForm";
-import { ResumePreview } from "@/components/resume/ResumePreview";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, EyeOff, FileText } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, FileText, Plus, Edit, Trash } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export default function Editor() {
-  const [showPreview, setShowPreview] = useState(true);
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  
-  // Sample form data
-  const [formData, setFormData] = useState({
-    name: "Jennifer Jobscan",
-    jobTitle: "Product Manager",
-    email: "jennifer@jobscan.co",
-    phone: "(123) 456-7890",
-    location: "Seattle, WA",
-    linkedin: "linkedin.com/in/jenniferjobscan",
-    summary: "Creative professional and collaborator with 15+ years experience devoted to product, 10+ as a Product Manager and Lead. In-depth knowledge of manufacturing processes, materials, applications, licensing with external partners and approval standards.",
-    experiences: [
+// Mock user data
+const mockUser = {
+  name: "Jane Doe",
+  email: "jane.doe@example.com",
+  title: "Full Stack Developer",
+  location: "San Francisco, CA",
+  bio: "Passionate developer with 5+ years of experience building web applications. Specializing in React, TypeScript, and Node.js.",
+  avatarUrl: "https://api.dicebear.com/7.x/personas/svg?seed=jane",
+  links: {
+    linkedin: "https://linkedin.com/in/janedoe",
+    portfolio: "https://janedoe.dev",
+    additionalLinks: [
+      { name: "GitHub", url: "https://github.com/janedoe" },
+      { name: "Twitter", url: "https://twitter.com/janedoe" }
+    ]
+  },
+  sections: {
+    // Default sections with display names
+    sectionMeta: {
+      "experience": { name: "Experience", deletable: true, renamable: true },
+      "education": { name: "Education", deletable: true, renamable: true },
+      "skills": { name: "Skills", deletable: true, renamable: true },
+      "projects": { name: "Projects", deletable: true, renamable: true },
+      "certifications": { name: "Certifications", deletable: true, renamable: true }
+    },
+    experience: [
       {
-        id: 1,
-        company: "Fashion Forum, Milan",
-        position: "Design Directory Consultant",
-        startDate: "Feb 2018",
-        endDate: "Present",
-        description: "Reviewed design concepts, critiqued, and designed fashion based tier 1 headwear that elevated product and brand expression. Designed quick-to-market regionalized, premium, and mass product line for subsidiary brands under fashion umbrella."
+        id: "exp1",
+        title: "Senior Developer",
+        company: "Tech Solutions Inc.",
+        period: "2021 - Present",
+        description: "Led development of multiple client projects. Implemented CI/CD pipelines and mentored junior developers.",
+        bulletPoints: [
+          { id: "bp-exp1-1", text: "Led a team of 5 developers on a high-profile client project" },
+          { id: "bp-exp1-2", text: "Implemented CI/CD pipelines reducing deployment time by 45%" },
+          { id: "bp-exp1-3", text: "Mentored 3 junior developers who were promoted within a year" }
+        ]
       },
       {
-        id: 2,
-        company: "StyleMe Inc, New York, NY",
-        position: "Assistant Manager (Design)",
-        startDate: "Aug 2016",
-        endDate: "Jan 2018",
-        description: "Influenced accounts, vendors, and internal stakeholders to support lifestyle product with trend presentation, selling tools, product curating, and exclusives."
+        id: "exp2",
+        title: "Web Developer",
+        company: "Digital Creations",
+        period: "2018 - 2021",
+        description: "Built responsive web applications using React and Redux. Collaborated with design team to implement UI/UX improvements."
       }
     ],
     education: [
       {
-        id: 1,
-        school: "New York University",
-        degree: "Bachelor",
-        field: "Fine Arts Management",
-        startDate: "Aug 2006",
-        endDate: "Dec 2010"
+        id: "edu1",
+        degree: "M.S. Computer Science",
+        institution: "Tech University",
+        year: "2018",
+        description: "Focus on software engineering and distributed systems.",
+        bulletPoints: [
+          { id: "bp-edu1-1", text: "Thesis: 'Efficient algorithms for distributed systems'" },
+          { id: "bp-edu1-2", text: "GPA: 3.9/4.0" }
+        ]
+      },
+      {
+        id: "edu2",
+        degree: "B.S. Computer Science",
+        institution: "State University",
+        year: "2016",
+        description: "Minor in Mathematics. Dean's List all semesters."
       }
     ],
-    skills: "Product Management, UX/UI Design, Project Management, Stakeholder Management, Agile Methodologies",
-    languages: "English (Native), French (Intermediate), Italian (Basic)",
-    certificates: ""
-  });
+    skills: [
+      { id: "skill1", name: "React" },
+      { id: "skill2", name: "TypeScript" },
+      { id: "skill3", name: "Node.js" },
+      { id: "skill4", name: "GraphQL" },
+      { id: "skill5", name: "Docker" },
+      { id: "skill6", name: "AWS" }
+    ],
+    projects: [
+      {
+        id: "proj1",
+        name: "E-commerce Platform",
+        description: "Built a full-stack e-commerce platform with React, Node.js, and MongoDB.",
+        link: "https://github.com/janedoe/ecommerce",
+        bulletPoints: [
+          { id: "bp-proj1-1", text: "Implemented payment processing with Stripe" },
+          { id: "bp-proj1-2", text: "Built real-time inventory management system" }
+        ]
+      },
+      {
+        id: "proj2",
+        name: "Task Management App",
+        description: "Developed a task management application with real-time updates using Socket.io.",
+        link: "https://github.com/janedoe/taskmanager"
+      }
+    ],
+    certifications: [
+      {
+        id: "cert1",
+        name: "AWS Certified Solutions Architect",
+        issuer: "Amazon Web Services",
+        date: "2022",
+        expirationDate: "2025",
+        credentialId: "AWS-123456",
+        bulletPoints: [
+          { id: "bp-cert1-1", text: "Passed with score of 945/1000" },
+          { id: "bp-cert1-2", text: "Built cloud architecture for financial services company as part of certification" }
+        ]
+      },
+      {
+        id: "cert2",
+        name: "Certified Kubernetes Administrator",
+        issuer: "Cloud Native Computing Foundation",
+        date: "2021",
+        expirationDate: "2024",
+        credentialId: "CKA-789012"
+      }
+    ],
+    // Custom sections
+    customSections: {}
+  }
+};
 
-  const togglePreview = () => {
-    setShowPreview(!showPreview);
+// Draggable section component
+const DraggableSection = ({ title, children, isOpen, toggleOpen }) => {
+  return (
+    <Collapsible open={isOpen} onOpenChange={toggleOpen} className="w-full">
+      <Card className="mb-4">
+        <CardHeader className="p-3 cursor-pointer">
+          <CollapsibleTrigger className="flex justify-between items-center w-full">
+            <CardTitle className="text-md">{title}</CardTitle>
+            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </CollapsibleTrigger>
+        </CardHeader>
+        <CollapsibleContent>
+          <CardContent className="p-3 pt-0">
+            {children}
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+};
+
+// Draggable item component
+const DraggableItem = ({ item, type, onDrop }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'RESUME_ITEM',
+    item: { ...item, itemType: type },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+  
+  // Simplified item displays based on data type
+  const renderContent = () => {
+    switch (type) {
+      case 'experience':
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div>
+              <div className="font-medium">{item.title}</div>
+              <div className="text-sm text-gray-600">{item.company}</div>
+              <div className="text-xs text-gray-500">{item.period}</div>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Edit size={16} />
+            </Button>
+          </div>
+        );
+      case 'education':
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div>
+              <div className="font-medium">{item.degree}</div>
+              <div className="text-sm text-gray-600">{item.institution}</div>
+              <div className="text-xs text-gray-500">{item.year}</div>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Edit size={16} />
+            </Button>
+          </div>
+        );
+      case 'skills':
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div className="font-medium">{item.name}</div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Edit size={16} />
+            </Button>
+          </div>
+        );
+      case 'projects':
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div>
+              <div className="font-medium">{item.name}</div>
+              <div className="text-xs text-gray-500">{item.description}</div>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Edit size={16} />
+            </Button>
+          </div>
+        );
+      case 'certifications':
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div>
+              <div className="font-medium">{item.name}</div>
+              <div className="text-sm text-gray-600">{item.issuer}</div>
+              <div className="text-xs text-gray-500">{item.date}</div>
+            </div>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Edit size={16} />
+            </Button>
+          </div>
+        );
+      default:
+        return <div>Unknown type</div>;
+    }
   };
 
+  return (
+    <div 
+      ref={drag}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+      className="transition-all duration-200"
+    >
+      {renderContent()}
+    </div>
+  );
+};
+
+// Resume drop zone component
+const ResumeDropZone = ({ onDrop, resumeContent }) => {
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: 'RESUME_ITEM',
+    drop: (item) => onDrop(item),
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  }));
+
+  return (
+    <div 
+      ref={drop} 
+      className={`mt-8 border-2 border-dashed ${isOver ? 'border-primary bg-primary/5' : 'border-gray-300'} rounded-md p-6 min-h-[400px] transition-colors`}
+    >
+      {resumeContent.sections.length === 0 ? (
+        <p className="text-center text-gray-400">Drop resume sections here</p>
+      ) : (
+        <div className="space-y-6">
+          {resumeContent.sections.map((section, index) => (
+            <div key={section.id || index} className="p-4 border rounded shadow-sm">
+              {section.itemType === 'experience' && (
+                <div>
+                  <h3 className="font-medium text-lg">{section.title}</h3>
+                  <div className="flex justify-between">
+                    <div className="text-sm">{section.company}</div>
+                    <div className="text-sm text-gray-600">{section.period}</div>
+                  </div>
+                  {section.description && (
+                    <div className="text-sm mt-1">{section.description}</div>
+                  )}
+                </div>
+              )}
+              {section.itemType === 'education' && (
+                <div>
+                  <h3 className="font-medium text-lg">{section.degree}</h3>
+                  <div className="flex justify-between">
+                    <div className="text-sm">{section.institution}</div>
+                    <div className="text-sm text-gray-600">{section.year}</div>
+                  </div>
+                </div>
+              )}
+              {section.itemType === 'projects' && (
+                <div>
+                  <h3 className="font-medium text-lg">{section.name}</h3>
+                  <div className="text-sm mt-1">{section.description}</div>
+                </div>
+              )}
+              {section.itemType === 'skills' && (
+                <div>
+                  <h3 className="font-medium">{section.name}</h3>
+                </div>
+              )}
+              {section.itemType === 'certifications' && (
+                <div>
+                  <h3 className="font-medium text-lg">{section.name}</h3>
+                  <div className="flex justify-between">
+                    <div className="text-sm">{section.issuer}</div>
+                    <div className="text-sm text-gray-600">{section.date}</div>
+                  </div>
+                </div>
+              )}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                onClick={() => removeSection(index)}
+              >
+                <Trash size={14} />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Updated Editor component
+export default function Editor() {
+  const [openSections, setOpenSections] = useState({
+    personalInfo: true,
+    experience: true,
+    education: true,
+    skills: true,
+    projects: false,
+    certifications: false,
+  });
+  
+  const toggleSection = (section) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+  
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  
+  // Resume content to be built with dragged items
+  const [resumeContent, setResumeContent] = useState({
+    personalInfo: {
+      name: mockUser.name,
+      title: mockUser.title,
+      email: mockUser.email,
+      location: mockUser.location,
+      links: mockUser.links
+    },
+    sections: []
+  });
+  
+  const handleDrop = (item) => {
+    setResumeContent(prev => ({
+      ...prev,
+      sections: [...prev.sections, item]
+    }));
+    toast.success(`Added ${item.itemType} to resume`);
+  };
+  
+  const removeSection = (index) => {
+    setResumeContent(prev => ({
+      ...prev,
+      sections: prev.sections.filter((_, i) => i !== index)
+    }));
+    toast.success("Section removed from resume");
+  };
+  
   const handleExport = (format: 'pdf' | 'docx') => {
     toast.success(`Exporting resume as ${format.toUpperCase()}...`);
     // In a real implementation, this would call an API to generate the file
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      
-      <div className="flex justify-end border-b px-6 py-3">
-        <div className="flex gap-2">
-          {!isDesktop && (
-            <Button variant="outline" size="sm" onClick={togglePreview} className="gap-2">
-              {showPreview ? (
-                <>
-                  <EyeOff className="h-4 w-4" />
-                  <span>Hide Preview</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="h-4 w-4" />
-                  <span>Show Preview</span>
-                </>
-              )}
+    <DndProvider backend={HTML5Backend}>
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        
+        <div className="flex justify-end border-b px-6 py-3">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-2">
+              <Download className="h-4 w-4" />
+              <span>PDF</span>
             </Button>
-          )}
-          
-          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-2">
-            <Download className="h-4 w-4" />
-            <span>PDF</span>
-          </Button>
-          
-          <Button variant="outline" size="sm" onClick={() => handleExport('docx')} className="gap-2">
-            <FileText className="h-4 w-4" />
-            <span>DOCX</span>
-          </Button>
-        </div>
-      </div>
-      
-      <main className="flex-1 bg-muted/30">
-        <div className="flex min-h-[calc(100vh-12rem)]">
-          <div className="w-full lg:w-1/2 overflow-auto">
-            <ResumeForm />
+            
+            <Button variant="outline" size="sm" onClick={() => handleExport('docx')} className="gap-2">
+              <FileText className="h-4 w-4" />
+              <span>DOCX</span>
+            </Button>
           </div>
-          
-          {(showPreview || isDesktop) && (
+        </div>
+        
+        <main className="flex-1 bg-muted/30">
+          <div className="flex min-h-[calc(100vh-12rem)]">
+            {/* Left side - Sections to drag from */}
+            <div className="w-full lg:w-1/2 overflow-auto p-4">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold mb-4">Resume Sections</h2>
+                <p className="text-gray-600 text-sm mb-4">Drag sections onto your resume or click to edit</p>
+              </div>
+              
+              {/* Personal Info Section */}
+              <DraggableSection 
+                title="Personal Information" 
+                isOpen={openSections.personalInfo}
+                toggleOpen={() => toggleSection('personalInfo')}
+              >
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{mockUser.name}</div>
+                    <div className="text-sm text-gray-500">{mockUser.title}</div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="ml-auto">
+                    <Edit size={16} />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="text-sm">
+                    <span className="font-medium">Email:</span> {mockUser.email}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Location:</span> {mockUser.location}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">LinkedIn:</span> {mockUser.links.linkedin}
+                  </div>
+                </div>
+              </DraggableSection>
+              
+              {/* Experience Section */}
+              <DraggableSection 
+                title="Experience" 
+                isOpen={openSections.experience}
+                toggleOpen={() => toggleSection('experience')}
+              >
+                {mockUser.sections.experience.map(exp => (
+                  <DraggableItem key={exp.id} item={exp} type="experience" onDrop={handleDrop} />
+                ))}
+                <Button variant="ghost" size="sm" className="w-full mt-2">
+                  <Plus size={16} className="mr-2" />
+                  Add Experience
+                </Button>
+              </DraggableSection>
+              
+              {/* Education Section */}
+              <DraggableSection 
+                title="Education" 
+                isOpen={openSections.education}
+                toggleOpen={() => toggleSection('education')}
+              >
+                {mockUser.sections.education.map(edu => (
+                  <DraggableItem key={edu.id} item={edu} type="education" onDrop={handleDrop} />
+                ))}
+                <Button variant="ghost" size="sm" className="w-full mt-2">
+                  <Plus size={16} className="mr-2" />
+                  Add Education
+                </Button>
+              </DraggableSection>
+              
+              {/* Skills Section */}
+              <DraggableSection 
+                title="Skills" 
+                isOpen={openSections.skills}
+                toggleOpen={() => toggleSection('skills')}
+              >
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {mockUser.sections.skills.map(skill => (
+                    <DraggableItem key={skill.id} item={skill} type="skills" onDrop={handleDrop} />
+                  ))}
+                </div>
+                <Button variant="ghost" size="sm" className="w-full mt-2">
+                  <Plus size={16} className="mr-2" />
+                  Add Skill
+                </Button>
+              </DraggableSection>
+              
+              {/* Projects Section */}
+              <DraggableSection 
+                title="Projects" 
+                isOpen={openSections.projects}
+                toggleOpen={() => toggleSection('projects')}
+              >
+                {mockUser.sections.projects.map(project => (
+                  <DraggableItem key={project.id} item={project} type="projects" onDrop={handleDrop} />
+                ))}
+                <Button variant="ghost" size="sm" className="w-full mt-2">
+                  <Plus size={16} className="mr-2" />
+                  Add Project
+                </Button>
+              </DraggableSection>
+              
+              {/* Certifications Section */}
+              <DraggableSection 
+                title="Certifications" 
+                isOpen={openSections.certifications}
+                toggleOpen={() => toggleSection('certifications')}
+              >
+                {mockUser.sections.certifications.map(cert => (
+                  <DraggableItem key={cert.id} item={cert} type="certifications" onDrop={handleDrop} />
+                ))}
+                <Button variant="ghost" size="sm" className="w-full mt-2">
+                  <Plus size={16} className="mr-2" />
+                  Add Certification
+                </Button>
+              </DraggableSection>
+            </div>
+            
+            {/* Right side - Resume preview */}
             <div className="hidden lg:block lg:w-1/2 p-8">
               <div className="sticky top-8 h-[calc(100vh-12rem)]">
-                <ResumePreview formData={formData} />
+                <div className="bg-white p-6 shadow-md h-full overflow-y-auto">
+                  <div className="text-center mb-6">
+                    <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
+                    <p>{resumeContent.personalInfo.title}</p>
+                    <div className="flex justify-center gap-4 text-sm mt-2">
+                      <span>{resumeContent.personalInfo.email}</span>
+                      <span>{resumeContent.personalInfo.location}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Droppable area for resume sections */}
+                  <ResumeDropZone onDrop={handleDrop} resumeContent={resumeContent} />
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      </main>
-      
-      <Footer />
-    </div>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    </DndProvider>
   );
 }

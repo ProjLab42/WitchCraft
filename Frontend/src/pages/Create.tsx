@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -13,32 +12,32 @@ const templates = [
   {
     id: "classic",
     name: "Classic Professional",
-    imageSrc: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/classic-resume-template.png",
   },
   {
     id: "modern",
     name: "Modern Professional",
-    imageSrc: "https://images.unsplash.com/photo-1586281380117-5a60ae2050cc?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/modern-resume-template.png",
   },
   {
     id: "student",
     name: "Modern Student",
-    imageSrc: "https://images.unsplash.com/photo-1594608661623-aa0bd3a69799?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/student-resume-template.png",
   },
   {
     id: "creative",
     name: "Creative Professional",
-    imageSrc: "https://images.unsplash.com/photo-1544177591-b26886cd7946?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/creative-resume-template.png",
   },
   {
     id: "executive",
     name: "Executive",
-    imageSrc: "https://images.unsplash.com/photo-1626971735946-b1048456bf8a?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/executive-resume-template.png",
   },
   {
     id: "minimal",
     name: "Minimal",
-    imageSrc: "https://images.unsplash.com/photo-1517842645767-c639042777db?q=80&w=300&h=400&auto=format&fit=crop",
+    imageSrc: "/assets/templates/minimal-resume-template.png",
   },
 ];
 
