@@ -45,6 +45,7 @@ interface ProfileHeaderProps {
   triggerFileInput: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   handleAvatarUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  saving?: boolean;
 }
 
 export const ProfileHeader = ({
@@ -57,7 +58,8 @@ export const ProfileHeader = ({
   regenerateAvatar,
   triggerFileInput,
   fileInputRef,
-  handleAvatarUpload
+  handleAvatarUpload,
+  saving = false
 }: ProfileHeaderProps) => {
   const [newLinkName, setNewLinkName] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
@@ -149,8 +151,17 @@ export const ProfileHeader = ({
         </div>
         <div>
           {editingProfile ? (
-            <Button onClick={handleProfileUpdate}>
-              <Save className="h-4 w-4 mr-2" /> Save
+            <Button onClick={handleProfileUpdate} disabled={saving}>
+              {saving ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span>
+                  Saving...
+                </span>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" /> Save
+                </>
+              )}
             </Button>
           ) : (
             <Button onClick={() => setEditingProfile(true)}>

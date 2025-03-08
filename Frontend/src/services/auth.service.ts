@@ -1,5 +1,5 @@
 import axios from 'axios'; // Add this if you want to use axios directly
-import api from './api';
+import api from './api.service';
 
 interface RegisterData {
   name: string;
@@ -34,8 +34,8 @@ const AuthService = {
   register: async (userData: RegisterData): Promise<AuthResponse> => {
     try {
       console.log('Attempting registration with:', { ...userData, password: '[REDACTED]' });
-      // Updated endpoint to match your backend route
-      const response = await api.post<AuthResponse>('/api/auth/register', userData);
+      // Updated endpoint to match the api.service.ts format
+      const response = await api.post<AuthResponse>('/auth/register', userData);
       
       if (response.data.token) {
         const expiryDate = new Date();
@@ -58,8 +58,8 @@ const AuthService = {
     try {
       console.log('Attempting login with:', { email: credentials.email, password: '[REDACTED]' });
       
-      // Updated endpoint to match your backend route
-      const response = await api.post<AuthResponse>('/api/auth/login', credentials);
+      // Updated endpoint to match the api.service.ts format
+      const response = await api.post<AuthResponse>('/auth/login', credentials);
       
       if (response.data.token) {
         const expiryDate = new Date();
