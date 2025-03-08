@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronDown, ChevronUp, FileText, Plus, Edit, Trash } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, FileText, Plus, Edit, Trash, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -163,6 +163,9 @@ const DraggableSection = ({ title, children, isOpen, toggleOpen }) => {
 
 // Draggable item component
 const DraggableItem = ({ item, type, onDrop }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedItem, setEditedItem] = useState({ ...item });
+  
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'RESUME_ITEM',
     item: { 
@@ -172,81 +175,308 @@ const DraggableItem = ({ item, type, onDrop }) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    canDrag: !isEditing, // Prevent dragging while editing
   }));
+  
+  const handleEditClick = (e) => {
+    e.stopPropagation(); // Prevent drag from starting
+    setIsEditing(true);
+  };
+  
+  const handleSave = () => {
+    // Update the item with edited values
+    onDrop({ ...editedItem, itemType: type });
+    setIsEditing(false);
+    toast.success("Item updated successfully");
+  };
+  
+  const handleCancel = () => {
+    // Reset to original values
+    setEditedItem({ ...item });
+    setIsEditing(false);
+  };
+  
+  const handleChange = (field, value) => {
+    setEditedItem(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
   
   // Simplified item displays based on data type
   const renderContent = () => {
     switch (type) {
       case 'experience':
-        return (
+        return isEditing ? (
+          <div className="p-3 border rounded-md mb-2 bg-white">
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block">Job Title</label>
+                <input 
+                  type="text" 
+                  value={editedItem.title} 
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Company</label>
+                <input 
+                  type="text" 
+                  value={editedItem.company} 
+                  onChange={(e) => handleChange('company', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Period</label>
+                <input 
+                  type="text" 
+                  value={editedItem.period} 
+                  onChange={(e) => handleChange('period', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Description</label>
+                <textarea 
+                  value={editedItem.description || ''} 
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
             <div>
               <div className="font-medium">{item.title}</div>
               <div className="text-sm text-gray-600">{item.company}</div>
               <div className="text-xs text-gray-500">{item.period}</div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
               <Edit size={16} />
             </Button>
           </div>
         );
       case 'education':
-        return (
+        return isEditing ? (
+          <div className="p-3 border rounded-md mb-2 bg-white">
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block">Institution</label>
+                <input 
+                  type="text" 
+                  value={editedItem.institution} 
+                  onChange={(e) => handleChange('institution', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Degree</label>
+                <input 
+                  type="text" 
+                  value={editedItem.degree} 
+                  onChange={(e) => handleChange('degree', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Year</label>
+                <input 
+                  type="text" 
+                  value={editedItem.year} 
+                  onChange={(e) => handleChange('year', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Description</label>
+                <textarea 
+                  value={editedItem.description || ''} 
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
             <div>
               <div className="font-medium">{item.degree}</div>
               <div className="text-sm text-gray-600">{item.institution}</div>
               <div className="text-xs text-gray-500">{item.year}</div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
               <Edit size={16} />
             </Button>
           </div>
         );
       case 'skills':
-        return (
+        return isEditing ? (
+          <div className="p-3 border rounded-md mb-2 bg-white">
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block">Skill Name</label>
+                <input 
+                  type="text" 
+                  value={editedItem.name} 
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
             <div className="font-medium">{item.name}</div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
               <Edit size={16} />
             </Button>
           </div>
         );
       case 'projects':
-        return (
-          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
-            <div>
-              <div className="font-medium">{item.name}</div>
-              <div className="text-xs text-gray-500">{item.description}</div>
+        return isEditing ? (
+          <div className="p-3 border rounded-md mb-2 bg-white">
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block">Project Name</label>
+                <input 
+                  type="text" 
+                  value={editedItem.name} 
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Description</label>
+                <textarea 
+                  value={editedItem.description || ''} 
+                  onChange={(e) => handleChange('description', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Link (optional)</label>
+                <input 
+                  type="text" 
+                  value={editedItem.link || ''} 
+                  onChange={(e) => handleChange('link', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+          </div>
+        ) : (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
+            <div className="font-medium">{item.name}</div>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
               <Edit size={16} />
             </Button>
           </div>
         );
       case 'certifications':
-        return (
+        return isEditing ? (
+          <div className="p-3 border rounded-md mb-2 bg-white">
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-gray-500 block">Certification Name</label>
+                <input 
+                  type="text" 
+                  value={editedItem.name} 
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Issuer</label>
+                <input 
+                  type="text" 
+                  value={editedItem.issuer} 
+                  onChange={(e) => handleChange('issuer', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">Date</label>
+                <input 
+                  type="text" 
+                  value={editedItem.date} 
+                  onChange={(e) => handleChange('date', e.target.value)}
+                  className="w-full p-1 border rounded text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="outline" size="sm" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button size="sm" onClick={handleSave}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md flex justify-between items-center">
             <div>
               <div className="font-medium">{item.name}</div>
               <div className="text-sm text-gray-600">{item.issuer}</div>
               <div className="text-xs text-gray-500">{item.date}</div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
               <Edit size={16} />
             </Button>
           </div>
         );
       default:
-        return <div>Unknown type</div>;
+        return (
+          <div className="p-2 border rounded-md mb-2 bg-white cursor-move hover:shadow-md">
+            {JSON.stringify(item)}
+          </div>
+        );
     }
   };
-
+  
   return (
     <div 
-      ref={drag}
+      ref={drag} 
       style={{ opacity: isDragging ? 0.5 : 1 }}
-      className="transition-all duration-200"
+      className={`${isEditing ? 'cursor-default' : 'cursor-move'}`}
     >
       {renderContent()}
     </div>
@@ -262,6 +492,10 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
       isOver: !!monitor.isOver(),
     }),
   }));
+
+  // Add state for editing items in the resume with proper typing
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editedValues, setEditedValues] = useState<any>({});
 
   // Get all selected skills
   const selectedSkills = resumeContent.selectedSkills || [];
@@ -313,6 +547,178 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
     reorderSections(result.source.index, result.destination.index);
   };
 
+  // Handle edit button click
+  const handleEditClick = (item) => {
+    setEditingItem(item);
+    setEditedValues({...item});
+  };
+
+  // Handle save edited item
+  const handleSaveEdit = () => {
+    onDrop(editedValues);
+    setEditingItem(null);
+    toast.success("Item updated successfully");
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditingItem(null);
+  };
+
+  // Handle input change
+  const handleInputChange = (field, value) => {
+    setEditedValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Render edit form based on section type
+  const renderEditForm = (item, sectionType) => {
+    switch (sectionType) {
+      case 'experience':
+        return (
+          <div className="space-y-2 p-2 border rounded-md mb-3">
+            <div>
+              <label className="text-xs text-gray-500 block">Company</label>
+              <input 
+                type="text" 
+                value={editedValues.company || ''} 
+                onChange={(e) => handleInputChange('company', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Title</label>
+              <input 
+                type="text" 
+                value={editedValues.title || ''} 
+                onChange={(e) => handleInputChange('title', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Period</label>
+              <input 
+                type="text" 
+                value={editedValues.period || ''} 
+                onChange={(e) => handleInputChange('period', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Description</label>
+              <textarea 
+                value={editedValues.description || ''} 
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSaveEdit}>
+                Save
+              </Button>
+            </div>
+          </div>
+        );
+      case 'education':
+        return (
+          <div className="space-y-2 p-2 border rounded-md mb-3">
+            <div>
+              <label className="text-xs text-gray-500 block">Institution</label>
+              <input 
+                type="text" 
+                value={editedValues.institution || ''} 
+                onChange={(e) => handleInputChange('institution', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Degree</label>
+              <input 
+                type="text" 
+                value={editedValues.degree || ''} 
+                onChange={(e) => handleInputChange('degree', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Year</label>
+              <input 
+                type="text" 
+                value={editedValues.year || ''} 
+                onChange={(e) => handleInputChange('year', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Description</label>
+              <textarea 
+                value={editedValues.description || ''} 
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSaveEdit}>
+                Save
+              </Button>
+            </div>
+          </div>
+        );
+      case 'projects':
+        return (
+          <div className="space-y-2 p-2 border rounded-md mb-3">
+            <div>
+              <label className="text-xs text-gray-500 block">Project Name</label>
+              <input 
+                type="text" 
+                value={editedValues.name || ''} 
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Description</label>
+              <textarea 
+                value={editedValues.description || ''} 
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+                rows={3}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">Link</label>
+              <input 
+                type="text" 
+                value={editedValues.link || ''} 
+                onChange={(e) => handleInputChange('link', e.target.value)}
+                className="w-full p-1 border rounded text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-2">
+              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSaveEdit}>
+                Save
+              </Button>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div 
       ref={drop} 
@@ -344,55 +750,54 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
         </div>
         
         {/* Resume content sections */}
-        {allSections.length === 0 ? (
-          <p className="text-center text-gray-400 py-12">Add resume sections by dragging them here</p>
-        ) : (
-          <div>
-            {/* Render all sections including skills */}
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="resume-sections">
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="resume-sections">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {allSections.map(([sectionType, items], sectionIndex) => (
+                  <Draggable 
+                    key={`section-${sectionType}`} 
+                    draggableId={`section-${sectionType}`} 
+                    index={sectionIndex}
                   >
-                    {allSections.map(([sectionType, items], sectionIndex) => (
-                      <Draggable 
-                        key={`section-${sectionType}`} 
-                        draggableId={`section-${sectionType}`} 
-                        index={sectionIndex}
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="mb-6 group relative"
                       >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className="mb-6 group relative"
-                          >
-                            {/* Section header with drag handle */}
-                            <div 
-                              {...provided.dragHandleProps}
-                              className="flex items-center cursor-move"
-                            >
-                              <h2 className="text-lg font-bold text-gray-800 border-b pb-1 mb-3 capitalize flex-grow">
-                                {sectionType}
-                              </h2>
-                            </div>
-                            
-                            {/* Section items */}
-                            {sectionType === 'skills' ? (
-                              <div className="text-gray-700 text-sm">
-                                {(items as Array<{id: string, name: string}>).map((skill, index) => (
-                                  <span key={skill.id}>
-                                    {skill.name}
-                                    {index < (items as Array<{id: string, name: string}>).length - 1 ? ' | ' : ''}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              (items as Array<any>).map((item, itemIndex) => (
-                                <div key={item.id || `item-${itemIndex}`} className="mb-4 group relative">
+                        {/* Section header with drag handle */}
+                        <div 
+                          {...provided.dragHandleProps}
+                          className="flex items-center cursor-move"
+                        >
+                          <h2 className="text-lg font-bold text-gray-800 border-b pb-1 mb-3 capitalize flex-grow">
+                            {sectionType}
+                          </h2>
+                        </div>
+                        
+                        {/* Section items */}
+                        {sectionType === 'skills' ? (
+                          <div className="text-gray-700 text-sm">
+                            {(items as Array<{id: string, name: string}>).map((skill, index) => (
+                              <span key={skill.id}>
+                                {skill.name}
+                                {index < (items as Array<{id: string, name: string}>).length - 1 ? ' | ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          (items as Array<any>).map((item, itemIndex) => (
+                            <div key={item.id || `item-${itemIndex}`} className="mb-4 group relative">
+                              {editingItem && editingItem.id === item.id ? (
+                                renderEditForm(item, sectionType)
+                              ) : (
+                                <>
                                   {sectionType === 'experience' && (
-                                    <div className="mb-3">
+                                    <div className="mb-3 relative group">
                                       <div className="flex justify-between items-baseline">
                                         <h3 className="font-semibold text-gray-800">{item.company}</h3>
                                         <span className="text-gray-600 text-sm">{item.period}</span>
@@ -401,11 +806,19 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
                                       {item.description && (
                                         <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                                       )}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleEditClick(item)}
+                                      >
+                                        <Edit size={12} />
+                                      </Button>
                                     </div>
                                   )}
                                   
                                   {sectionType === 'education' && (
-                                    <div className="mb-3">
+                                    <div className="mb-3 relative group">
                                       <div className="flex justify-between items-baseline">
                                         <h3 className="font-semibold text-gray-800">{item.institution}</h3>
                                         <span className="text-gray-600 text-sm">{item.year}</span>
@@ -414,11 +827,19 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
                                       {item.description && (
                                         <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                                       )}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleEditClick(item)}
+                                      >
+                                        <Edit size={12} />
+                                      </Button>
                                     </div>
                                   )}
                                   
                                   {sectionType === 'projects' && (
-                                    <div className="mb-3">
+                                    <div className="mb-3 relative group">
                                       <h3 className="font-semibold text-gray-800">{item.name}</h3>
                                       <p className="text-sm text-gray-600">{item.description}</p>
                                       {item.link && (
@@ -426,47 +847,58 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
                                           View Project
                                         </a>
                                       )}
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleEditClick(item)}
+                                      >
+                                        <Edit size={12} />
+                                      </Button>
                                     </div>
                                   )}
                                   
                                   {sectionType === 'certifications' && (
-                                    <div className="mb-3">
+                                    <div className="mb-3 relative group">
                                       <div className="flex justify-between items-baseline">
                                         <h3 className="font-semibold text-gray-800">{item.name}</h3>
                                         <span className="text-gray-600 text-sm">{item.date}</span>
                                       </div>
-                                      <div className="text-gray-700">{item.issuer}</div>
-                                      {item.credentialId && (
-                                        <div className="text-xs text-gray-500">Credential ID: {item.credentialId}</div>
-                                      )}
+                                      <div className="text-gray-700 font-medium">{item.issuer}</div>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleEditClick(item)}
+                                      >
+                                        <Edit size={12} />
+                                      </Button>
                                     </div>
                                   )}
-                                  
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeSection(resumeContent.sections.indexOf(item));
-                                    }}
-                                  >
-                                    <Trash size={14} />
-                                  </Button>
-                                </div>
-                              ))
-                            )}
-                          </div>
+                                </>
+                              )}
+                              
+                              {/* Remove button */}
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 absolute bottom-0 right-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => removeSection(item.id)}
+                              >
+                                <X size={12} />
+                              </Button>
+                            </div>
+                          ))
                         )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </div>
-        )}
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
       </div>
     </div>
   );
@@ -483,15 +915,6 @@ export default function Editor() {
     certifications: false,
   });
   
-  const toggleSection = (section) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-  
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  
-  // Add state for selected skills
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  
   // Resume content to be built with dragged items
   const [resumeContent, setResumeContent] = useState({
     personalInfo: {
@@ -505,6 +928,29 @@ export default function Editor() {
     selectedSkills: [],
     sectionOrder: []
   });
+  
+  // Add state for personal info editing with proper typing
+  const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
+  const [editedPersonalInfo, setEditedPersonalInfo] = useState<typeof resumeContent.personalInfo>({
+    name: '',
+    title: '',
+    email: '',
+    location: '',
+    links: {
+      linkedin: '',
+      portfolio: '',
+      additionalLinks: []
+    }
+  });
+  
+  const toggleSection = (section) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+  
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  
+  // Add state for selected skills
+  const [selectedSkills, setSelectedSkills] = useState([]);
   
   // Define the reorderSections function
   const reorderSections = (sourceIndex, destinationIndex) => {
@@ -542,29 +988,49 @@ export default function Editor() {
   
   const handleDrop = (item) => {
     setResumeContent(prev => {
-      // Add the item to sections
-      const updatedSections = [...prev.sections, item];
+      // Check if this is an update to an existing item
+      const isUpdate = prev.sections.some(section => section.id === item.id);
       
-      // Update section order if needed
-      let updatedOrder = [...prev.sectionOrder];
-      if (!updatedOrder.includes(item.itemType)) {
-        updatedOrder.push(item.itemType);
+      let updatedSections;
+      
+      if (isUpdate) {
+        // Update the existing item
+        updatedSections = prev.sections.map(section => 
+          section.id === item.id ? { ...item } : section
+        );
+        
+        // Show success message outside this function to avoid multiple toasts
+      } else {
+        // Add the item to sections
+        updatedSections = [...prev.sections, item];
+        
+        // Update section order if needed
+        let updatedOrder = [...prev.sectionOrder];
+        if (!updatedOrder.includes(item.itemType)) {
+          updatedOrder.push(item.itemType);
+        }
+        
+        // Show success message outside this function to avoid multiple toasts
+        toast.success(`Added ${item.itemType} item to resume`);
+        
+        return {
+          ...prev,
+          sections: updatedSections,
+          sectionOrder: updatedOrder
+        };
       }
       
       return {
         ...prev,
-        sections: updatedSections,
-        sectionOrder: updatedOrder
+        sections: updatedSections
       };
     });
-    
-    toast.success(`Added ${item.itemType} item to resume`);
   };
   
-  const removeSection = (index) => {
+  const removeSection = (id) => {
     setResumeContent(prev => ({
       ...prev,
-      sections: prev.sections.filter((_, i) => i !== index)
+      sections: prev.sections.filter(section => section.id !== id)
     }));
     toast.success("Item removed from resume");
   };
@@ -794,6 +1260,48 @@ export default function Editor() {
     );
   }
 
+  // Function to handle personal info edit
+  const handleEditPersonalInfo = () => {
+    setEditedPersonalInfo({...resumeContent.personalInfo});
+    setIsEditingPersonalInfo(true);
+  };
+  
+  // Function to save personal info changes
+  const handleSavePersonalInfo = () => {
+    setResumeContent(prev => ({
+      ...prev,
+      personalInfo: editedPersonalInfo
+    }));
+    setIsEditingPersonalInfo(false);
+    toast.success("Personal information updated");
+  };
+  
+  // Function to cancel personal info edit
+  const handleCancelPersonalInfo = () => {
+    setIsEditingPersonalInfo(false);
+  };
+  
+  // Function to handle personal info field changes
+  const handlePersonalInfoChange = (field, value) => {
+    setEditedPersonalInfo(prev => {
+      if (field.includes('.')) {
+        // Handle nested fields like links.linkedin
+        const [parent, child] = field.split('.');
+        return {
+          ...prev,
+          [parent]: {
+            ...prev[parent],
+            [child]: value
+          }
+        };
+      }
+      return {
+        ...prev,
+        [field]: value
+      };
+    });
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen flex-col">
@@ -828,29 +1336,91 @@ export default function Editor() {
                 isOpen={openSections.personalInfo}
                 toggleOpen={() => toggleSection('personalInfo')}
               >
-                <div className="flex items-center gap-4 mb-2">
-                  <div className="w-12 h-12 rounded-full overflow-hidden">
-                    <img src={mockUser.avatarUrl} alt={mockUser.name} className="w-full h-full object-cover" />
+                {isEditingPersonalInfo ? (
+                  <div className="p-3 border rounded-md mb-2 bg-white">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-gray-500 block">Full Name</label>
+                        <input 
+                          type="text" 
+                          value={editedPersonalInfo.name || ''} 
+                          onChange={(e) => handlePersonalInfoChange('name', e.target.value)}
+                          className="w-full p-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block">Professional Title</label>
+                        <input 
+                          type="text" 
+                          value={editedPersonalInfo.title || ''} 
+                          onChange={(e) => handlePersonalInfoChange('title', e.target.value)}
+                          className="w-full p-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block">Email</label>
+                        <input 
+                          type="email" 
+                          value={editedPersonalInfo.email || ''} 
+                          onChange={(e) => handlePersonalInfoChange('email', e.target.value)}
+                          className="w-full p-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block">Location</label>
+                        <input 
+                          type="text" 
+                          value={editedPersonalInfo.location || ''} 
+                          onChange={(e) => handlePersonalInfoChange('location', e.target.value)}
+                          className="w-full p-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block">LinkedIn</label>
+                        <input 
+                          type="text" 
+                          value={editedPersonalInfo.links?.linkedin || ''} 
+                          onChange={(e) => handlePersonalInfoChange('links.linkedin', e.target.value)}
+                          className="w-full p-1 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button variant="outline" size="sm" onClick={handleCancelPersonalInfo}>
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={handleSavePersonalInfo}>
+                          Save
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-medium">{mockUser.name}</div>
-                    <div className="text-sm text-gray-500">{mockUser.title}</div>
-                  </div>
-                  <Button variant="ghost" size="icon" className="ml-auto">
-                    <Edit size={16} />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="text-sm">
-                    <span className="font-medium">Email:</span> {mockUser.email}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-medium">Location:</span> {mockUser.location}
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-medium">LinkedIn:</span> {mockUser.links.linkedin}
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                        <img src={mockUser.avatarUrl} alt={resumeContent.personalInfo.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{resumeContent.personalInfo.name}</div>
+                        <div className="text-sm text-gray-500">{resumeContent.personalInfo.title}</div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="ml-auto" onClick={handleEditPersonalInfo}>
+                        <Edit size={16} />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="text-sm">
+                        <span className="font-medium">Email:</span> {resumeContent.personalInfo.email}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium">Location:</span> {resumeContent.personalInfo.location}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-medium">LinkedIn:</span> {resumeContent.personalInfo.links?.linkedin}
+                      </div>
+                    </div>
+                  </>
+                )}
               </DraggableSection>
               
               {/* Experience Section */}
