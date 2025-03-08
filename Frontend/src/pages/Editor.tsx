@@ -7,8 +7,6 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import {
   Dialog,
@@ -144,21 +142,21 @@ const mockUser = {
 // Draggable section component
 const DraggableSection = ({ title, children, isOpen, toggleOpen }) => {
   return (
-    <Collapsible open={isOpen} onOpenChange={toggleOpen} className="w-full">
-      <Card className="mb-4">
-        <CardHeader className="p-3 cursor-pointer">
-          <CollapsibleTrigger className="flex justify-between items-center w-full">
-            <CardTitle className="text-md">{title}</CardTitle>
-            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </CollapsibleTrigger>
-        </CardHeader>
-        <CollapsibleContent>
-          <CardContent className="p-3 pt-0">
-            {children}
-          </CardContent>
-        </CollapsibleContent>
-      </Card>
-    </Collapsible>
+    <div className="mb-6 border rounded-md overflow-hidden">
+      <div 
+        className="p-3 bg-muted/50 flex justify-between items-center cursor-pointer"
+        onClick={toggleOpen}
+      >
+        <h3 className="font-semibold">{title}</h3>
+        <Button variant="ghost" size="icon" className="h-6 w-6">
+          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </Button>
+      </div>
+      
+      <div className={`p-3 ${isOpen ? 'block' : 'hidden'}`}>
+        {children}
+      </div>
+    </div>
   );
 };
 
@@ -506,7 +504,7 @@ const DraggableItem = ({ item, type, onDrop, userData, setUserData }) => {
 };
 
 // Resume drop zone component
-const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections, userData, setUserData }) => {
+const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections, userData, setUserData, setResumeContent }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -563,10 +561,81 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
     }
   }
 
-  // Handle drag end for reordering
+  // Handle drag end for reordering sections
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-    reorderSections(result.source.index, result.destination.index);
+    
+    const { source, destination, type } = result;
+    
+    // Handle section reordering
+    if (type === 'section') {
+      reorderSections(source.index, destination.index);
+      return;
+    }
+    
+    // Handle item reordering within a section
+    if (type.startsWith('items-')) {
+      const sectionType = type.replace('items-', '');
+      
+      // Get the items for this section
+      const sectionItems = [...resumeContent.sections.filter(item => item.itemType === sectionType)];
+      
+      // Reorder the items
+      const [removed] = sectionItems.splice(source.index, 1);
+      sectionItems.splice(destination.index, 0, removed);
+      
+      // Update resumeContent with the reordered items
+      setResumeContent(prev => {
+        // Filter out the items of this section type
+        const otherSections = prev.sections.filter(item => item.itemType !== sectionType);
+        
+        // Add back the reordered items
+        return {
+          ...prev,
+          sections: [...otherSections, ...sectionItems]
+        };
+      });
+      
+      // Update userData with the reordered items
+      setUserData(prevUserData => {
+        // Create a deep copy of the sections
+        const updatedSections = { ...prevUserData.sections };
+        
+        // Get the items for this section from userData
+        const userDataSectionItems = [...updatedSections[sectionType]];
+        
+        // Find the items by ID to ensure we're reordering the correct ones
+        const itemIds = sectionItems.map(item => item.id);
+        
+        // Create a new array with the items in the correct order
+        const reorderedItems = [];
+        
+        // Add items in the new order
+        itemIds.forEach(id => {
+          const item = userDataSectionItems.find(item => item.id === id);
+          if (item) {
+            reorderedItems.push(item);
+          }
+        });
+        
+        // Add any remaining items that weren't in the resume
+        userDataSectionItems.forEach(item => {
+          if (!itemIds.includes(item.id)) {
+            reorderedItems.push(item);
+          }
+        });
+        
+        // Update the section with the reordered items
+        updatedSections[sectionType] = reorderedItems;
+        
+        return {
+          ...prevUserData,
+          sections: updatedSections
+        };
+      });
+      
+      toast.success(`Reordered ${sectionType} items`);
+    }
   };
 
   // Handle edit button click
@@ -794,7 +863,7 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
         
         {/* Resume content sections */}
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="resume-sections">
+          <Droppable droppableId="resume-sections" type="section">
             {(provided) => (
               <div
                 {...provided.droppableProps}
@@ -833,105 +902,141 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
                             ))}
                           </div>
                         ) : (
-                          (items as Array<any>).map((item, itemIndex) => (
-                            <div key={item.id || `item-${itemIndex}`} className="mb-4 group relative">
-                              {editingItem && editingItem.id === item.id ? (
-                                renderEditForm(item, sectionType)
-                              ) : (
-                                <>
-                                  {sectionType === 'experience' && (
-                                    <div className="mb-3 relative group">
-                                      <div className="flex justify-between items-baseline">
-                                        <h3 className="font-semibold text-gray-800">{item.company}</h3>
-                                        <span className="text-gray-600 text-sm">{item.period}</span>
-                                      </div>
-                                      <div className="text-gray-700 font-medium">{item.title}</div>
-                                      {item.description && (
-                                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                      )}
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleEditClick(item)}
-                                      >
-                                        <Edit size={12} />
-                                      </Button>
-                                    </div>
-                                  )}
-                                  
-                                  {sectionType === 'education' && (
-                                    <div className="mb-3 relative group">
-                                      <div className="flex justify-between items-baseline">
-                                        <h3 className="font-semibold text-gray-800">{item.institution}</h3>
-                                        <span className="text-gray-600 text-sm">{item.year}</span>
-                                      </div>
-                                      <div className="text-gray-700 font-medium">{item.degree}</div>
-                                      {item.description && (
-                                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                      )}
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleEditClick(item)}
-                                      >
-                                        <Edit size={12} />
-                                      </Button>
-                                    </div>
-                                  )}
-                                  
-                                  {sectionType === 'projects' && (
-                                    <div className="mb-3 relative group">
-                                      <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                                      <p className="text-sm text-gray-600">{item.description}</p>
-                                      {item.link && (
-                                        <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-                                          View Project
-                                        </a>
-                                      )}
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleEditClick(item)}
-                                      >
-                                        <Edit size={12} />
-                                      </Button>
-                                    </div>
-                                  )}
-                                  
-                                  {sectionType === 'certifications' && (
-                                    <div className="mb-3 relative group">
-                                      <div className="flex justify-between items-baseline">
-                                        <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                                        <span className="text-gray-600 text-sm">{item.date}</span>
-                                      </div>
-                                      <div className="text-gray-700 font-medium">{item.issuer}</div>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={() => handleEditClick(item)}
-                                      >
-                                        <Edit size={12} />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                              
-                              {/* Remove button */}
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 absolute bottom-0 right-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => removeSection(item.id)}
+                          <Droppable 
+                            droppableId={`droppable-${sectionType}`} 
+                            type={`items-${sectionType}`}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
                               >
-                                <X size={12} />
-                              </Button>
-                            </div>
-                          ))
+                                {(items as Array<any>).map((item, itemIndex) => (
+                                  <Draggable
+                                    key={item.id || `item-${itemIndex}`}
+                                    draggableId={item.id || `item-${itemIndex}`}
+                                    index={itemIndex}
+                                  >
+                                    {(provided) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className="mb-4 group relative"
+                                      >
+                                        <div 
+                                          {...provided.dragHandleProps}
+                                          className="absolute left-0 top-1/2 -translate-x-full -ml-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-move"
+                                        >
+                                          <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                            <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                          </div>
+                                        </div>
+                                        
+                                        {editingItem && editingItem.id === item.id ? (
+                                          renderEditForm(item, sectionType)
+                                        ) : (
+                                          <>
+                                            {sectionType === 'experience' && (
+                                              <div className="mb-3 relative group">
+                                                <div className="flex justify-between items-baseline">
+                                                  <h3 className="font-semibold text-gray-800">{item.company}</h3>
+                                                  <span className="text-gray-600 text-sm">{item.period}</span>
+                                                </div>
+                                                <div className="text-gray-700 font-medium">{item.title}</div>
+                                                {item.description && (
+                                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                                )}
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="icon" 
+                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  onClick={() => handleEditClick(item)}
+                                                >
+                                                  <Edit size={12} />
+                                                </Button>
+                                              </div>
+                                            )}
+                                            
+                                            {sectionType === 'education' && (
+                                              <div className="mb-3 relative group">
+                                                <div className="flex justify-between items-baseline">
+                                                  <h3 className="font-semibold text-gray-800">{item.institution}</h3>
+                                                  <span className="text-gray-600 text-sm">{item.year}</span>
+                                                </div>
+                                                <div className="text-gray-700 font-medium">{item.degree}</div>
+                                                {item.description && (
+                                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                                                )}
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="icon" 
+                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  onClick={() => handleEditClick(item)}
+                                                >
+                                                  <Edit size={12} />
+                                                </Button>
+                                              </div>
+                                            )}
+                                            
+                                            {sectionType === 'projects' && (
+                                              <div className="mb-3 relative group">
+                                                <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                                <p className="text-sm text-gray-600">{item.description}</p>
+                                                {item.link && (
+                                                  <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                                                    View Project
+                                                  </a>
+                                                )}
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="icon" 
+                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  onClick={() => handleEditClick(item)}
+                                                >
+                                                  <Edit size={12} />
+                                                </Button>
+                                              </div>
+                                            )}
+                                            
+                                            {sectionType === 'certifications' && (
+                                              <div className="mb-3 relative group">
+                                                <div className="flex justify-between items-baseline">
+                                                  <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                                  <span className="text-gray-600 text-sm">{item.date}</span>
+                                                </div>
+                                                <div className="text-gray-700 font-medium">{item.issuer}</div>
+                                                <Button 
+                                                  variant="ghost" 
+                                                  size="icon" 
+                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                  onClick={() => handleEditClick(item)}
+                                                >
+                                                  <Edit size={12} />
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                        
+                                        {/* Remove button */}
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="h-6 w-6 absolute bottom-0 right-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                          onClick={() => removeSection(item.id)}
+                                        >
+                                          <X size={12} />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
                         )}
                       </div>
                     )}
@@ -1430,6 +1535,31 @@ export default function Editor() {
     });
   };
 
+  // Function to reorder items within a section in userData
+  const reorderSectionItems = (sectionType, sourceIndex, destinationIndex) => {
+    setUserData(prevUserData => {
+      // Create a deep copy of the sections
+      const updatedSections = { ...prevUserData.sections };
+      
+      // Get the items for this section
+      const sectionItems = [...updatedSections[sectionType]];
+      
+      // Reorder the items
+      const [removed] = sectionItems.splice(sourceIndex, 1);
+      sectionItems.splice(destinationIndex, 0, removed);
+      
+      // Update the section with the reordered items
+      updatedSections[sectionType] = sectionItems;
+      
+      return {
+        ...prevUserData,
+        sections: updatedSections
+      };
+    });
+    
+    toast.success(`Reordered ${sectionType} items`);
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen flex-col">
@@ -1557,16 +1687,57 @@ export default function Editor() {
                 isOpen={openSections.experience}
                 toggleOpen={() => toggleSection('experience')}
               >
-                {userData.sections.experience.map(exp => (
-                  <DraggableItem 
-                    key={exp.id} 
-                    item={exp} 
-                    type="experience" 
-                    onDrop={handleDrop} 
-                    userData={userData} 
-                    setUserData={setUserData} 
-                  />
-                ))}
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  reorderSectionItems('experience', result.source.index, result.destination.index);
+                }}>
+                  <Droppable droppableId="experience-items" type="experience-items">
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {userData.sections.experience.map((exp, index) => (
+                          <Draggable 
+                            key={exp.id} 
+                            draggableId={exp.id} 
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                              >
+                                <div className="flex items-center">
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                  >
+                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <DraggableItem 
+                                      item={exp} 
+                                      type="experience" 
+                                      onDrop={handleDrop} 
+                                      userData={userData} 
+                                      setUserData={setUserData} 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addExperience}>
                   <Plus size={16} className="mr-2" />
                   Add Experience
@@ -1579,16 +1750,57 @@ export default function Editor() {
                 isOpen={openSections.education}
                 toggleOpen={() => toggleSection('education')}
               >
-                {userData.sections.education.map(edu => (
-                  <DraggableItem 
-                    key={edu.id} 
-                    item={edu} 
-                    type="education" 
-                    onDrop={handleDrop} 
-                    userData={userData} 
-                    setUserData={setUserData} 
-                  />
-                ))}
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  reorderSectionItems('education', result.source.index, result.destination.index);
+                }}>
+                  <Droppable droppableId="education-items" type="education-items">
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {userData.sections.education.map((edu, index) => (
+                          <Draggable 
+                            key={edu.id} 
+                            draggableId={edu.id} 
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                              >
+                                <div className="flex items-center">
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                  >
+                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <DraggableItem 
+                                      item={edu} 
+                                      type="education" 
+                                      onDrop={handleDrop} 
+                                      userData={userData} 
+                                      setUserData={setUserData} 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addEducation}>
                   <Plus size={16} className="mr-2" />
                   Add Education
@@ -1624,16 +1836,57 @@ export default function Editor() {
                 isOpen={openSections.projects}
                 toggleOpen={() => toggleSection('projects')}
               >
-                {userData.sections.projects.map(project => (
-                  <DraggableItem 
-                    key={project.id} 
-                    item={project} 
-                    type="projects" 
-                    onDrop={handleDrop} 
-                    userData={userData} 
-                    setUserData={setUserData} 
-                  />
-                ))}
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  reorderSectionItems('projects', result.source.index, result.destination.index);
+                }}>
+                  <Droppable droppableId="projects-items" type="projects-items">
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {userData.sections.projects.map((project, index) => (
+                          <Draggable 
+                            key={project.id} 
+                            draggableId={project.id} 
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                              >
+                                <div className="flex items-center">
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                  >
+                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <DraggableItem 
+                                      item={project} 
+                                      type="projects" 
+                                      onDrop={handleDrop} 
+                                      userData={userData} 
+                                      setUserData={setUserData} 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addProject}>
                   <Plus size={16} className="mr-2" />
                   Add Project
@@ -1646,16 +1899,57 @@ export default function Editor() {
                 isOpen={openSections.certifications}
                 toggleOpen={() => toggleSection('certifications')}
               >
-                {userData.sections.certifications.map(cert => (
-                  <DraggableItem 
-                    key={cert.id} 
-                    item={cert} 
-                    type="certifications" 
-                    onDrop={handleDrop} 
-                    userData={userData} 
-                    setUserData={setUserData} 
-                  />
-                ))}
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  reorderSectionItems('certifications', result.source.index, result.destination.index);
+                }}>
+                  <Droppable droppableId="certifications-items" type="certifications-items">
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {userData.sections.certifications.map((cert, index) => (
+                          <Draggable 
+                            key={cert.id} 
+                            draggableId={cert.id} 
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                              >
+                                <div className="flex items-center">
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                  >
+                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <DraggableItem 
+                                      item={cert} 
+                                      type="certifications" 
+                                      onDrop={handleDrop} 
+                                      userData={userData} 
+                                      setUserData={setUserData} 
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addCertification}>
                   <Plus size={16} className="mr-2" />
                   Add Certification
@@ -1679,6 +1973,7 @@ export default function Editor() {
                     reorderSections={reorderSections}
                     userData={userData}
                     setUserData={setUserData}
+                    setResumeContent={setResumeContent}
                   />
                 </div>
               </div>
