@@ -22,21 +22,22 @@ interface Project {
 
 interface EditProjectDialogProps {
   id: string;
-  project: Project;
+  project?: Project;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSave: (project: Project) => void;
 }
 
-export const EditProjectDialog = ({ id, project, onSave }: EditProjectDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditProjectDialog = ({ id, project, open, onOpenChange, onSave }: EditProjectDialogProps) => {
   const [data, setData] = useState<Project>({
     ...project,
-    bulletPoints: project.bulletPoints || []
+    bulletPoints: project?.bulletPoints || []
   });
 
   useEffect(() => {
     setData({
       ...project,
-      bulletPoints: project.bulletPoints || []
+      bulletPoints: project?.bulletPoints || []
     });
   }, [project]);
 
@@ -45,11 +46,11 @@ export const EditProjectDialog = ({ id, project, onSave }: EditProjectDialogProp
       ...project,
       ...data
     });
-    setOpen(false);
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <button id={id} className="hidden"></button>
       </DialogTrigger>

@@ -23,12 +23,13 @@ interface Experience {
 
 interface EditExperienceDialogProps {
   id: string;
-  experience: Experience;
+  experience?: Experience;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSave: (experience: Experience) => void;
 }
 
-export const EditExperienceDialog = ({ id, experience, onSave }: EditExperienceDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditExperienceDialog = ({ id, experience, open, onOpenChange, onSave }: EditExperienceDialogProps) => {
   const [data, setData] = useState<Experience>({
     ...experience,
     bulletPoints: experience.bulletPoints || []
@@ -46,11 +47,11 @@ export const EditExperienceDialog = ({ id, experience, onSave }: EditExperienceD
       ...experience,
       ...data
     });
-    setOpen(false);
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <button id={id} className="hidden"></button>
       </DialogTrigger>
