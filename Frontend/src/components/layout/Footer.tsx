@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { FileText, Github, Twitter } from "lucide-react";
+import { FileText, Github, Twitter, Search } from "lucide-react";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -28,7 +28,7 @@ export function Footer() {
         <div className="flex flex-col items-center gap-4 md:flex-row md:gap-6">
           <div className="flex items-center gap-3">
             <a
-              href="https://github.com"
+              href="https://github.com/ProjLab42/WitchCraft"
               target="_blank"
               rel="noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
@@ -37,17 +37,19 @@ export function Footer() {
               <span className="sr-only">GitHub</span>
             </a>
             <a
-              href="https://twitter.com"
+              href="https://www.google.com/search?q=witchcraft"
               target="_blank"
               rel="noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Twitter className="h-4 w-4" />
-              <span className="sr-only">Twitter</span>
+              <Search className="h-4 w-4" />
+              <span className="sr-only">Google Search</span>
             </a>
           </div>
           <div className="text-xs text-muted-foreground">
             &copy; {currentYear} WitchCraft. All rights reserved.
+            <br />
+            Licensed under the MIT License.
           </div>
         </div>
       </div>
