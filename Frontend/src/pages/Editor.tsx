@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Link } from "react-router-dom";
 
 // Mock user data
 const mockUser = {
@@ -162,7 +163,7 @@ const DraggableSection = ({ title, children, isOpen, toggleOpen }) => {
 };
 
 // Draggable item component
-const DraggableItem = ({ item, type, onDrop }) => {
+const DraggableItem = ({ item, type, onDrop, userData, setUserData }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedItem, setEditedItem] = useState({ ...item });
   
@@ -186,6 +187,27 @@ const DraggableItem = ({ item, type, onDrop }) => {
   const handleSave = () => {
     // Update the item with edited values
     onDrop({ ...editedItem, itemType: type });
+    
+    // Update the userData state to sync with the edited item
+    if (userData && setUserData) {
+      setUserData(prevUserData => {
+        // Create a deep copy of the sections
+        const updatedSections = { ...prevUserData.sections };
+        
+        // Find and update the item in the appropriate section
+        if (updatedSections[type]) {
+          updatedSections[type] = updatedSections[type].map(sectionItem => 
+            sectionItem.id === editedItem.id ? { ...editedItem } : sectionItem
+          );
+        }
+        
+        return {
+          ...prevUserData,
+          sections: updatedSections
+        };
+      });
+    }
+    
     setIsEditing(false);
     toast.success("Item updated successfully");
   };
@@ -484,7 +506,7 @@ const DraggableItem = ({ item, type, onDrop }) => {
 };
 
 // Resume drop zone component
-const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections }) => {
+const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections, userData, setUserData }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -556,6 +578,27 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections 
   // Handle save edited item
   const handleSaveEdit = () => {
     onDrop(editedValues);
+    
+    // Update the userData state to sync with the edited item
+    if (userData && setUserData && editedValues.itemType) {
+      setUserData(prevUserData => {
+        // Create a deep copy of the sections
+        const updatedSections = { ...prevUserData.sections };
+        
+        // Find and update the item in the appropriate section
+        if (updatedSections[editedValues.itemType]) {
+          updatedSections[editedValues.itemType] = updatedSections[editedValues.itemType].map(sectionItem => 
+            sectionItem.id === editedValues.id ? { ...editedValues } : sectionItem
+          );
+        }
+        
+        return {
+          ...prevUserData,
+          sections: updatedSections
+        };
+      });
+    }
+    
     setEditingItem(null);
     toast.success("Item updated successfully");
   };
@@ -915,14 +958,17 @@ export default function Editor() {
     certifications: false,
   });
   
+  // Add state for user data
+  const [userData, setUserData] = useState(mockUser);
+  
   // Resume content to be built with dragged items
   const [resumeContent, setResumeContent] = useState({
     personalInfo: {
-      name: mockUser.name,
-      title: mockUser.title,
-      email: mockUser.email,
-      location: mockUser.location,
-      links: mockUser.links
+      name: userData.name,
+      title: userData.title,
+      email: userData.email,
+      location: userData.location,
+      links: userData.links
     },
     sections: [],
     selectedSkills: [],
@@ -1028,11 +1074,36 @@ export default function Editor() {
   };
   
   const removeSection = (id) => {
-    setResumeContent(prev => ({
-      ...prev,
-      sections: prev.sections.filter(section => section.id !== id)
-    }));
-    toast.success("Item removed from resume");
+    // Find the section to be removed to get its type
+    const sectionToRemove = resumeContent.sections.find(section => section.id === id);
+    
+    if (sectionToRemove) {
+      // Update resumeContent
+      setResumeContent(prev => ({
+        ...prev,
+        sections: prev.sections.filter(section => section.id !== id)
+      }));
+      
+      // Update userData
+      setUserData(prev => {
+        const sectionType = sectionToRemove.itemType;
+        
+        // Create a deep copy of the sections
+        const updatedSections = { ...prev.sections };
+        
+        // Remove the item from the appropriate section if it exists
+        if (updatedSections[sectionType]) {
+          updatedSections[sectionType] = updatedSections[sectionType].filter(item => item.id !== id);
+        }
+        
+        return {
+          ...prev,
+          sections: updatedSections
+        };
+      });
+      
+      toast.success("Item removed from resume");
+    }
   };
   
   const handleExport = (format: 'pdf' | 'docx') => {
@@ -1051,12 +1122,22 @@ export default function Editor() {
       bulletPoints: []
     };
     
+    // Update resumeContent
     setResumeContent(prev => ({
       ...prev,
       sections: [...prev.sections, {
         itemType: 'experience',
         ...newExperience
       }]
+    }));
+    
+    // Update userData
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        experience: [...prev.sections.experience, newExperience]
+      }
     }));
     
     toast.success("Added new experience");
@@ -1069,16 +1150,25 @@ export default function Editor() {
       degree: "Degree Name",
       institution: "Institution Name",
       year: "Graduation Year",
-      description: "Description of your studies",
-      bulletPoints: []
+      description: "Description of your education"
     };
     
+    // Update resumeContent
     setResumeContent(prev => ({
       ...prev,
       sections: [...prev.sections, {
         itemType: 'education',
         ...newEducation
       }]
+    }));
+    
+    // Update userData
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        education: [...prev.sections.education, newEducation]
+      }
     }));
     
     toast.success("Added new education");
@@ -1175,8 +1265,14 @@ export default function Editor() {
       name: skillName
     };
     
-    // Add to mock user skills
-    mockUser.sections.skills.push(newSkill);
+    // Add to user skills
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        skills: [...prev.sections.skills, newSkill]
+      }
+    }));
     
     // Force re-render
     setOpenSections({...openSections});
@@ -1188,18 +1284,27 @@ export default function Editor() {
   const addProject = () => {
     const newProject = {
       id: `proj-${Date.now()}`,
-      name: "New Project",
+      name: "Project Name",
       description: "Description of your project",
-      link: "",
-      bulletPoints: []
+      link: "https://example.com/project"
     };
     
+    // Update resumeContent
     setResumeContent(prev => ({
       ...prev,
       sections: [...prev.sections, {
-        itemType: 'project',
+        itemType: 'projects',
         ...newProject
       }]
+    }));
+    
+    // Update userData
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        projects: [...prev.sections.projects, newProject]
+      }
     }));
     
     toast.success("Added new project");
@@ -1209,20 +1314,29 @@ export default function Editor() {
   const addCertification = () => {
     const newCertification = {
       id: `cert-${Date.now()}`,
-      name: "New Certification",
+      name: "Certification Name",
       issuer: "Issuing Organization",
       date: "Issue Date",
       expirationDate: "Expiration Date",
-      credentialId: "",
-      bulletPoints: []
+      credentialId: "Credential ID"
     };
     
+    // Update resumeContent
     setResumeContent(prev => ({
       ...prev,
       sections: [...prev.sections, {
-        itemType: 'certification',
+        itemType: 'certifications',
         ...newCertification
       }]
+    }));
+    
+    // Update userData
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        certifications: [...prev.sections.certifications, newCertification]
+      }
     }));
     
     toast.success("Added new certification");
@@ -1272,6 +1386,20 @@ export default function Editor() {
       ...prev,
       personalInfo: editedPersonalInfo
     }));
+    
+    // Update the userData state to sync with the edited personal info
+    setUserData(prevUserData => ({
+      ...prevUserData,
+      name: editedPersonalInfo.name,
+      title: editedPersonalInfo.title,
+      email: editedPersonalInfo.email,
+      location: editedPersonalInfo.location,
+      links: {
+        ...prevUserData.links,
+        linkedin: editedPersonalInfo.links?.linkedin || prevUserData.links.linkedin
+      }
+    }));
+    
     setIsEditingPersonalInfo(false);
     toast.success("Personal information updated");
   };
@@ -1398,7 +1526,7 @@ export default function Editor() {
                   <>
                     <div className="flex items-center gap-4 mb-2">
                       <div className="w-12 h-12 rounded-full overflow-hidden">
-                        <img src={mockUser.avatarUrl} alt={resumeContent.personalInfo.name} className="w-full h-full object-cover" />
+                        <img src={userData.avatarUrl} alt={resumeContent.personalInfo.name} className="w-full h-full object-cover" />
                       </div>
                       <div>
                         <div className="font-medium">{resumeContent.personalInfo.name}</div>
@@ -1429,8 +1557,15 @@ export default function Editor() {
                 isOpen={openSections.experience}
                 toggleOpen={() => toggleSection('experience')}
               >
-                {mockUser.sections.experience.map(exp => (
-                  <DraggableItem key={exp.id} item={exp} type="experience" onDrop={handleDrop} />
+                {userData.sections.experience.map(exp => (
+                  <DraggableItem 
+                    key={exp.id} 
+                    item={exp} 
+                    type="experience" 
+                    onDrop={handleDrop} 
+                    userData={userData} 
+                    setUserData={setUserData} 
+                  />
                 ))}
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addExperience}>
                   <Plus size={16} className="mr-2" />
@@ -1444,8 +1579,15 @@ export default function Editor() {
                 isOpen={openSections.education}
                 toggleOpen={() => toggleSection('education')}
               >
-                {mockUser.sections.education.map(edu => (
-                  <DraggableItem key={edu.id} item={edu} type="education" onDrop={handleDrop} />
+                {userData.sections.education.map(edu => (
+                  <DraggableItem 
+                    key={edu.id} 
+                    item={edu} 
+                    type="education" 
+                    onDrop={handleDrop} 
+                    userData={userData} 
+                    setUserData={setUserData} 
+                  />
                 ))}
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addEducation}>
                   <Plus size={16} className="mr-2" />
@@ -1460,16 +1602,16 @@ export default function Editor() {
                 toggleOpen={() => toggleSection('skills')}
               >
                 <div className="grid grid-cols-2 gap-2 mb-2">
-                  {mockUser.sections.skills.map(skill => (
+                  {userData.sections.skills.map(skill => (
                     <div key={skill.id} className="flex items-center">
                       <input 
                         type="checkbox" 
                         id={`skill-${skill.id}`}
-                        checked={resumeContent.selectedSkills?.some(s => s.id === skill.id)}
-                        onChange={() => toggleSkill(skill)}
                         className="mr-2"
+                        checked={resumeContent.selectedSkills.some(s => s.id === skill.id)}
+                        onChange={() => toggleSkill(skill)}
                       />
-                      <label htmlFor={`skill-${skill.id}`}>{skill.name}</label>
+                      <label htmlFor={`skill-${skill.id}`} className="text-sm">{skill.name}</label>
                     </div>
                   ))}
                 </div>
@@ -1482,8 +1624,15 @@ export default function Editor() {
                 isOpen={openSections.projects}
                 toggleOpen={() => toggleSection('projects')}
               >
-                {mockUser.sections.projects.map(project => (
-                  <DraggableItem key={project.id} item={project} type="projects" onDrop={handleDrop} />
+                {userData.sections.projects.map(project => (
+                  <DraggableItem 
+                    key={project.id} 
+                    item={project} 
+                    type="projects" 
+                    onDrop={handleDrop} 
+                    userData={userData} 
+                    setUserData={setUserData} 
+                  />
                 ))}
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addProject}>
                   <Plus size={16} className="mr-2" />
@@ -1497,8 +1646,15 @@ export default function Editor() {
                 isOpen={openSections.certifications}
                 toggleOpen={() => toggleSection('certifications')}
               >
-                {mockUser.sections.certifications.map(cert => (
-                  <DraggableItem key={cert.id} item={cert} type="certifications" onDrop={handleDrop} />
+                {userData.sections.certifications.map(cert => (
+                  <DraggableItem 
+                    key={cert.id} 
+                    item={cert} 
+                    type="certifications" 
+                    onDrop={handleDrop} 
+                    userData={userData} 
+                    setUserData={setUserData} 
+                  />
                 ))}
                 <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addCertification}>
                   <Plus size={16} className="mr-2" />
@@ -1521,6 +1677,8 @@ export default function Editor() {
                     resumeContent={resumeContent} 
                     removeSection={removeSection}
                     reorderSections={reorderSections}
+                    userData={userData}
+                    setUserData={setUserData}
                   />
                 </div>
               </div>
