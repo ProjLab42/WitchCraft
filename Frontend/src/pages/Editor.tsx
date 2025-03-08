@@ -513,10 +513,6 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
     }),
   }));
 
-  // Add state for editing items in the resume with proper typing
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [editedValues, setEditedValues] = useState<any>({});
-
   // Get all selected skills
   const selectedSkills = resumeContent.selectedSkills || [];
 
@@ -638,199 +634,6 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
     }
   };
 
-  // Handle edit button click
-  const handleEditClick = (item) => {
-    setEditingItem(item);
-    setEditedValues({...item});
-  };
-
-  // Handle save edited item
-  const handleSaveEdit = () => {
-    onDrop(editedValues);
-    
-    // Update the userData state to sync with the edited item
-    if (userData && setUserData && editedValues.itemType) {
-      setUserData(prevUserData => {
-        // Create a deep copy of the sections
-        const updatedSections = { ...prevUserData.sections };
-        
-        // Find and update the item in the appropriate section
-        if (updatedSections[editedValues.itemType]) {
-          updatedSections[editedValues.itemType] = updatedSections[editedValues.itemType].map(sectionItem => 
-            sectionItem.id === editedValues.id ? { ...editedValues } : sectionItem
-          );
-        }
-        
-        return {
-          ...prevUserData,
-          sections: updatedSections
-        };
-      });
-    }
-    
-    setEditingItem(null);
-    toast.success("Item updated successfully");
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setEditingItem(null);
-  };
-
-  // Handle input change
-  const handleInputChange = (field, value) => {
-    setEditedValues(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Render edit form based on section type
-  const renderEditForm = (item, sectionType) => {
-    switch (sectionType) {
-      case 'experience':
-        return (
-          <div className="space-y-2 p-2 border rounded-md mb-3">
-            <div>
-              <label className="text-xs text-gray-500 block">Company</label>
-              <input 
-                type="text" 
-                value={editedValues.company || ''} 
-                onChange={(e) => handleInputChange('company', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Title</label>
-              <input 
-                type="text" 
-                value={editedValues.title || ''} 
-                onChange={(e) => handleInputChange('title', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Period</label>
-              <input 
-                type="text" 
-                value={editedValues.period || ''} 
-                onChange={(e) => handleInputChange('period', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Description</label>
-              <textarea 
-                value={editedValues.description || ''} 
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveEdit}>
-                Save
-              </Button>
-            </div>
-          </div>
-        );
-      case 'education':
-        return (
-          <div className="space-y-2 p-2 border rounded-md mb-3">
-            <div>
-              <label className="text-xs text-gray-500 block">Institution</label>
-              <input 
-                type="text" 
-                value={editedValues.institution || ''} 
-                onChange={(e) => handleInputChange('institution', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Degree</label>
-              <input 
-                type="text" 
-                value={editedValues.degree || ''} 
-                onChange={(e) => handleInputChange('degree', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Year</label>
-              <input 
-                type="text" 
-                value={editedValues.year || ''} 
-                onChange={(e) => handleInputChange('year', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Description</label>
-              <textarea 
-                value={editedValues.description || ''} 
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveEdit}>
-                Save
-              </Button>
-            </div>
-          </div>
-        );
-      case 'projects':
-        return (
-          <div className="space-y-2 p-2 border rounded-md mb-3">
-            <div>
-              <label className="text-xs text-gray-500 block">Project Name</label>
-              <input 
-                type="text" 
-                value={editedValues.name || ''} 
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Description</label>
-              <textarea 
-                value={editedValues.description || ''} 
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block">Link</label>
-              <input 
-                type="text" 
-                value={editedValues.link || ''} 
-                onChange={(e) => handleInputChange('link', e.target.value)}
-                className="w-full p-1 border rounded text-sm"
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-2">
-              <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleSaveEdit}>
-                Save
-              </Button>
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <div 
       ref={drop} 
@@ -934,90 +737,52 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
                                           </div>
                                         </div>
                                         
-                                        {editingItem && editingItem.id === item.id ? (
-                                          renderEditForm(item, sectionType)
-                                        ) : (
-                                          <>
-                                            {sectionType === 'experience' && (
-                                              <div className="mb-3 relative group">
-                                                <div className="flex justify-between items-baseline">
-                                                  <h3 className="font-semibold text-gray-800">{item.company}</h3>
-                                                  <span className="text-gray-600 text-sm">{item.period}</span>
-                                                </div>
-                                                <div className="text-gray-700 font-medium">{item.title}</div>
-                                                {item.description && (
-                                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                                )}
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  onClick={() => handleEditClick(item)}
-                                                >
-                                                  <Edit size={12} />
-                                                </Button>
-                                              </div>
+                                        {sectionType === 'experience' && (
+                                          <div className="mb-3 relative group">
+                                            <div className="flex justify-between items-baseline">
+                                              <h3 className="font-semibold text-gray-800">{item.company}</h3>
+                                              <span className="text-gray-600 text-sm">{item.period}</span>
+                                            </div>
+                                            <div className="text-gray-700 font-medium">{item.title}</div>
+                                            {item.description && (
+                                              <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                                             )}
-                                            
-                                            {sectionType === 'education' && (
-                                              <div className="mb-3 relative group">
-                                                <div className="flex justify-between items-baseline">
-                                                  <h3 className="font-semibold text-gray-800">{item.institution}</h3>
-                                                  <span className="text-gray-600 text-sm">{item.year}</span>
-                                                </div>
-                                                <div className="text-gray-700 font-medium">{item.degree}</div>
-                                                {item.description && (
-                                                  <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                                                )}
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  onClick={() => handleEditClick(item)}
-                                                >
-                                                  <Edit size={12} />
-                                                </Button>
-                                              </div>
+                                          </div>
+                                        )}
+                                        
+                                        {sectionType === 'education' && (
+                                          <div className="mb-3 relative group">
+                                            <div className="flex justify-between items-baseline">
+                                              <h3 className="font-semibold text-gray-800">{item.institution}</h3>
+                                              <span className="text-gray-600 text-sm">{item.year}</span>
+                                            </div>
+                                            <div className="text-gray-700 font-medium">{item.degree}</div>
+                                            {item.description && (
+                                              <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                                             )}
-                                            
-                                            {sectionType === 'projects' && (
-                                              <div className="mb-3 relative group">
-                                                <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                                                <p className="text-sm text-gray-600">{item.description}</p>
-                                                {item.link && (
-                                                  <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-                                                    View Project
-                                                  </a>
-                                                )}
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  onClick={() => handleEditClick(item)}
-                                                >
-                                                  <Edit size={12} />
-                                                </Button>
-                                              </div>
+                                          </div>
+                                        )}
+                                        
+                                        {sectionType === 'projects' && (
+                                          <div className="mb-3 relative group">
+                                            <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                            <p className="text-sm text-gray-600">{item.description}</p>
+                                            {item.link && (
+                                              <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                                                View Project
+                                              </a>
                                             )}
-                                            
-                                            {sectionType === 'certifications' && (
-                                              <div className="mb-3 relative group">
-                                                <div className="flex justify-between items-baseline">
-                                                  <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                                                  <span className="text-gray-600 text-sm">{item.date}</span>
-                                                </div>
-                                                <div className="text-gray-700 font-medium">{item.issuer}</div>
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6 absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                  onClick={() => handleEditClick(item)}
-                                                >
-                                                  <Edit size={12} />
-                                                </Button>
-                                              </div>
-                                            )}
-                                          </>
+                                          </div>
+                                        )}
+                                        
+                                        {sectionType === 'certifications' && (
+                                          <div className="mb-3 relative group">
+                                            <div className="flex justify-between items-baseline">
+                                              <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                                              <span className="text-gray-600 text-sm">{item.date}</span>
+                                            </div>
+                                            <div className="text-gray-700 font-medium">{item.issuer}</div>
+                                          </div>
                                         )}
                                         
                                         {/* Remove button */}
