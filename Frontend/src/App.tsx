@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import Create from "./pages/Create";
 import Editor from "./pages/Editor";
 import Dashboard from "./pages/Dashboard";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/create" element={<Create />} />
           <Route path="/editor" element={<Editor />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="/upload" element={<Upload />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/signin" element={<SignIn />} />

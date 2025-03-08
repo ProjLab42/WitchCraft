@@ -1766,6 +1766,7 @@ export default function Editor() {
               text: name,
               bold: true,
               size: nameFontSize,
+              font: "Inter",
             }),
           ],
           alignment: docx.AlignmentType.CENTER,
@@ -1779,6 +1780,7 @@ export default function Editor() {
             new docx.TextRun({
               text: title,
               size: titleFontSize,
+              font: "Inter",
             }),
           ],
           alignment: docx.AlignmentType.CENTER,
@@ -1799,6 +1801,7 @@ export default function Editor() {
             new docx.TextRun({
               text: contactText,
               size: contactFontSize,
+              font: "Inter",
             }),
           ],
           alignment: docx.AlignmentType.CENTER,
@@ -1840,6 +1843,7 @@ export default function Editor() {
                 text: sectionType.charAt(0).toUpperCase() + sectionType.slice(1),
                 bold: true,
                 size: sectionHeaderSize,
+                font: "Inter",
               }),
             ],
             spacing: { before: sectionSpacing / 2, after: sectionSpacing / 2 },
@@ -1855,6 +1859,7 @@ export default function Editor() {
             new docx.Paragraph({
               text: skillsText,
               spacing: { after: isLastSection ? sectionSpacing * 2 : sectionSpacing },
+              font: "Inter",
             })
           );
         } else {
@@ -1888,10 +1893,12 @@ export default function Editor() {
                       text: item.company,
                       bold: true,
                       size: itemTitleSize,
+                      font: "Inter",
                     }),
                     new docx.TextRun({
                       text: `  ${item.period}`,
                       size: itemTextSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 2 },
@@ -1906,6 +1913,7 @@ export default function Editor() {
                       text: item.title,
                       italics: true,
                       size: itemSubtitleSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 4 },
@@ -1920,6 +1928,7 @@ export default function Editor() {
                       new docx.TextRun({
                         text: item.description,
                         size: itemTextSize,
+                        font: "Inter",
                       }),
                     ],
                     spacing: { before: itemSpacing / 4, after: afterSpacing },
@@ -1943,10 +1952,12 @@ export default function Editor() {
                       text: item.institution,
                       bold: true,
                       size: itemTitleSize,
+                      font: "Inter",
                     }),
                     new docx.TextRun({
                       text: `  ${item.year}`,
                       size: itemTextSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 2 },
@@ -1961,6 +1972,7 @@ export default function Editor() {
                       text: item.degree,
                       italics: true,
                       size: itemSubtitleSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 4 },
@@ -1975,6 +1987,7 @@ export default function Editor() {
                       new docx.TextRun({
                         text: item.description,
                         size: itemTextSize,
+                        font: "Inter",
                       }),
                     ],
                     spacing: { before: itemSpacing / 4, after: afterSpacing },
@@ -1998,6 +2011,7 @@ export default function Editor() {
                       text: item.name,
                       bold: true,
                       size: itemTitleSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 2 },
@@ -2012,6 +2026,7 @@ export default function Editor() {
                       new docx.TextRun({
                         text: item.description,
                         size: itemTextSize,
+                        font: "Inter",
                       }),
                     ],
                     spacing: { before: itemSpacing / 4 },
@@ -2034,6 +2049,7 @@ export default function Editor() {
                               type: docx.UnderlineType.SINGLE,
                             },
                             size: itemTextSize,
+                            font: "Inter",
                           }),
                         ],
                         link: item.link,
@@ -2060,10 +2076,12 @@ export default function Editor() {
                       text: item.name,
                       bold: true,
                       size: itemTitleSize,
+                      font: "Inter",
                     }),
                     new docx.TextRun({
                       text: `  ${item.date}`,
                       size: itemTextSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 2 },
@@ -2078,6 +2096,7 @@ export default function Editor() {
                       text: item.issuer,
                       italics: true,
                       size: itemSubtitleSize,
+                      font: "Inter",
                     }),
                   ],
                   spacing: { before: itemSpacing / 4, after: afterSpacing },
