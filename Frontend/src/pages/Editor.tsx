@@ -569,6 +569,22 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
       return;
     }
     
+    // Handle skills reordering in the resume view
+    if (type === 'items-skills-resume') {
+      const skillItems = [...resumeContent.selectedSkills];
+      const [removed] = skillItems.splice(source.index, 1);
+      skillItems.splice(destination.index, 0, removed);
+      
+      // Update resumeContent with the reordered skills
+      setResumeContent(prev => ({
+        ...prev,
+        selectedSkills: skillItems
+      }));
+      
+      toast.success("Reordered skills");
+      return;
+    }
+    
     // Handle item reordering within a section
     if (type.startsWith('items-')) {
       const sectionType = type.replace('items-', '');
@@ -696,14 +712,39 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
                         
                         {/* Section items */}
                         {sectionType === 'skills' ? (
-                          <div className="text-gray-700 text-sm">
-                            {(items as Array<{id: string, name: string}>).map((skill, index) => (
-                              <span key={skill.id}>
-                                {skill.name}
-                                {index < (items as Array<{id: string, name: string}>).length - 1 ? ' | ' : ''}
-                              </span>
-                            ))}
-                          </div>
+                          <Droppable 
+                            droppableId={`droppable-skills-resume`} 
+                            type={`items-skills-resume`}
+                            direction="horizontal"
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.droppableProps}
+                                className="flex flex-wrap gap-2"
+                              >
+                                {(items as Array<{id: string, name: string}>).map((skill, index) => (
+                                  <Draggable
+                                    key={skill.id}
+                                    draggableId={`resume-skill-${skill.id}`}
+                                    index={index}
+                                  >
+                                    {(provided) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                        className="bg-gray-100 px-2 py-1 rounded-md flex items-center cursor-move"
+                                      >
+                                        <span className="text-gray-700 text-sm">{skill.name}</span>
+                                      </div>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {provided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
                         ) : (
                           <Droppable 
                             droppableId={`droppable-${sectionType}`} 
@@ -1325,6 +1366,26 @@ export default function Editor() {
     toast.success(`Reordered ${sectionType} items`);
   };
 
+  // Function to delete a skill from userData
+  const deleteSkill = (skillId) => {
+    // Update userData
+    setUserData(prev => ({
+      ...prev,
+      sections: {
+        ...prev.sections,
+        skills: prev.sections.skills.filter(skill => skill.id !== skillId)
+      }
+    }));
+    
+    // Update resumeContent if the skill was selected
+    setResumeContent(prev => ({
+      ...prev,
+      selectedSkills: prev.selectedSkills.filter(skill => skill.id !== skillId)
+    }));
+    
+    toast.success("Skill deleted");
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen flex-col">
@@ -1578,20 +1639,89 @@ export default function Editor() {
                 isOpen={openSections.skills}
                 toggleOpen={() => toggleSection('skills')}
               >
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  {userData.sections.skills.map(skill => (
-                    <div key={skill.id} className="flex items-center">
-                      <input 
-                        type="checkbox" 
-                        id={`skill-${skill.id}`}
-                        className="mr-2"
-                        checked={resumeContent.selectedSkills.some(s => s.id === skill.id)}
-                        onChange={() => toggleSkill(skill)}
-                      />
-                      <label htmlFor={`skill-${skill.id}`} className="text-sm">{skill.name}</label>
-                    </div>
-                  ))}
-                </div>
+                <DragDropContext onDragEnd={(result) => {
+                  if (!result.destination) return;
+                  reorderSectionItems('skills', result.source.index, result.destination.index);
+                  
+                  // Also update the selected skills order in resumeContent if they're selected
+                  const reorderedSkills = [...userData.sections.skills];
+                  const [removed] = reorderedSkills.splice(result.source.index, 1);
+                  reorderedSkills.splice(result.destination.index, 0, removed);
+                  
+                  setResumeContent(prev => {
+                    // Create a new array with the skills in the correct order
+                    const updatedSelectedSkills = [];
+                    
+                    // Add skills in the new order if they were already selected
+                    reorderedSkills.forEach(skill => {
+                      if (prev.selectedSkills.some(s => s.id === skill.id)) {
+                        updatedSelectedSkills.push(skill);
+                      }
+                    });
+                    
+                    return {
+                      ...prev,
+                      selectedSkills: updatedSelectedSkills
+                    };
+                  });
+                }}>
+                  <Droppable droppableId="skills-items" type="skills-items">
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          {userData.sections.skills.map((skill, index) => (
+                            <Draggable 
+                              key={skill.id} 
+                              draggableId={skill.id} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className="flex items-center"
+                                >
+                                  <div 
+                                    {...provided.dragHandleProps}
+                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                  >
+                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center flex-1">
+                                    <input 
+                                      type="checkbox" 
+                                      id={`skill-${skill.id}`}
+                                      className="mr-2"
+                                      checked={resumeContent.selectedSkills.some(s => s.id === skill.id)}
+                                      onChange={() => toggleSkill(skill)}
+                                    />
+                                    <label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">{skill.name}</label>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-6 w-6 text-gray-400 hover:text-destructive"
+                                      onClick={() => deleteSkill(skill.id)}
+                                    >
+                                      <Trash size={14} />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                        </div>
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
                 <AddSkillDialog onAdd={addSkill} />
               </DraggableSection>
               
