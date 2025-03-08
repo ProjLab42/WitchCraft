@@ -1,7 +1,7 @@
 const Template = require('../models/template.model');
 
 // Get all active templates
-exports.getTemplates = async (req, res) => {
+exports.getAllTemplates = async (req, res) => {
   try {
     const templates = await Template.find({ isActive: true })
       .select('id name imageSrc');
