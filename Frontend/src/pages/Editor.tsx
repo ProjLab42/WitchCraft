@@ -1857,9 +1857,13 @@ export default function Editor() {
           
           docSections.push(
             new docx.Paragraph({
-              text: skillsText,
+              children: [
+                new docx.TextRun({
+                  text: skillsText,
+                  font: "Inter",
+                }),
+              ],
               spacing: { after: isLastSection ? sectionSpacing * 2 : sectionSpacing },
-              font: "Inter",
             })
           );
         } else {
