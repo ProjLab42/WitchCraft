@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, ChevronDown, ChevronUp, FileText, Plus, Edit, Trash, X } from "lucide-react";
+import { Download, ChevronDown, ChevronUp, FileText, Plus, Edit, Trash, X, Check } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
@@ -19,6 +19,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { toPng } from 'html-to-image';
+import { saveAs } from 'file-saver';
+import * as docx from 'docx';
 
 // Mock user data
 const mockUser = {
@@ -504,7 +524,7 @@ const DraggableItem = ({ item, type, onDrop, userData, setUserData }) => {
 };
 
 // Resume drop zone component
-const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections, userData, setUserData, setResumeContent }) => {
+const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections, userData, setUserData, setResumeContent, resumeRef }) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -652,7 +672,10 @@ const ResumeDropZone = ({ onDrop, resumeContent, removeSection, reorderSections,
 
   return (
     <div 
-      ref={drop} 
+      ref={(el) => {
+        drop(el);
+        if (resumeRef) resumeRef.current = el;
+      }}
       className={`mt-0 bg-white shadow-md border rounded-md paper-texture min-h-[600px] max-w-[612px] mx-auto transition-all ${isOver ? 'border-primary shadow-lg' : 'border-gray-100'}`}
     >
       <div className="p-8">
@@ -1017,11 +1040,6 @@ export default function Editor() {
     }
   };
   
-  const handleExport = (format: 'pdf' | 'docx') => {
-    toast.success(`Exporting resume as ${format.toUpperCase()}...`);
-    // In a real implementation, this would call an API to generate the file
-  };
-
   // Function to add a new experience
   const addExperience = () => {
     const newExperience = {
@@ -1386,497 +1404,1156 @@ export default function Editor() {
     toast.success("Skill deleted");
   };
 
+  // Add state for page format
+  const [pageFormat, setPageFormat] = useState('a4');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
+  // Create a ref for the resume element
+  const resumeRef = useRef(null);
+  
+  // Function to handle export dialog open
+  const openExportDialog = () => {
+    setExportDialogOpen(true);
+  };
+  
+  // Function to handle export dialog close
+  const closeExportDialog = () => {
+    setExportDialogOpen(false);
+  };
+  
+  // Function to handle page format change
+  const handlePageFormatChange = (value) => {
+    setPageFormat(value);
+  };
+  
+  // Function to export resume as PDF
+  const exportAsPDF = async () => {
+    if (!resumeRef.current) {
+      toast.error("Resume element not found");
+      return;
+    }
+    
+    try {
+      toast.loading("Generating PDF...");
+      
+      // Get dimensions based on page format
+      let width, height;
+      switch (pageFormat) {
+        case 'a4':
+          width = 210;
+          height = 297;
+          break;
+        case 'letter':
+          width = 215.9;
+          height = 279.4;
+          break;
+        case 'legal':
+          width = 215.9;
+          height = 355.6;
+          break;
+        default:
+          width = 210;
+          height = 297;
+      }
+      
+      // Create a new PDF with the correct dimensions
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [width, height]
+      });
+      
+      // Add personal information
+      const { name, title, email, location, links } = resumeContent.personalInfo;
+      
+      // Calculate font sizes based on content amount to ensure single-page fit
+      const contentAmount = resumeContent.sections.length + resumeContent.selectedSkills.length;
+      const scaleFactor = contentAmount > 10 ? 0.8 : contentAmount > 6 ? 0.9 : 1;
+      
+      // Set font styles with adjusted sizes
+      const headerFontSize = Math.max(14, Math.floor(18 * scaleFactor));
+      const subheaderFontSize = Math.max(12, Math.floor(14 * scaleFactor));
+      const normalFontSize = Math.max(8, Math.floor(10 * scaleFactor));
+      const sectionHeaderFontSize = Math.max(10, Math.floor(14 * scaleFactor));
+      const itemHeaderFontSize = Math.max(9, Math.floor(12 * scaleFactor));
+      
+      // Set margins based on content amount
+      const leftMargin = 15;
+      const rightMargin = width - 15;
+      const topMargin = 15;
+      const lineSpacing = Math.max(4, Math.floor(6 * scaleFactor));
+      
+      // Set font styles
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(headerFontSize);
+      pdf.setTextColor(0, 0, 0);
+      
+      // Add name centered at the top
+      pdf.text(name, width / 2, topMargin, { align: 'center' });
+      
+      // Add title
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(subheaderFontSize);
+      pdf.text(title, width / 2, topMargin + 8 * scaleFactor, { align: 'center' });
+      
+      // Add contact info
+      pdf.setFontSize(normalFontSize);
+      let contactText = '';
+      if (email) contactText += email;
+      if (location) contactText += contactText ? ' | ' + location : location;
+      if (links?.linkedin) contactText += contactText ? ' | ' + links.linkedin : links.linkedin;
+      
+      pdf.text(contactText, width / 2, topMargin + 16 * scaleFactor, { align: 'center' });
+      
+      // Add horizontal line
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(leftMargin, topMargin + 20 * scaleFactor, rightMargin, topMargin + 20 * scaleFactor);
+      
+      // Current Y position for content
+      let yPos = topMargin + 25 * scaleFactor;
+      
+      // Process each section
+      resumeContent.sectionOrder.forEach(sectionType => {
+        // Check if we're approaching the page limit and adjust spacing if needed
+        const remainingSpace = height - yPos - 15; // 15mm margin at bottom
+        const estimatedContentHeight = 
+          sectionType === 'skills' ? 15 : 
+          (resumeContent.sections.filter(item => item.itemType === sectionType).length * 20);
+        
+        // If we're running out of space, reduce spacing
+        const spaceConstraint = remainingSpace < estimatedContentHeight;
+        const adjustedLineSpacing = spaceConstraint ? Math.max(2, lineSpacing - 2) : lineSpacing;
+        
+        // Add section header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(sectionHeaderFontSize);
+        pdf.text(sectionType.charAt(0).toUpperCase() + sectionType.slice(1), leftMargin, yPos);
+        yPos += adjustedLineSpacing;
+        
+        // Add section content
+        if (sectionType === 'skills' && resumeContent.selectedSkills.length > 0) {
+          // Handle skills section
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(normalFontSize);
+          
+          const skillsText = resumeContent.selectedSkills.map(skill => skill.name).join(' | ');
+          
+          // Split long text into multiple lines if needed
+          const splitSkills = pdf.splitTextToSize(skillsText, width - (leftMargin + 15));
+          pdf.text(splitSkills, leftMargin, yPos);
+          yPos += splitSkills.length * adjustedLineSpacing + 2;
+        } else {
+          // Handle other sections
+          const sectionItems = resumeContent.sections.filter(item => item.itemType === sectionType);
+          
+          sectionItems.forEach(item => {
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(itemHeaderFontSize);
+            
+            if (sectionType === 'experience') {
+              // Company and period on the same line
+              pdf.text(item.company, leftMargin, yPos);
+              pdf.setFont("helvetica", "normal");
+              pdf.setFontSize(normalFontSize);
+              pdf.text(item.period, rightMargin, yPos, { align: 'right' });
+              yPos += adjustedLineSpacing - 1;
+              
+              // Job title
+              pdf.setFont("helvetica", "italic");
+              pdf.text(item.title, leftMargin, yPos);
+              yPos += adjustedLineSpacing - 1;
+              
+              // Description - only if we have space
+              if (item.description && yPos < height - 30) {
+                pdf.setFont("helvetica", "normal");
+                // Limit description length if space is tight
+                let description = item.description;
+                if (spaceConstraint && description.length > 100) {
+                  description = description.substring(0, 100) + '...';
+                }
+                const splitDescription = pdf.splitTextToSize(description, width - (leftMargin + 15));
+                // Limit number of lines if space is tight
+                const maxLines = spaceConstraint ? 2 : 4;
+                const linesToShow = Math.min(splitDescription.length, maxLines);
+                pdf.text(splitDescription.slice(0, linesToShow), leftMargin, yPos);
+                yPos += linesToShow * (adjustedLineSpacing - 1) + 1;
+              }
+            } else if (sectionType === 'education') {
+              // Institution and year on the same line
+              pdf.text(item.institution, leftMargin, yPos);
+              pdf.setFont("helvetica", "normal");
+              pdf.setFontSize(normalFontSize);
+              pdf.text(item.year, rightMargin, yPos, { align: 'right' });
+              yPos += adjustedLineSpacing - 1;
+              
+              // Degree
+              pdf.setFont("helvetica", "italic");
+              pdf.text(item.degree, leftMargin, yPos);
+              yPos += adjustedLineSpacing - 1;
+              
+              // Description - only if we have space
+              if (item.description && yPos < height - 30) {
+                pdf.setFont("helvetica", "normal");
+                // Limit description length if space is tight
+                let description = item.description;
+                if (spaceConstraint && description.length > 100) {
+                  description = description.substring(0, 100) + '...';
+                }
+                const splitDescription = pdf.splitTextToSize(description, width - (leftMargin + 15));
+                // Limit number of lines if space is tight
+                const maxLines = spaceConstraint ? 2 : 4;
+                const linesToShow = Math.min(splitDescription.length, maxLines);
+                pdf.text(splitDescription.slice(0, linesToShow), leftMargin, yPos);
+                yPos += linesToShow * (adjustedLineSpacing - 1) + 1;
+              }
+            } else if (sectionType === 'projects') {
+              // Project name
+              pdf.text(item.name, leftMargin, yPos);
+              yPos += adjustedLineSpacing - 1;
+              
+              // Description - only if we have space
+              if (item.description && yPos < height - 30) {
+                pdf.setFont("helvetica", "normal");
+                pdf.setFontSize(normalFontSize);
+                // Limit description length if space is tight
+                let description = item.description;
+                if (spaceConstraint && description.length > 100) {
+                  description = description.substring(0, 100) + '...';
+                }
+                const splitDescription = pdf.splitTextToSize(description, width - (leftMargin + 15));
+                // Limit number of lines if space is tight
+                const maxLines = spaceConstraint ? 2 : 4;
+                const linesToShow = Math.min(splitDescription.length, maxLines);
+                pdf.text(splitDescription.slice(0, linesToShow), leftMargin, yPos);
+                yPos += linesToShow * (adjustedLineSpacing - 1) + 1;
+              }
+              
+              // Link - only if we have space
+              if (item.link && yPos < height - 25) {
+                pdf.setTextColor(0, 0, 255);
+                pdf.text(item.link, leftMargin, yPos);
+                pdf.setTextColor(0, 0, 0);
+                yPos += adjustedLineSpacing - 1;
+              }
+            } else if (sectionType === 'certifications') {
+              // Certification name and date on the same line
+              pdf.text(item.name, leftMargin, yPos);
+              pdf.setFont("helvetica", "normal");
+              pdf.setFontSize(normalFontSize);
+              pdf.text(item.date, rightMargin, yPos, { align: 'right' });
+              yPos += adjustedLineSpacing - 1;
+              
+              // Issuer
+              pdf.setFont("helvetica", "italic");
+              pdf.text(item.issuer, leftMargin, yPos);
+              yPos += adjustedLineSpacing;
+            }
+            
+            // Add spacing between items (reduced if space is tight)
+            yPos += spaceConstraint ? 1 : 2;
+          });
+        }
+        
+        // Add spacing between sections (reduced if space is tight)
+        yPos += spaceConstraint ? 2 : 4;
+      });
+      
+      // Save the PDF
+      pdf.save(`${resumeContent.personalInfo.name.replace(/\s+/g, '_')}_Resume.pdf`);
+      
+      toast.dismiss();
+      toast.success("PDF downloaded successfully");
+      closeExportDialog();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.dismiss();
+      toast.error("Failed to generate PDF");
+    }
+  };
+  
+  // Function to export resume as DOCX
+  const exportAsDOCX = async () => {
+    if (!resumeRef.current) {
+      toast.error("Resume element not found");
+      return;
+    }
+    
+    try {
+      toast.loading("Generating DOCX...");
+      
+      // Create document sections array
+      const docSections = [];
+      
+      // Add personal information section
+      const { name, title, email, location, links } = resumeContent.personalInfo;
+      
+      // Calculate content amount to determine scaling
+      const contentAmount = resumeContent.sections.length + resumeContent.selectedSkills.length;
+      const isContentHeavy = contentAmount > 8;
+      
+      // Adjust spacing based on content amount
+      const standardSpacing = isContentHeavy ? 120 : 200;
+      const sectionSpacing = isContentHeavy ? 200 : 400;
+      const paragraphSpacing = isContentHeavy ? 60 : 100;
+      
+      // Create header with personal info
+      docSections.push(
+        new docx.Paragraph({
+          text: name,
+          alignment: docx.AlignmentType.CENTER,
+          heading: docx.HeadingLevel.HEADING_1,
+          spacing: { after: standardSpacing },
+          style: isContentHeavy ? "CompactHeading1" : undefined,
+        })
+      );
+      
+      docSections.push(
+        new docx.Paragraph({
+          text: title,
+          alignment: docx.AlignmentType.CENTER,
+          spacing: { after: standardSpacing },
+        })
+      );
+      
+      // Contact info
+      const contactText = [
+        email,
+        location ? location : '',
+        links?.linkedin ? links.linkedin : ''
+      ].filter(Boolean).join(' | ');
+      
+      docSections.push(
+        new docx.Paragraph({
+          text: contactText,
+          alignment: docx.AlignmentType.CENTER,
+          spacing: { after: standardSpacing },
+        })
+      );
+      
+      // Add horizontal line
+      docSections.push(
+        new docx.Paragraph({
+          text: "",
+          border: {
+            bottom: { color: "999999", space: 1, style: docx.BorderStyle.SINGLE, size: 6 },
+          },
+          spacing: { after: standardSpacing },
+        })
+      );
+      
+      // Process each section
+      resumeContent.sectionOrder.forEach(sectionType => {
+        // Add section header
+        docSections.push(
+          new docx.Paragraph({
+            text: sectionType.charAt(0).toUpperCase() + sectionType.slice(1),
+            heading: docx.HeadingLevel.HEADING_2,
+            spacing: { before: isContentHeavy ? 120 : 200, after: isContentHeavy ? 100 : 200 },
+            style: isContentHeavy ? "CompactHeading2" : undefined,
+          })
+        );
+        
+        // Add section content
+        if (sectionType === 'skills' && resumeContent.selectedSkills.length > 0) {
+          // Handle skills section
+          const skillsText = resumeContent.selectedSkills.map(skill => skill.name).join(' | ');
+          
+          docSections.push(
+            new docx.Paragraph({
+              text: skillsText,
+              spacing: { after: standardSpacing },
+            })
+          );
+        } else {
+          // Handle other sections
+          const sectionItems = resumeContent.sections.filter(item => item.itemType === sectionType);
+          
+          // If content is heavy, limit the number of items per section
+          const maxItemsPerSection = isContentHeavy ? 3 : 5;
+          const itemsToShow = sectionItems.slice(0, maxItemsPerSection);
+          
+          itemsToShow.forEach((item, index) => {
+            // For the last item in a heavy content document, reduce spacing
+            const isLastItem = index === itemsToShow.length - 1;
+            const afterSpacing = isLastItem && isContentHeavy ? paragraphSpacing : standardSpacing;
+            
+            if (sectionType === 'experience') {
+              // Company and period
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.company,
+                      bold: true,
+                    }),
+                    new docx.TextRun({
+                      text: `  ${item.period}`,
+                      bold: false,
+                    }),
+                  ],
+                  spacing: { before: paragraphSpacing },
+                })
+              );
+              
+              // Job title
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.title,
+                      italics: true,
+                    }),
+                  ],
+                  spacing: { before: isContentHeavy ? 40 : paragraphSpacing },
+                })
+              );
+              
+              // Description - truncate if content is heavy
+              if (item.description) {
+                let description = item.description;
+                if (isContentHeavy && description.length > 150) {
+                  description = description.substring(0, 150) + '...';
+                }
+                
+                docSections.push(
+                  new docx.Paragraph({
+                    text: description,
+                    spacing: { before: isContentHeavy ? 40 : paragraphSpacing, after: afterSpacing },
+                  })
+                );
+              }
+            } else if (sectionType === 'education') {
+              // Institution and year
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.institution,
+                      bold: true,
+                    }),
+                    new docx.TextRun({
+                      text: `  ${item.year}`,
+                      bold: false,
+                    }),
+                  ],
+                  spacing: { before: paragraphSpacing },
+                })
+              );
+              
+              // Degree
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.degree,
+                      italics: true,
+                    }),
+                  ],
+                  spacing: { before: isContentHeavy ? 40 : paragraphSpacing },
+                })
+              );
+              
+              // Description - truncate if content is heavy
+              if (item.description) {
+                let description = item.description;
+                if (isContentHeavy && description.length > 150) {
+                  description = description.substring(0, 150) + '...';
+                }
+                
+                docSections.push(
+                  new docx.Paragraph({
+                    text: description,
+                    spacing: { before: isContentHeavy ? 40 : paragraphSpacing, after: afterSpacing },
+                  })
+                );
+              }
+            } else if (sectionType === 'projects') {
+              // Project name
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.name,
+                      bold: true,
+                    }),
+                  ],
+                  spacing: { before: paragraphSpacing },
+                })
+              );
+              
+              // Description - truncate if content is heavy
+              if (item.description) {
+                let description = item.description;
+                if (isContentHeavy && description.length > 150) {
+                  description = description.substring(0, 150) + '...';
+                }
+                
+                docSections.push(
+                  new docx.Paragraph({
+                    text: description,
+                    spacing: { before: isContentHeavy ? 40 : paragraphSpacing },
+                  })
+                );
+              }
+              
+              // Link
+              if (item.link && (!isContentHeavy || index < 2)) {
+                docSections.push(
+                  new docx.Paragraph({
+                    children: [
+                      new docx.ExternalHyperlink({
+                        children: [
+                          new docx.TextRun({
+                            text: item.link,
+                            style: "hyperlink",
+                            color: "0000FF",
+                            underline: {
+                              type: docx.UnderlineType.SINGLE,
+                            },
+                          }),
+                        ],
+                        link: item.link,
+                      }),
+                    ],
+                    spacing: { before: isContentHeavy ? 40 : paragraphSpacing, after: afterSpacing },
+                  })
+                );
+              }
+            } else if (sectionType === 'certifications') {
+              // Certification name and date
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.name,
+                      bold: true,
+                    }),
+                    new docx.TextRun({
+                      text: `  ${item.date}`,
+                      bold: false,
+                    }),
+                  ],
+                  spacing: { before: paragraphSpacing },
+                })
+              );
+              
+              // Issuer
+              docSections.push(
+                new docx.Paragraph({
+                  children: [
+                    new docx.TextRun({
+                      text: item.issuer,
+                      italics: true,
+                    }),
+                  ],
+                  spacing: { before: isContentHeavy ? 40 : paragraphSpacing, after: afterSpacing },
+                })
+              );
+            }
+          });
+        }
+      });
+      
+      // Create the document with proper page size
+      const doc = new docx.Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                size: {
+                  width: pageFormat === 'a4' ? docx.convertMillimetersToTwip(210) : 
+                         pageFormat === 'letter' ? docx.convertMillimetersToTwip(215.9) : 
+                         docx.convertMillimetersToTwip(215.9),
+                  height: pageFormat === 'a4' ? docx.convertMillimetersToTwip(297) : 
+                          pageFormat === 'letter' ? docx.convertMillimetersToTwip(279.4) : 
+                          docx.convertMillimetersToTwip(355.6),
+                },
+                margin: {
+                  top: docx.convertMillimetersToTwip(isContentHeavy ? 12 : 20),
+                  right: docx.convertMillimetersToTwip(isContentHeavy ? 12 : 20),
+                  bottom: docx.convertMillimetersToTwip(isContentHeavy ? 12 : 20),
+                  left: docx.convertMillimetersToTwip(isContentHeavy ? 12 : 20),
+                },
+              },
+            },
+            children: docSections,
+          },
+        ],
+        styles: {
+          paragraphStyles: [
+            {
+              id: "CompactHeading1",
+              name: "Compact Heading 1",
+              basedOn: "Heading1",
+              run: {
+                size: 28, // Smaller than default heading
+              },
+              paragraph: {
+                spacing: { before: 120, after: 120 },
+              },
+            },
+            {
+              id: "CompactHeading2",
+              name: "Compact Heading 2",
+              basedOn: "Heading2",
+              run: {
+                size: 24, // Smaller than default heading
+              },
+              paragraph: {
+                spacing: { before: 100, after: 80 },
+              },
+            },
+          ],
+        },
+      });
+      
+      // Generate the document as a blob
+      docx.Packer.toBlob(doc).then(blob => {
+        saveAs(blob, `${resumeContent.personalInfo.name.replace(/\s+/g, '_')}_Resume.docx`);
+        toast.dismiss();
+        toast.success("DOCX downloaded successfully");
+        closeExportDialog();
+      });
+    } catch (error) {
+      console.error("Error generating DOCX:", error);
+      toast.dismiss();
+      toast.error("Failed to generate DOCX");
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="flex min-h-screen flex-col">
         <Header />
         
-        <div className="flex justify-end border-b px-6 py-3">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-2">
-              <Download className="h-4 w-4" />
-              <span>PDF</span>
-            </Button>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold">Resume Builder</h1>
+              <p className="text-gray-600">Create and customize your professional resume</p>
+            </div>
             
-            <Button variant="outline" size="sm" onClick={() => handleExport('docx')} className="gap-2">
-              <FileText className="h-4 w-4" />
-              <span>DOCX</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={openExportDialog}>
+                <Download className="mr-2 h-4 w-4" />
+                Export Resume
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        <main className="flex-1 bg-muted/30">
-          <div className="flex min-h-[calc(100vh-12rem)]">
-            {/* Left side - Sections to drag from */}
-            <div className="w-full lg:w-1/2 overflow-auto p-4">
-              <div className="mb-6">
-                <h2 className="text-xl font-bold mb-4">Resume Sections</h2>
-                <p className="text-gray-600 text-sm mb-4">Drag sections onto your resume or click to edit</p>
+          
+          {/* Export Dialog */}
+          <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Export Resume</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="page-format" className="text-right">
+                    Page Format
+                  </Label>
+                  <Select
+                    value={pageFormat}
+                    onValueChange={handlePageFormatChange}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select page format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="a4">A4</SelectItem>
+                      <SelectItem value="letter">Letter</SelectItem>
+                      <SelectItem value="legal">Legal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <Button onClick={exportAsPDF} className="w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Download as PDF
+                  </Button>
+                  <Button onClick={exportAsDOCX} className="w-full">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Download as DOCX
+                  </Button>
+                </div>
               </div>
-              
-              {/* Personal Info Section */}
-              <DraggableSection 
-                title="Personal Information" 
-                isOpen={openSections.personalInfo}
-                toggleOpen={() => toggleSection('personalInfo')}
-              >
-                {isEditingPersonalInfo ? (
-                  <div className="p-3 border rounded-md mb-2 bg-white">
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs text-gray-500 block">Full Name</label>
-                        <input 
-                          type="text" 
-                          value={editedPersonalInfo.name || ''} 
-                          onChange={(e) => handlePersonalInfoChange('name', e.target.value)}
-                          className="w-full p-1 border rounded text-sm"
-                        />
+            </DialogContent>
+          </Dialog>
+          
+          <main className="flex-1 bg-muted/30">
+            <div className="flex min-h-[calc(100vh-12rem)]">
+              {/* Left side - Sections to drag from */}
+              <div className="w-full lg:w-1/2 overflow-auto p-4">
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold mb-4">Resume Sections</h2>
+                  <p className="text-gray-600 text-sm mb-4">Drag sections onto your resume or click to edit</p>
+                </div>
+                
+                {/* Personal Info Section */}
+                <DraggableSection 
+                  title="Personal Information" 
+                  isOpen={openSections.personalInfo}
+                  toggleOpen={() => toggleSection('personalInfo')}
+                >
+                  {isEditingPersonalInfo ? (
+                    <div className="p-3 border rounded-md mb-2 bg-white">
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-gray-500 block">Full Name</label>
+                          <input 
+                            type="text" 
+                            value={editedPersonalInfo.name || ''} 
+                            onChange={(e) => handlePersonalInfoChange('name', e.target.value)}
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block">Professional Title</label>
+                          <input 
+                            type="text" 
+                            value={editedPersonalInfo.title || ''} 
+                            onChange={(e) => handlePersonalInfoChange('title', e.target.value)}
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block">Email</label>
+                          <input 
+                            type="email" 
+                            value={editedPersonalInfo.email || ''} 
+                            onChange={(e) => handlePersonalInfoChange('email', e.target.value)}
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block">Location</label>
+                          <input 
+                            type="text" 
+                            value={editedPersonalInfo.location || ''} 
+                            onChange={(e) => handlePersonalInfoChange('location', e.target.value)}
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block">LinkedIn</label>
+                          <input 
+                            type="text" 
+                            value={editedPersonalInfo.links?.linkedin || ''} 
+                            onChange={(e) => handlePersonalInfoChange('links.linkedin', e.target.value)}
+                            className="w-full p-1 border rounded text-sm"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button variant="outline" size="sm" onClick={handleCancelPersonalInfo}>
+                            Cancel
+                          </Button>
+                          <Button size="sm" onClick={handleSavePersonalInfo}>
+                            Save
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-xs text-gray-500 block">Professional Title</label>
-                        <input 
-                          type="text" 
-                          value={editedPersonalInfo.title || ''} 
-                          onChange={(e) => handlePersonalInfoChange('title', e.target.value)}
-                          className="w-full p-1 border rounded text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 block">Email</label>
-                        <input 
-                          type="email" 
-                          value={editedPersonalInfo.email || ''} 
-                          onChange={(e) => handlePersonalInfoChange('email', e.target.value)}
-                          className="w-full p-1 border rounded text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 block">Location</label>
-                        <input 
-                          type="text" 
-                          value={editedPersonalInfo.location || ''} 
-                          onChange={(e) => handlePersonalInfoChange('location', e.target.value)}
-                          className="w-full p-1 border rounded text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500 block">LinkedIn</label>
-                        <input 
-                          type="text" 
-                          value={editedPersonalInfo.links?.linkedin || ''} 
-                          onChange={(e) => handlePersonalInfoChange('links.linkedin', e.target.value)}
-                          className="w-full p-1 border rounded text-sm"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2 mt-2">
-                        <Button variant="outline" size="sm" onClick={handleCancelPersonalInfo}>
-                          Cancel
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-4 mb-2">
+                        <div className="w-12 h-12 rounded-full overflow-hidden">
+                          <img src={userData.avatarUrl} alt={resumeContent.personalInfo.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{resumeContent.personalInfo.name}</div>
+                          <div className="text-sm text-gray-500">{resumeContent.personalInfo.title}</div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="ml-auto" onClick={handleEditPersonalInfo}>
+                          <Edit size={16} />
                         </Button>
-                        <Button size="sm" onClick={handleSavePersonalInfo}>
-                          Save
-                        </Button>
                       </div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className="w-12 h-12 rounded-full overflow-hidden">
-                        <img src={userData.avatarUrl} alt={resumeContent.personalInfo.name} className="w-full h-full object-cover" />
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="text-sm">
+                          <span className="font-medium">Email:</span> {resumeContent.personalInfo.email}
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium">Location:</span> {resumeContent.personalInfo.location}
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium">LinkedIn:</span> {resumeContent.personalInfo.links?.linkedin}
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{resumeContent.personalInfo.name}</div>
-                        <div className="text-sm text-gray-500">{resumeContent.personalInfo.title}</div>
-                      </div>
-                      <Button variant="ghost" size="icon" className="ml-auto" onClick={handleEditPersonalInfo}>
-                        <Edit size={16} />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="text-sm">
-                        <span className="font-medium">Email:</span> {resumeContent.personalInfo.email}
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Location:</span> {resumeContent.personalInfo.location}
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">LinkedIn:</span> {resumeContent.personalInfo.links?.linkedin}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </DraggableSection>
-              
-              {/* Experience Section */}
-              <DraggableSection 
-                title="Experience" 
-                isOpen={openSections.experience}
-                toggleOpen={() => toggleSection('experience')}
-              >
-                <DragDropContext onDragEnd={(result) => {
-                  if (!result.destination) return;
-                  reorderSectionItems('experience', result.source.index, result.destination.index);
-                }}>
-                  <Droppable droppableId="experience-items" type="experience-items">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        {userData.sections.experience.map((exp, index) => (
-                          <Draggable 
-                            key={exp.id} 
-                            draggableId={exp.id} 
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                              >
-                                <div className="flex items-center">
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
-                                  >
-                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-1">
-                                    <DraggableItem 
-                                      item={exp} 
-                                      type="experience" 
-                                      onDrop={handleDrop} 
-                                      userData={userData} 
-                                      setUserData={setUserData} 
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addExperience}>
-                  <Plus size={16} className="mr-2" />
-                  Add Experience
-                </Button>
-              </DraggableSection>
-              
-              {/* Education Section */}
-              <DraggableSection 
-                title="Education" 
-                isOpen={openSections.education}
-                toggleOpen={() => toggleSection('education')}
-              >
-                <DragDropContext onDragEnd={(result) => {
-                  if (!result.destination) return;
-                  reorderSectionItems('education', result.source.index, result.destination.index);
-                }}>
-                  <Droppable droppableId="education-items" type="education-items">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        {userData.sections.education.map((edu, index) => (
-                          <Draggable 
-                            key={edu.id} 
-                            draggableId={edu.id} 
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                              >
-                                <div className="flex items-center">
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
-                                  >
-                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-1">
-                                    <DraggableItem 
-                                      item={edu} 
-                                      type="education" 
-                                      onDrop={handleDrop} 
-                                      userData={userData} 
-                                      setUserData={setUserData} 
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addEducation}>
-                  <Plus size={16} className="mr-2" />
-                  Add Education
-                </Button>
-              </DraggableSection>
-              
-              {/* Skills Section */}
-              <DraggableSection 
-                title="Skills" 
-                isOpen={openSections.skills}
-                toggleOpen={() => toggleSection('skills')}
-              >
-                <DragDropContext onDragEnd={(result) => {
-                  if (!result.destination) return;
-                  reorderSectionItems('skills', result.source.index, result.destination.index);
-                  
-                  // Also update the selected skills order in resumeContent if they're selected
-                  const reorderedSkills = [...userData.sections.skills];
-                  const [removed] = reorderedSkills.splice(result.source.index, 1);
-                  reorderedSkills.splice(result.destination.index, 0, removed);
-                  
-                  setResumeContent(prev => {
-                    // Create a new array with the skills in the correct order
-                    const updatedSelectedSkills = [];
-                    
-                    // Add skills in the new order if they were already selected
-                    reorderedSkills.forEach(skill => {
-                      if (prev.selectedSkills.some(s => s.id === skill.id)) {
-                        updatedSelectedSkills.push(skill);
-                      }
-                    });
-                    
-                    return {
-                      ...prev,
-                      selectedSkills: updatedSelectedSkills
-                    };
-                  });
-                }}>
-                  <Droppable droppableId="skills-items" type="skills-items">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          {userData.sections.skills.map((skill, index) => (
+                    </>
+                  )}
+                </DraggableSection>
+                
+                {/* Experience Section */}
+                <DraggableSection 
+                  title="Experience" 
+                  isOpen={openSections.experience}
+                  toggleOpen={() => toggleSection('experience')}
+                >
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination) return;
+                    reorderSectionItems('experience', result.source.index, result.destination.index);
+                  }}>
+                    <Droppable droppableId="experience-items" type="experience-items">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          {userData.sections.experience.map((exp, index) => (
                             <Draggable 
-                              key={skill.id} 
-                              draggableId={skill.id} 
+                              key={exp.id} 
+                              draggableId={exp.id} 
                               index={index}
                             >
                               {(provided) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className="flex items-center"
                                 >
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
-                                  >
-                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center flex-1">
-                                    <input 
-                                      type="checkbox" 
-                                      id={`skill-${skill.id}`}
-                                      className="mr-2"
-                                      checked={resumeContent.selectedSkills.some(s => s.id === skill.id)}
-                                      onChange={() => toggleSkill(skill)}
-                                    />
-                                    <label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">{skill.name}</label>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-6 w-6 text-gray-400 hover:text-destructive"
-                                      onClick={() => deleteSkill(skill.id)}
+                                  <div className="flex items-center">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="mr-2 cursor-move opacity-50 hover:opacity-100"
                                     >
-                                      <Trash size={14} />
-                                    </Button>
+                                      <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <DraggableItem 
+                                        item={exp} 
+                                        type="experience" 
+                                        onDrop={handleDrop} 
+                                        userData={userData} 
+                                        setUserData={setUserData} 
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               )}
                             </Draggable>
                           ))}
+                          {provided.placeholder}
                         </div>
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <AddSkillDialog onAdd={addSkill} />
-              </DraggableSection>
-              
-              {/* Projects Section */}
-              <DraggableSection 
-                title="Projects" 
-                isOpen={openSections.projects}
-                toggleOpen={() => toggleSection('projects')}
-              >
-                <DragDropContext onDragEnd={(result) => {
-                  if (!result.destination) return;
-                  reorderSectionItems('projects', result.source.index, result.destination.index);
-                }}>
-                  <Droppable droppableId="projects-items" type="projects-items">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        {userData.sections.projects.map((project, index) => (
-                          <Draggable 
-                            key={project.id} 
-                            draggableId={project.id} 
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                              >
-                                <div className="flex items-center">
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
-                                  >
-                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addExperience}>
+                    <Plus size={16} className="mr-2" />
+                    Add Experience
+                  </Button>
+                </DraggableSection>
+                
+                {/* Education Section */}
+                <DraggableSection 
+                  title="Education" 
+                  isOpen={openSections.education}
+                  toggleOpen={() => toggleSection('education')}
+                >
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination) return;
+                    reorderSectionItems('education', result.source.index, result.destination.index);
+                  }}>
+                    <Droppable droppableId="education-items" type="education-items">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          {userData.sections.education.map((edu, index) => (
+                            <Draggable 
+                              key={edu.id} 
+                              draggableId={edu.id} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                >
+                                  <div className="flex items-center">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                    >
+                                      <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <DraggableItem 
+                                        item={edu} 
+                                        type="education" 
+                                        onDrop={handleDrop} 
+                                        userData={userData} 
+                                        setUserData={setUserData} 
+                                      />
                                     </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <DraggableItem 
-                                      item={project} 
-                                      type="projects" 
-                                      onDrop={handleDrop} 
-                                      userData={userData} 
-                                      setUserData={setUserData} 
-                                    />
-                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addProject}>
-                  <Plus size={16} className="mr-2" />
-                  Add Project
-                </Button>
-              </DraggableSection>
-              
-              {/* Certifications Section */}
-              <DraggableSection 
-                title="Certifications" 
-                isOpen={openSections.certifications}
-                toggleOpen={() => toggleSection('certifications')}
-              >
-                <DragDropContext onDragEnd={(result) => {
-                  if (!result.destination) return;
-                  reorderSectionItems('certifications', result.source.index, result.destination.index);
-                }}>
-                  <Droppable droppableId="certifications-items" type="certifications-items">
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                      >
-                        {userData.sections.certifications.map((cert, index) => (
-                          <Draggable 
-                            key={cert.id} 
-                            draggableId={cert.id} 
-                            index={index}
-                          >
-                            {(provided) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addEducation}>
+                    <Plus size={16} className="mr-2" />
+                    Add Education
+                  </Button>
+                </DraggableSection>
+                
+                {/* Skills Section */}
+                <DraggableSection 
+                  title="Skills" 
+                  isOpen={openSections.skills}
+                  toggleOpen={() => toggleSection('skills')}
+                >
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination) return;
+                    reorderSectionItems('skills', result.source.index, result.destination.index);
+                    
+                    // Also update the selected skills order in resumeContent if they're selected
+                    const reorderedSkills = [...userData.sections.skills];
+                    const [removed] = reorderedSkills.splice(result.source.index, 1);
+                    reorderedSkills.splice(result.destination.index, 0, removed);
+                    
+                    setResumeContent(prev => {
+                      // Create a new array with the skills in the correct order
+                      const updatedSelectedSkills = [];
+                      
+                      // Add skills in the new order if they were already selected
+                      reorderedSkills.forEach(skill => {
+                        if (prev.selectedSkills.some(s => s.id === skill.id)) {
+                          updatedSelectedSkills.push(skill);
+                        }
+                      });
+                      
+                      return {
+                        ...prev,
+                        selectedSkills: updatedSelectedSkills
+                      };
+                    });
+                  }}>
+                    <Droppable droppableId="skills-items" type="skills-items">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            {userData.sections.skills.map((skill, index) => (
+                              <Draggable 
+                                key={skill.id} 
+                                draggableId={skill.id} 
+                                index={index}
                               >
-                                <div className="flex items-center">
-                                  <div 
-                                    {...provided.dragHandleProps}
-                                    className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                {(provided) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className="flex items-center"
                                   >
-                                    <div className="h-6 w-3 flex flex-col justify-center items-center">
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
-                                      <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                    >
+                                      <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center flex-1">
+                                      <input 
+                                        type="checkbox" 
+                                        id={`skill-${skill.id}`}
+                                        className="mr-2"
+                                        checked={resumeContent.selectedSkills.some(s => s.id === skill.id)}
+                                        onChange={() => toggleSkill(skill)}
+                                      />
+                                      <label htmlFor={`skill-${skill.id}`} className="text-sm flex-1">{skill.name}</label>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 text-gray-400 hover:text-destructive"
+                                        onClick={() => deleteSkill(skill.id)}
+                                      >
+                                        <Trash size={14} />
+                                      </Button>
                                     </div>
                                   </div>
-                                  <div className="flex-1">
-                                    <DraggableItem 
-                                      item={cert} 
-                                      type="certifications" 
-                                      onDrop={handleDrop} 
-                                      userData={userData} 
-                                      setUserData={setUserData} 
-                                    />
+                                )}
+                              </Draggable>
+                            ))}
+                          </div>
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <AddSkillDialog onAdd={addSkill} />
+                </DraggableSection>
+                
+                {/* Projects Section */}
+                <DraggableSection 
+                  title="Projects" 
+                  isOpen={openSections.projects}
+                  toggleOpen={() => toggleSection('projects')}
+                >
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination) return;
+                    reorderSectionItems('projects', result.source.index, result.destination.index);
+                  }}>
+                    <Droppable droppableId="projects-items" type="projects-items">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          {userData.sections.projects.map((project, index) => (
+                            <Draggable 
+                              key={project.id} 
+                              draggableId={project.id} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                >
+                                  <div className="flex items-center">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                    >
+                                      <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <DraggableItem 
+                                        item={project} 
+                                        type="projects" 
+                                        onDrop={handleDrop} 
+                                        userData={userData} 
+                                        setUserData={setUserData} 
+                                      />
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-                <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addCertification}>
-                  <Plus size={16} className="mr-2" />
-                  Add Certification
-                </Button>
-              </DraggableSection>
-            </div>
-            
-            {/* Right side - Resume preview */}
-            <div className="hidden lg:block lg:w-1/2 p-8 bg-gray-100">
-              <div className="sticky top-8 h-[calc(100vh-12rem)] flex flex-col">
-                <div className="text-center mb-4">
-                  <h2 className="text-xl font-bold">Resume Preview</h2>
-                  <p className="text-sm text-gray-500">Drag items from the left panel</p>
-                </div>
-                <div className="flex-1 overflow-y-auto flex items-start justify-center">
-                  {/* Paper-like resume container */}
-                  <ResumeDropZone 
-                    onDrop={handleDrop} 
-                    resumeContent={resumeContent} 
-                    removeSection={removeSection}
-                    reorderSections={reorderSections}
-                    userData={userData}
-                    setUserData={setUserData}
-                    setResumeContent={setResumeContent}
-                  />
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addProject}>
+                    <Plus size={16} className="mr-2" />
+                    Add Project
+                  </Button>
+                </DraggableSection>
+                
+                {/* Certifications Section */}
+                <DraggableSection 
+                  title="Certifications" 
+                  isOpen={openSections.certifications}
+                  toggleOpen={() => toggleSection('certifications')}
+                >
+                  <DragDropContext onDragEnd={(result) => {
+                    if (!result.destination) return;
+                    reorderSectionItems('certifications', result.source.index, result.destination.index);
+                  }}>
+                    <Droppable droppableId="certifications-items" type="certifications-items">
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          {userData.sections.certifications.map((cert, index) => (
+                            <Draggable 
+                              key={cert.id} 
+                              draggableId={cert.id} 
+                              index={index}
+                            >
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                >
+                                  <div className="flex items-center">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="mr-2 cursor-move opacity-50 hover:opacity-100"
+                                    >
+                                      <div className="h-6 w-3 flex flex-col justify-center items-center">
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400 mb-0.5"></div>
+                                        <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <DraggableItem 
+                                        item={cert} 
+                                        type="certifications" 
+                                        onDrop={handleDrop} 
+                                        userData={userData} 
+                                        setUserData={setUserData} 
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={addCertification}>
+                    <Plus size={16} className="mr-2" />
+                    Add Certification
+                  </Button>
+                </DraggableSection>
+              </div>
+              
+              {/* Right side - Resume preview */}
+              <div className="hidden lg:block lg:w-1/2 p-8 bg-gray-100">
+                <div className="sticky top-8 h-[calc(100vh-12rem)] flex flex-col">
+                  <div className="text-center mb-4">
+                    <h2 className="text-xl font-bold">Resume Preview</h2>
+                    <p className="text-sm text-gray-500">Drag items from the left panel</p>
+                  </div>
+                  <div className="flex-1 overflow-y-auto flex items-start justify-center">
+                    {/* Paper-like resume container */}
+                    <ResumeDropZone 
+                      onDrop={handleDrop} 
+                      resumeContent={resumeContent} 
+                      removeSection={removeSection}
+                      reorderSections={reorderSections}
+                      userData={userData}
+                      setUserData={setUserData}
+                      setResumeContent={setResumeContent}
+                      resumeRef={resumeRef}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </main>
-        
-        <Footer />
+          </main>
+          
+          <Footer />
+        </div>
       </div>
     </DndProvider>
   );
