@@ -51,14 +51,27 @@ export const parseResumeFile = async (file: File): Promise<ParsedResume> => {
  * @returns Promise that resolves when data is saved
  */
 export const saveParsedResumeToProfile = async (parsedData: Partial<ParsedResume>): Promise<void> => {
+  console.log('Starting to save parsed resume data to profile...');
   try {
-    // Try to use the API first
+    // Use the API to save the data
     await cvAPI.saveResumeData(parsedData);
+    console.log('Resume data saved successfully via API');
+    toast.success('Resume data saved to your profile!');
   } catch (error) {
-    console.error('Error saving parsed resume with API, falling back to mock implementation:', error);
+    console.error('Error saving parsed resume with API:', error);
     
-    // Fall back to mock implementation
-    await mockSaveParsedResumeToProfile(parsedData);
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
+    // Show error toast
+    toast.error('Failed to save resume data. Please try again.');
+    
+    // Rethrow the error to be handled by the caller
+    throw error;
   }
 };
 

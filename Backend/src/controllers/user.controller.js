@@ -407,23 +407,63 @@ exports.deleteUser = async (req, res) => {
 
 // Save parsed resume data to user profile
 exports.saveResumeData = async (req, res) => {
+  console.log('Resume data save request received');
+  
   try {
-    const userId = req.user.id;
+    const userId = req.user ? req.user.id : req.userId;
+    
+    if (!userId) {
+      console.error('No user ID found in request');
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    console.log('Processing resume data for user:', userId);
     const parsedData = req.body;
+    
+    // Log the received data structure
+    console.log('Received parsed data structure:', {
+      hasPersonalInfo: !!parsedData.personalInfo,
+      experienceCount: parsedData.experience?.length || 0,
+      educationCount: parsedData.education?.length || 0,
+      skillsCount: parsedData.skills?.length || 0,
+      projectsCount: parsedData.projects?.length || 0,
+      certificationsCount: parsedData.certifications?.length || 0
+    });
     
     // Get the user
     const user = await User.findById(userId);
     if (!user) {
+      console.error('User not found:', userId);
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Initialize sections if they don't exist
-    if (!user.sections) {
-      user.sections = {};
+    console.log('Found user:', user.name);
+    
+    // Find or create a resume for the user
+    let resume = await Resume.findOne({ user: userId });
+    
+    if (!resume) {
+      console.log('Creating new resume for user');
+      resume = new Resume({
+        user: userId,
+        title: "Parsed Resume",
+        template: "default",
+        sections: {
+          experience: [],
+          education: [],
+          skills: [],
+          projects: [],
+          certifications: [],
+          customSections: new Map()
+        }
+      });
+    } else {
+      console.log('Found existing resume:', resume._id.toString());
     }
     
     // Process personal info
     if (parsedData.personalInfo && parsedData.personalInfo.selected) {
+      console.log('Processing personal info');
       user.name = parsedData.personalInfo.name || user.name;
       user.email = parsedData.personalInfo.email || user.email;
       user.phone = parsedData.personalInfo.phone || user.phone;
@@ -441,10 +481,11 @@ exports.saveResumeData = async (req, res) => {
     
     // Process experience
     if (parsedData.experience && parsedData.experience.length > 0) {
-      if (!user.sections.experience) user.sections.experience = [];
+      console.log('Processing experience items:', parsedData.experience.length);
       
       // Add selected experiences
       const selectedExperiences = parsedData.experience.filter(exp => exp.selected);
+      console.log('Selected experience items:', selectedExperiences.length);
       
       for (const exp of selectedExperiences) {
         // Parse period into start/end dates
@@ -475,17 +516,18 @@ exports.saveResumeData = async (req, res) => {
           bullets
         };
         
-        // Add to user's experiences
-        user.sections.experience.push(experience);
+        // Add to resume's experiences
+        resume.sections.experience.push(experience);
       }
     }
     
     // Process education
     if (parsedData.education && parsedData.education.length > 0) {
-      if (!user.sections.education) user.sections.education = [];
+      console.log('Processing education items:', parsedData.education.length);
       
       // Add selected education entries
       const selectedEducation = parsedData.education.filter(edu => edu.selected);
+      console.log('Selected education items:', selectedEducation.length);
       
       for (const edu of selectedEducation) {
         // Parse year into start/end dates
@@ -524,17 +566,18 @@ exports.saveResumeData = async (req, res) => {
           bullets
         };
         
-        // Add to user's education
-        user.sections.education.push(education);
+        // Add to resume's education
+        resume.sections.education.push(education);
       }
     }
     
     // Process skills
     if (parsedData.skills && parsedData.skills.length > 0) {
-      if (!user.sections.skills) user.sections.skills = [];
+      console.log('Processing skills:', parsedData.skills.length);
       
       // Add selected skills
       const selectedSkills = parsedData.skills.filter(skill => skill.selected);
+      console.log('Selected skills:', selectedSkills.length);
       
       for (const skill of selectedSkills) {
         // Create the skill object
@@ -544,17 +587,18 @@ exports.saveResumeData = async (req, res) => {
           level: 'Intermediate' // Default level
         };
         
-        // Add to user's skills
-        user.sections.skills.push(skillObj);
+        // Add to resume's skills
+        resume.sections.skills.push(skillObj);
       }
     }
     
     // Process projects
     if (parsedData.projects && parsedData.projects.length > 0) {
-      if (!user.sections.projects) user.sections.projects = [];
+      console.log('Processing projects:', parsedData.projects.length);
       
       // Add selected projects
       const selectedProjects = parsedData.projects.filter(project => project.selected);
+      console.log('Selected projects:', selectedProjects.length);
       
       for (const project of selectedProjects) {
         // Create bullets from bullet points
@@ -569,17 +613,18 @@ exports.saveResumeData = async (req, res) => {
           bullets
         };
         
-        // Add to user's projects
-        user.sections.projects.push(projectObj);
+        // Add to resume's projects
+        resume.sections.projects.push(projectObj);
       }
     }
     
     // Process certifications
     if (parsedData.certifications && parsedData.certifications.length > 0) {
-      if (!user.sections.certifications) user.sections.certifications = [];
+      console.log('Processing certifications:', parsedData.certifications.length);
       
       // Add selected certifications
       const selectedCertifications = parsedData.certifications.filter(cert => cert.selected);
+      console.log('Selected certifications:', selectedCertifications.length);
       
       for (const cert of selectedCertifications) {
         // Create bullets from bullet points
@@ -596,13 +641,17 @@ exports.saveResumeData = async (req, res) => {
           bullets
         };
         
-        // Add to user's certifications
-        user.sections.certifications.push(certObj);
+        // Add to resume's certifications
+        resume.sections.certifications.push(certObj);
       }
     }
     
-    // Save the user
+    // Save the user and resume
+    console.log('Saving user and resume data');
     await user.save();
+    await resume.save();
+    
+    console.log('Resume data saved successfully');
     
     res.json({
       message: 'Resume data saved to profile successfully',
@@ -614,6 +663,11 @@ exports.saveResumeData = async (req, res) => {
     });
   } catch (error) {
     console.error('Error saving resume data:', error);
-    res.status(500).json({ message: 'Error saving resume data to profile' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Error saving resume data to profile',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
