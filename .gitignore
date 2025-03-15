@@ -1,4 +1,9 @@
 /node_modules/*
 /dist/*
 /.vscode/*
+<<<<<<< HEAD
 Backend/.env
+=======
+.DS_Store
+.env
+>>>>>>> 1735f9a14785a1febec1d5394beda047f1c5df31
