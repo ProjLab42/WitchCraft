@@ -12,32 +12,32 @@ const templates = [
   {
     id: "classic",
     name: "Classic Professional",
-    imageSrc: "/assets/templates/classic-resume-template.png",
+    imageSrc: "/assets/templates/classic-resume-template.svg",
   },
   {
     id: "modern",
     name: "Modern Professional",
-    imageSrc: "/assets/templates/modern-resume-template.png",
+    imageSrc: "/assets/templates/modern-resume-template.svg",
   },
   {
     id: "student",
     name: "Modern Student",
-    imageSrc: "/assets/templates/student-resume-template.png",
+    imageSrc: "/assets/templates/student-resume-template.svg",
   },
   {
     id: "creative",
     name: "Creative Professional",
-    imageSrc: "/assets/templates/creative-resume-template.png",
+    imageSrc: "/assets/templates/creative-resume-template.svg",
   },
   {
     id: "executive",
     name: "Executive",
-    imageSrc: "/assets/templates/executive-resume-template.png",
+    imageSrc: "/assets/templates/executive-resume-template.svg",
   },
   {
     id: "minimal",
     name: "Minimal",
-    imageSrc: "/assets/templates/minimal-resume-template.png",
+    imageSrc: "/assets/templates/minimal-resume-template.svg",
   },
 ];
 
