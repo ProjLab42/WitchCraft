@@ -333,6 +333,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         transformOrigin: 'top center',
         minHeight: '29.7cm',
         width: '21cm',
+        margin: '0 auto',
       }}
     >
       {/* Personal Info */}

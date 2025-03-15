@@ -794,7 +794,7 @@ function EditorContent() {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <main className="container py-8 pb-16">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Resume Builder</h1>
           
@@ -814,7 +814,7 @@ function EditorContent() {
         
         <div className="grid lg:grid-cols-[350px_1fr] gap-6">
           {/* Left sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
             {/* Personal Info Section */}
             <DraggableSection 
               title="Personal Information" 
@@ -982,7 +982,7 @@ function EditorContent() {
           </div>
           
           {/* Right side - Resume preview */}
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)]">
             <div className="flex justify-end mb-4">
               <ZoomControls
                 zoomLevel={zoomLevel}
