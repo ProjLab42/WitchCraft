@@ -982,7 +982,7 @@ function EditorContent() {
           </div>
           
           {/* Right side - Resume preview */}
-          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)]">
+          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
             <div className="flex justify-end mb-4">
               <ZoomControls
                 zoomLevel={zoomLevel}

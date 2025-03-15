@@ -27,11 +27,8 @@ const getItemStyle = (isDragging, draggableStyle) => ({
   // If dragging, we want to ensure it stays in the same horizontal position
   // and add smooth transitions for a better drop experience
   ...(isDragging && {
-    left: 'auto',
-    width: draggableStyle.width,
-    margin: '0 auto',
+    transform: draggableStyle.transform,
     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-    transform: `${draggableStyle.transform} scale(1.02)`,
     zIndex: 9999,
   }),
   
@@ -52,11 +49,8 @@ const getSectionStyle = (isDragging, draggableStyle) => ({
   // If dragging, we want to ensure it stays in the same horizontal position
   // and add smooth transitions for a better drop experience
   ...(isDragging && {
-    left: 'auto',
-    width: draggableStyle.width,
-    margin: '0 auto',
+    transform: draggableStyle.transform,
     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-    transform: `${draggableStyle.transform} scale(1.01)`,
     zIndex: 9999,
   }),
   
@@ -191,125 +185,134 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
             className={`space-y-3 mt-2 ${snapshot.isDraggingOver ? 'bg-muted/30 rounded-md p-2 -mx-2' : ''}`}
             style={{
               transition: 'background-color 0.2s ease, padding 0.2s ease, margin 0.2s ease',
+              minHeight: '10px',
             }}
           >
             {items.map((item, index) => (
               <Draggable key={item.id} draggableId={item.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`p-3 border border-transparent hover:border-border rounded-md bg-card group ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
-                    style={getItemStyle(
-                      snapshot.isDragging,
-                      provided.draggableProps.style
-                    )}
-                  >
-                    {type === 'experience' && (
-                      <div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">{item.company}</h4>
-                            <p className="text-sm italic">{item.title}</p>
-                            <p className="text-xs text-muted-foreground">{item.period}</p>
-                          </div>
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                              <GripVertical size={14} />
+                {(provided, snapshot) => {
+                  // Fix for horizontal positioning
+                  if (snapshot.isDragging) {
+                    provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
+                  }
+                  
+                  return (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      className={`p-3 border border-transparent hover:border-border rounded-md bg-card group ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
+                      style={getItemStyle(
+                        snapshot.isDragging,
+                        provided.draggableProps.style
+                      )}
+                      data-is-dragging={snapshot.isDragging ? "true" : "false"}
+                    >
+                      {type === 'experience' && (
+                        <div>
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{item.company}</h4>
+                              <p className="text-sm italic">{item.title}</p>
+                              <p className="text-xs text-muted-foreground">{item.period}</p>
                             </div>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => removeSection(item.id)}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="text-sm mt-2">{item.description}</p>
-                      </div>
-                    )}
-                    
-                    {type === 'education' && (
-                      <div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">{item.institution}</h4>
-                            <p className="text-sm italic">{item.degree}</p>
-                            <p className="text-xs text-muted-foreground">{item.period}</p>
-                          </div>
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                              <GripVertical size={14} />
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
+                                <GripVertical size={14} />
+                              </div>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeSection(item.id)}
+                              >
+                                <Trash size={14} />
+                              </Button>
                             </div>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => removeSection(item.id)}
-                            >
-                              <Trash size={14} />
-                            </Button>
                           </div>
+                          <p className="text-sm mt-2">{item.description}</p>
                         </div>
-                        <p className="text-sm mt-2">{item.description}</p>
-                      </div>
-                    )}
-                    
-                    {type === 'projects' && (
-                      <div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">{item.name}</h4>
-                            <p className="text-sm italic">{item.role}</p>
-                            <p className="text-xs text-muted-foreground">{item.period}</p>
-                          </div>
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                              <GripVertical size={14} />
+                      )}
+                      
+                      {type === 'education' && (
+                        <div>
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{item.institution}</h4>
+                              <p className="text-sm italic">{item.degree}</p>
+                              <p className="text-xs text-muted-foreground">{item.period}</p>
                             </div>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => removeSection(item.id)}
-                            >
-                              <Trash size={14} />
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="text-sm mt-2">{item.description}</p>
-                      </div>
-                    )}
-                    
-                    {type === 'certifications' && (
-                      <div>
-                        <div className="flex justify-between">
-                          <div>
-                            <h4 className="font-medium">{item.name}</h4>
-                            <p className="text-sm italic">{item.issuer}</p>
-                            <p className="text-xs text-muted-foreground">{item.date}</p>
-                          </div>
-                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                              <GripVertical size={14} />
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
+                                <GripVertical size={14} />
+                              </div>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeSection(item.id)}
+                              >
+                                <Trash size={14} />
+                              </Button>
                             </div>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6 text-destructive"
-                              onClick={() => removeSection(item.id)}
-                            >
-                              <Trash size={14} />
-                            </Button>
                           </div>
+                          <p className="text-sm mt-2">{item.description}</p>
                         </div>
-                        <p className="text-sm mt-2">{item.description}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                      
+                      {type === 'projects' && (
+                        <div>
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{item.name}</h4>
+                              <p className="text-sm italic">{item.role}</p>
+                              <p className="text-xs text-muted-foreground">{item.period}</p>
+                            </div>
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
+                                <GripVertical size={14} />
+                              </div>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeSection(item.id)}
+                              >
+                                <Trash size={14} />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm mt-2">{item.description}</p>
+                        </div>
+                      )}
+                      
+                      {type === 'certifications' && (
+                        <div>
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{item.name}</h4>
+                              <p className="text-sm italic">{item.issuer}</p>
+                              <p className="text-xs text-muted-foreground">{item.date}</p>
+                            </div>
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
+                                <GripVertical size={14} />
+                              </div>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6 text-destructive"
+                                onClick={() => removeSection(item.id)}
+                              >
+                                <Trash size={14} />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm mt-2">{item.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
               </Draggable>
             ))}
             {provided.placeholder}
@@ -334,6 +337,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         minHeight: '29.7cm',
         width: '21cm',
         margin: '0 auto',
+        position: 'relative',
+        overflow: 'visible',
       }}
     >
       {/* Personal Info */}
@@ -373,31 +378,41 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
               className={`space-y-6 ${snapshot.isDraggingOver ? 'bg-muted/20 p-4 -mx-4 rounded-md' : ''}`}
               style={{
                 transition: 'background-color 0.3s ease, padding 0.3s ease, margin 0.3s ease',
+                minHeight: '20px',
+                position: 'relative',
               }}
             >
               {allSections.map(([type, items], index) => (
                 <Draggable key={type as string} draggableId={type as string} index={index}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
-                      style={getSectionStyle(
-                        snapshot.isDragging,
-                        provided.draggableProps.style
-                      )}
-                    >
-                      <div className="flex items-center mb-2">
-                        <h3 className="text-lg font-semibold">
-                          {renderSectionTitle(type as string)}
-                        </h3>
-                        <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                          <GripVertical size={14} />
+                  {(provided, snapshot) => {
+                    // Fix for horizontal positioning
+                    if (snapshot.isDragging) {
+                      provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
+                    }
+                    
+                    return (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
+                        style={getSectionStyle(
+                          snapshot.isDragging,
+                          provided.draggableProps.style
+                        )}
+                        data-is-dragging={snapshot.isDragging ? "true" : "false"}
+                      >
+                        <div className="flex items-center mb-2">
+                          <h3 className="text-lg font-semibold">
+                            {renderSectionTitle(type as string)}
+                          </h3>
+                          <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            <GripVertical size={14} />
+                          </div>
                         </div>
+                        {renderSectionContent(type as string, items)}
                       </div>
-                      {renderSectionContent(type as string, items)}
-                    </div>
-                  )}
+                    );
+                  }}
                 </Draggable>
               ))}
               {provided.placeholder}
