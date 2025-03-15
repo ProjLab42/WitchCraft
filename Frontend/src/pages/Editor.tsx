@@ -14,6 +14,8 @@ import { ResumeProvider, useResumeContext } from "@/components/resume-editor/Res
 import { DraggableSection } from "@/components/resume-editor/DraggableSection";
 import { DraggableItem } from "@/components/resume-editor/DraggableItem";
 import { ResumeDropZone } from "@/components/resume-editor/ResumeDropZone";
+import { ReorderableResume } from "@/components/resume-editor/ReorderableResume";
+import { HybridResumeEditor } from "@/components/resume-editor/HybridResumeEditor";
 import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
@@ -335,32 +337,6 @@ function EditorContent() {
       };
     });
     
-    // Also remove from userData to keep them in sync
-    if (sectionToRemove && sectionToRemove.itemType !== 'skills') {
-      const sectionType = sectionToRemove.itemType;
-      
-      setUserData(prev => {
-        // Create a deep copy of the sections
-        const updatedSections = { ...prev.sections };
-        
-        // Get the array for this section type
-        const sectionArray = updatedSections[sectionType] || [];
-        console.log("Section array before removal:", sectionArray);
-        
-        // Filter out the item with the matching ID
-        const updatedArray = sectionArray.filter(item => item.id !== id);
-        console.log("Section array after removal:", updatedArray);
-        
-        // Update the section with the new array
-        updatedSections[sectionType] = updatedArray;
-        
-        return {
-          ...prev,
-          sections: updatedSections
-        };
-      });
-    }
-    
     toast.success("Item removed from resume");
   };
   
@@ -456,6 +432,34 @@ function EditorContent() {
     }));
     
     toast.success("New education added");
+  };
+  
+  // Delete an item from the left panel
+  const deleteItemFromPanel = (type: string, id: string) => {
+    setUserData(prev => {
+      const updatedSections = { ...prev.sections };
+      
+      if (updatedSections[type as keyof typeof updatedSections]) {
+        const sectionArray = updatedSections[type as keyof typeof updatedSections] as any[];
+        const updatedArray = sectionArray.filter(item => item.id !== id);
+        
+        // Update the section with the filtered array
+        updatedSections[type as keyof typeof updatedSections] = updatedArray as any;
+      }
+      
+      return {
+        ...prev,
+        sections: updatedSections
+      };
+    });
+    
+    // Also remove from resume if it's there
+    const isInResume = resumeContent.sections.some(section => section.id === id);
+    if (isInResume) {
+      removeSection(id);
+    }
+    
+    toast.success("Item deleted");
   };
   
   // Toggle a skill selection
@@ -804,7 +808,7 @@ function EditorContent() {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <main className="container py-8 pb-16">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Resume Builder</h1>
           
@@ -824,7 +828,7 @@ function EditorContent() {
         
         <div className="grid lg:grid-cols-[350px_1fr] gap-6">
           {/* Left sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
             {/* Personal Info Section */}
             <DraggableSection 
               title="Personal Information" 
@@ -871,6 +875,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('experience', id)}
                   />
                 ))}
                 
@@ -895,6 +901,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('education', id)}
                   />
                 ))}
                 
@@ -949,6 +957,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('projects', id)}
                   />
                 ))}
                 
@@ -973,6 +983,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('certifications', id)}
                   />
                 ))}
                 
@@ -984,7 +996,7 @@ function EditorContent() {
           </div>
           
           {/* Right side - Resume preview */}
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
             <div className="flex justify-end mb-4">
               <ZoomControls
                 zoomLevel={zoomLevel}
@@ -994,14 +1006,12 @@ function EditorContent() {
               />
             </div>
             
-            <ResumeDropZone
+            <HybridResumeEditor
               onDrop={handleDrop}
               resumeContent={resumeContent}
               removeSection={removeSection}
               reorderSections={reorderSections}
               reorderSectionItems={reorderSectionItems}
-              userData={userData}
-              setUserData={setUserData}
               setResumeContent={setResumeContent}
               resumeRef={resumeRef}
               zoomLevel={zoomLevel}
