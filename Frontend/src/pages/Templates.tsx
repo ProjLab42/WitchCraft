@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { templateService, Template } from "@/services/template.service";
 import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Templates() {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -34,12 +36,36 @@ export default function Templates() {
   const handleContinue = () => {
     if (selectedTemplate) {
       navigate(`/editor?template=${selectedTemplate}`);
+    } else {
+      toast.error("Please select a template to continue");
     }
   };
   
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      
+      {/* Fixed Continue Button - always visible */}
+      <div className="sticky top-16 z-50 py-3 px-4 bg-background/80 backdrop-blur-sm border-b shadow-sm">
+        <div className="container flex justify-between items-center">
+          <div className="text-sm font-medium">
+            {selectedTemplate ? (
+              <span>Selected: <span className="text-primary">{templates.find(t => t.id === selectedTemplate)?.name}</span></span>
+            ) : (
+              <span className="text-muted-foreground">Please select a template</span>
+            )}
+          </div>
+          <Button 
+            onClick={handleContinue} 
+            size="sm" 
+            className="gap-2"
+            disabled={!selectedTemplate}
+          >
+            <span>Continue with this template</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       
       <main className="flex-1 py-8 md:py-12">
         <div className="container">
@@ -98,20 +124,6 @@ export default function Templates() {
                 </CardFooter>
               </Card>
             ))}
-          </div>
-          
-          <div className="mt-12 flex justify-end">
-            <Button 
-              onClick={handleContinue} 
-              size="lg" 
-              className="gap-2"
-              disabled={!selectedTemplate}
-            >
-              <span>Continue with this template</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </Button>
           </div>
         </div>
       </main>

@@ -404,3 +404,216 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Save parsed resume data to user profile
+exports.saveResumeData = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const parsedData = req.body;
+    
+    // Get the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Initialize sections if they don't exist
+    if (!user.sections) {
+      user.sections = {};
+    }
+    
+    // Process personal info
+    if (parsedData.personalInfo && parsedData.personalInfo.selected) {
+      user.name = parsedData.personalInfo.name || user.name;
+      user.email = parsedData.personalInfo.email || user.email;
+      user.phone = parsedData.personalInfo.phone || user.phone;
+      user.title = parsedData.personalInfo.title || user.title;
+      user.location = parsedData.personalInfo.location || user.location;
+      user.bio = parsedData.personalInfo.bio || user.bio;
+      
+      // Process links
+      if (parsedData.personalInfo.links) {
+        if (!user.links) user.links = {};
+        user.links.linkedin = parsedData.personalInfo.links.linkedin || user.links.linkedin;
+        user.links.portfolio = parsedData.personalInfo.links.portfolio || user.links.portfolio;
+      }
+    }
+    
+    // Process experience
+    if (parsedData.experience && parsedData.experience.length > 0) {
+      if (!user.sections.experience) user.sections.experience = [];
+      
+      // Add selected experiences
+      const selectedExperiences = parsedData.experience.filter(exp => exp.selected);
+      
+      for (const exp of selectedExperiences) {
+        // Parse period into start/end dates
+        let startDate = '';
+        let endDate = '';
+        let current = false;
+        
+        if (exp.period) {
+          const parts = exp.period.split(' - ');
+          startDate = parts[0];
+          endDate = parts.length > 1 ? parts[1] : '';
+          current = endDate === 'Present';
+        }
+        
+        // Create bullets from bullet points
+        const bullets = exp.bulletPoints ? exp.bulletPoints.map(bp => bp.text) : [];
+        
+        // Create the experience object
+        const experience = {
+          id: exp.id,
+          company: exp.company,
+          title: exp.title,
+          location: '',
+          startDate,
+          endDate,
+          current,
+          description: exp.description,
+          bullets
+        };
+        
+        // Add to user's experiences
+        user.sections.experience.push(experience);
+      }
+    }
+    
+    // Process education
+    if (parsedData.education && parsedData.education.length > 0) {
+      if (!user.sections.education) user.sections.education = [];
+      
+      // Add selected education entries
+      const selectedEducation = parsedData.education.filter(edu => edu.selected);
+      
+      for (const edu of selectedEducation) {
+        // Parse year into start/end dates
+        let startDate = '';
+        let endDate = '';
+        let current = false;
+        
+        if (edu.year) {
+          const parts = edu.year.split(' - ');
+          startDate = parts[0];
+          endDate = parts.length > 1 ? parts[1] : parts[0];
+          current = endDate === 'Present';
+        }
+        
+        // Try to extract field from degree
+        let field = '';
+        if (edu.degree && edu.degree.includes(' in ')) {
+          const parts = edu.degree.split(' in ');
+          field = parts[1];
+        }
+        
+        // Create bullets from bullet points
+        const bullets = edu.bulletPoints ? edu.bulletPoints.map(bp => bp.text) : [];
+        
+        // Create the education object
+        const education = {
+          id: edu.id,
+          institution: edu.institution,
+          degree: edu.degree,
+          field,
+          location: '',
+          startDate,
+          endDate,
+          current,
+          gpa: '',
+          bullets
+        };
+        
+        // Add to user's education
+        user.sections.education.push(education);
+      }
+    }
+    
+    // Process skills
+    if (parsedData.skills && parsedData.skills.length > 0) {
+      if (!user.sections.skills) user.sections.skills = [];
+      
+      // Add selected skills
+      const selectedSkills = parsedData.skills.filter(skill => skill.selected);
+      
+      for (const skill of selectedSkills) {
+        // Create the skill object
+        const skillObj = {
+          id: skill.id,
+          name: skill.name,
+          level: 'Intermediate' // Default level
+        };
+        
+        // Add to user's skills
+        user.sections.skills.push(skillObj);
+      }
+    }
+    
+    // Process projects
+    if (parsedData.projects && parsedData.projects.length > 0) {
+      if (!user.sections.projects) user.sections.projects = [];
+      
+      // Add selected projects
+      const selectedProjects = parsedData.projects.filter(project => project.selected);
+      
+      for (const project of selectedProjects) {
+        // Create bullets from bullet points
+        const bullets = project.bulletPoints ? project.bulletPoints.map(bp => bp.text) : [];
+        
+        // Create the project object
+        const projectObj = {
+          id: project.id,
+          name: project.name,
+          description: project.description,
+          link: project.link,
+          bullets
+        };
+        
+        // Add to user's projects
+        user.sections.projects.push(projectObj);
+      }
+    }
+    
+    // Process certifications
+    if (parsedData.certifications && parsedData.certifications.length > 0) {
+      if (!user.sections.certifications) user.sections.certifications = [];
+      
+      // Add selected certifications
+      const selectedCertifications = parsedData.certifications.filter(cert => cert.selected);
+      
+      for (const cert of selectedCertifications) {
+        // Create bullets from bullet points
+        const bullets = cert.bulletPoints ? cert.bulletPoints.map(bp => bp.text) : [];
+        
+        // Create the certification object
+        const certObj = {
+          id: cert.id,
+          name: cert.name,
+          issuer: cert.issuer,
+          date: cert.date,
+          expirationDate: cert.expirationDate,
+          credentialID: cert.credentialId,
+          bullets
+        };
+        
+        // Add to user's certifications
+        user.sections.certifications.push(certObj);
+      }
+    }
+    
+    // Save the user
+    await user.save();
+    
+    res.json({
+      message: 'Resume data saved to profile successfully',
+      user: {
+        name: user.name,
+        email: user.email,
+        title: user.title
+      }
+    });
+  } catch (error) {
+    console.error('Error saving resume data:', error);
+    res.status(500).json({ message: 'Error saving resume data to profile' });
+  }
+};

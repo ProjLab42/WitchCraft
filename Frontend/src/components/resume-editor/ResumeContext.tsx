@@ -6,12 +6,14 @@ import { useSearchParams } from 'react-router-dom';
 const mockUser = {
   name: "Jane Doe",
   email: "jane.doe@example.com",
+  phone: "(555) 123-4567",
   title: "Full Stack Developer",
   location: "San Francisco, CA",
   bio: "Passionate developer with 5+ years of experience building web applications. Specializing in React, TypeScript, and Node.js.",
   avatarUrl: "https://api.dicebear.com/7.x/personas/svg?seed=jane",
   links: {
     linkedin: "https://linkedin.com/in/janedoe",
+    github: "https://github.com/janedoe",
     portfolio: "https://janedoe.dev",
     additionalLinks: []
   },
@@ -82,9 +84,11 @@ export type PersonalInfo = {
   name: string;
   title: string;
   email: string;
+  phone?: string;
   location: string;
   links?: {
     linkedin?: string;
+    github?: string;
     portfolio?: string;
     additionalLinks?: { label: string; url: string }[];
   };
@@ -144,12 +148,14 @@ export type ResumeContent = {
 export type UserData = {
   name: string;
   email: string;
+  phone: string;
   title: string;
   location: string;
   bio: string;
   avatarUrl: string;
   links: {
     linkedin: string;
+    github: string;
     portfolio: string;
     additionalLinks: { label: string; url: string }[];
   };
@@ -200,6 +206,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       name: userData.name,
       title: userData.title,
       email: userData.email,
+      phone: userData.phone,
       location: userData.location,
       links: userData.links
     },
@@ -222,9 +229,11 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     name: '',
     title: '',
     email: '',
+    phone: '',
     location: '',
     links: {
       linkedin: '',
+      github: '',
       portfolio: '',
       additionalLinks: []
     }

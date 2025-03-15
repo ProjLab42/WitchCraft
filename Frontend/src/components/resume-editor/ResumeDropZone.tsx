@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Edit, Trash } from "lucide-react";
@@ -32,6 +32,13 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
 }) => {
   // Get template styles from context
   const { templateStyles } = useResumeContext();
+  
+  // Log when template styles change
+  useEffect(() => {
+    if (templateStyles) {
+      console.log('Template styles applied in ResumeDropZone:', templateStyles);
+    }
+  }, [templateStyles]);
   
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
@@ -271,6 +278,13 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
       fontFamily: templateStyles?.fontFamily || 'Arial, sans-serif',
     };
     
+    // Common link styles
+    const linkStyle = {
+      textDecoration: 'none',
+      color: 'inherit',
+      cursor: 'pointer',
+    };
+    
     // Apply template-specific header styles
     if (templateStyles) {
       const headerType = templateStyles.headerStyle || 'centered';
@@ -310,7 +324,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                 justifyContent: 'center',
                 gap: '10px'
               }}>
-                <span>{email}</span>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
                 {phone && <span>• {phone}</span>}
                 {location && <span>• {location}</span>}
               </div>
@@ -323,9 +337,9 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   gap: '10px',
                   marginTop: '5px'
                 }}>
-                  {links.linkedin && <span>{links.linkedin}</span>}
-                  {links.github && <span>• {links.github}</span>}
-                  {links.portfolio && <span>• {links.portfolio}</span>}
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
                 </div>
               )}
             </div>
@@ -365,7 +379,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                 justifyContent: 'center',
                 gap: '10px'
               }}>
-                <span>{email}</span>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
                 {phone && <span>• {phone}</span>}
                 {location && <span>• {location}</span>}
               </div>
@@ -378,9 +392,9 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   gap: '10px',
                   marginTop: '5px'
                 }}>
-                  {links.linkedin && <span>{links.linkedin}</span>}
-                  {links.github && <span>• {links.github}</span>}
-                  {links.portfolio && <span>• {links.portfolio}</span>}
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
                 </div>
               )}
             </div>
@@ -412,7 +426,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                 justifyContent: 'center',
                 gap: '10px'
               }}>
-                <span>{email}</span>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
                 {phone && <span>• {phone}</span>}
                 {location && <span>• {location}</span>}
               </div>
@@ -425,9 +439,9 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   gap: '10px',
                   marginTop: '5px'
                 }}>
-                  {links.linkedin && <span>{links.linkedin}</span>}
-                  {links.github && <span>• {links.github}</span>}
-                  {links.portfolio && <span>• {links.portfolio}</span>}
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
                 </div>
               )}
             </div>
@@ -460,7 +474,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                 justifyContent: 'center',
                 gap: '10px'
               }}>
-                <span>{email}</span>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
                 {phone && <span>• {phone}</span>}
                 {location && <span>• {location}</span>}
               </div>
@@ -473,9 +487,9 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   gap: '10px',
                   marginTop: '5px'
                 }}>
-                  {links.linkedin && <span>{links.linkedin}</span>}
-                  {links.github && <span>• {links.github}</span>}
-                  {links.portfolio && <span>• {links.portfolio}</span>}
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
                 </div>
               )}
             </div>
@@ -489,15 +503,15 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
         <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 5px 0' }}>{name}</h1>
         <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: '0 0 10px 0' }}>{title}</h2>
         <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-          <span>{email}</span>
+          <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
           {phone && <span>• {phone}</span>}
           {location && <span>• {location}</span>}
         </div>
         {links && (
           <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '5px' }}>
-            {links.linkedin && <span>{links.linkedin}</span>}
-            {links.github && <span>• {links.github}</span>}
-            {links.portfolio && <span>• {links.portfolio}</span>}
+            {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+            {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+            {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
           </div>
         )}
       </div>

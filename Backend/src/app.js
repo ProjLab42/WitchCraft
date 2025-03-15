@@ -22,6 +22,7 @@ const authRoutes = require('./routes/auth.routes');
 const resumeRoutes = require('./routes/resume.routes');
 const templateRoutes = require('./routes/template.routes');
 const userRoutes = require('./routes/user.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 
 const app = express();
@@ -54,6 +55,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/template", templateRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

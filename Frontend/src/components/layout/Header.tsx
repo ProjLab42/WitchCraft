@@ -50,12 +50,14 @@ export function Header() {
           </Link>
         </nav>
         <div className="flex items-center gap-4">
-          <Button asChild variant="outline" size="sm" className="hidden md:flex gap-2">
-            <Link to="/create">
-              <Plus className="h-4 w-4" />
-              <span>New Resume</span>
-            </Link>
-          </Button>
+          <div className="hidden md:flex">
+            <Button asChild variant="default" size="sm" className="ml-4">
+              <Link to="/templates">
+                <FileText className="mr-2 h-4 w-4" />
+                Create Resume
+              </Link>
+            </Button>
+          </div>
           
           {isAuthenticated ? (
             // Show profile button when authenticated
