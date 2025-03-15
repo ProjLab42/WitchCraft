@@ -14,6 +14,8 @@ import { ResumeProvider, useResumeContext } from "@/components/resume-editor/Res
 import { DraggableSection } from "@/components/resume-editor/DraggableSection";
 import { DraggableItem } from "@/components/resume-editor/DraggableItem";
 import { ResumeDropZone } from "@/components/resume-editor/ResumeDropZone";
+import { ReorderableResume } from "@/components/resume-editor/ReorderableResume";
+import { HybridResumeEditor } from "@/components/resume-editor/HybridResumeEditor";
 import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
@@ -990,14 +992,12 @@ function EditorContent() {
               />
             </div>
             
-            <ResumeDropZone
+            <HybridResumeEditor
               onDrop={handleDrop}
               resumeContent={resumeContent}
               removeSection={removeSection}
               reorderSections={reorderSections}
               reorderSectionItems={reorderSectionItems}
-              userData={userData}
-              setUserData={setUserData}
               setResumeContent={setResumeContent}
               resumeRef={resumeRef}
               zoomLevel={zoomLevel}
