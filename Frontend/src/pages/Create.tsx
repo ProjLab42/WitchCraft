@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TemplateCard } from "@/components/resume/TemplateCard";
@@ -62,6 +62,28 @@ export default function Create() {
     <div className="flex min-h-screen flex-col">
       <Header />
       
+      {/* Fixed Continue Button - always visible */}
+      <div className="sticky top-16 z-50 py-3 px-4 bg-background/80 backdrop-blur-sm border-b shadow-sm">
+        <div className="container flex justify-between items-center">
+          <div className="text-sm font-medium">
+            {selectedTemplate ? (
+              <span>Selected: <span className="text-primary">{templates.find(t => t.id === selectedTemplate)?.name}</span></span>
+            ) : (
+              <span className="text-muted-foreground">Please select a template</span>
+            )}
+          </div>
+          <Button 
+            onClick={handleContinue} 
+            size="sm" 
+            className="gap-2"
+            disabled={!selectedTemplate}
+          >
+            <span>Continue</span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
       <main className="flex-1 py-8 md:py-12">
         <div className="container">
           <div className="mb-12 max-w-2xl">
@@ -82,18 +104,6 @@ export default function Create() {
                 onSelect={handleSelectTemplate}
               />
             ))}
-          </div>
-          
-          <div className="mt-12 flex justify-end">
-            <Button 
-              onClick={handleContinue} 
-              size="lg" 
-              className="gap-2"
-              disabled={!selectedTemplate}
-            >
-              <span>Continue</span>
-              <ChevronRight className="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </main>
