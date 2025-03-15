@@ -2,13 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Edit } from "lucide-react";
+import { Download, Plus, Edit, ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Link, useSearchParams } from "react-router-dom";
-import { templateService } from "@/services/template.service";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -22,12 +21,18 @@ import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
 import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-editor/utils";
+import { templateService, Template } from "@/services/template.service";
 
 // Main Editor component
 function EditorContent() {
   // Get URL parameters
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
+  
+  // Template state
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [templateLoading, setTemplateLoading] = useState<boolean>(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   
   // Get all state from context
   const {
@@ -56,6 +61,61 @@ function EditorContent() {
   const resumeRef = useRef(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
+  // Fetch template data when templateParam changes
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      if (!templateParam) {
+        // If no template is specified, use the first default template
+        try {
+          const templates = await templateService.getAllTemplates();
+          if (templates && templates.length > 0) {
+            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
+            setTemplate(defaultTemplate);
+            setSelectedTemplate(templates[0].id);
+          }
+        } catch (error) {
+          console.error('Error fetching default template:', error);
+          setTemplateError('Failed to load default template. Using basic styling.');
+        }
+        return;
+      }
+      
+      try {
+        setTemplateLoading(true);
+        setTemplateError(null);
+        
+        console.log('Fetching template with ID:', templateParam);
+        const templateData = await templateService.getTemplateById(templateParam);
+        console.log('Template data received:', templateData);
+        
+        if (!templateData || !templateData.styles) {
+          throw new Error('Invalid template data received');
+        }
+        
+        setTemplate(templateData);
+        setSelectedTemplate(templateParam);
+      } catch (error) {
+        console.error('Error fetching template:', error);
+        setTemplateError('Failed to load template. Using default styling.');
+        
+        // Try to load a default template as fallback
+        try {
+          const templates = await templateService.getAllTemplates();
+          if (templates && templates.length > 0) {
+            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
+            setTemplate(defaultTemplate);
+          }
+        } catch (innerError) {
+          console.error('Error fetching fallback template:', innerError);
+        }
+      } finally {
+        setTemplateLoading(false);
+      }
+    };
+    
+    fetchTemplate();
+  }, [templateParam, setSelectedTemplate]);
+
   // Clean up duplicates on component mount
   useEffect(() => {
     // Only run on initial mount
@@ -68,19 +128,9 @@ function EditorContent() {
 
   // Set the template from URL parameter when component mounts
   useEffect(() => {
-    if (templateParam) {
-      // Get the template from the service
-      const template = templateService.getTemplateById(templateParam);
-      
-      if (template && templateParam !== selectedTemplate) {
-        console.log(`Applying template: ${template.name} with styles:`, template.styles);
-        
-        // Set the selected template in context
-        setSelectedTemplate(templateParam);
-        
-        // Apply template styles
-        toast.success(`Template "${template.name}" applied`);
-      }
+    if (templateParam && templateParam !== selectedTemplate) {
+      setSelectedTemplate(templateParam);
+      toast.success(`Template "${templateParam}" applied`);
     }
   }, [templateParam, selectedTemplate, setSelectedTemplate]);
 
@@ -821,7 +871,12 @@ function EditorContent() {
       
       <main className="container py-8 pb-16">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Resume Builder</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Resume Builder</h1>
+            {templateError && (
+              <span className="text-sm text-destructive">{templateError}</span>
+            )}
+          </div>
           
           <div className="flex gap-2">
             <Button onClick={openExportDialog}>
@@ -829,9 +884,10 @@ function EditorContent() {
               Export
             </Button>
             
-            <Link to="/">
+            <Link to="/templates">
               <Button variant="outline">
-                Back to Dashboard
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Templates
               </Button>
             </Link>
           </div>
@@ -861,7 +917,6 @@ function EditorContent() {
                       <h4 className="font-medium">{userData.name}</h4>
                       <p className="text-sm text-muted-foreground">{userData.title}</p>
                       <p className="text-xs text-muted-foreground">{userData.email}</p>
-                      <p className="text-xs text-muted-foreground">{userData.phone}</p>
                       <p className="text-xs text-muted-foreground">{userData.location}</p>
                     </div>
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
@@ -1027,6 +1082,7 @@ function EditorContent() {
               setResumeContent={setResumeContent}
               resumeRef={resumeRef}
               zoomLevel={zoomLevel}
+              selectedTemplate={template}
             />
           </div>
         </div>
@@ -1050,6 +1106,16 @@ function EditorContent() {
         onExportPDF={handleExportPDF}
         onExportDOCX={handleExportDOCX}
       />
+      
+      {/* Add a loading indicator for template loading */}
+      {templateLoading && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">Loading template...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

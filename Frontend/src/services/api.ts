@@ -42,50 +42,31 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor with better error logging
+// Add a response interceptor for better error handling
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data
-    });
     return response;
   },
   (error) => {
-    // Handle errors globally here with more detailed logging
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('API Error - Server responded with:', {
-        status: error.response.status,
-        data: error.response.data,
-        headers: error.response.headers,
-        url: error.config.url
-      });
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('API Error - No response received:', {
-        request: error.request,
-        url: error.config.url,
-        method: error.config.method,
-        baseURL: error.config.baseURL
-      });
-      
-      // For development debugging - help message for common issues
-      console.error(
-        'Network Error Troubleshooting:\n' +
-        '1. Is your backend server running?\n' +
-        `2. Check if the URL ${error.config.baseURL}${error.config.url} is correct\n` +
-        '3. Check for CORS issues in your browser console\n' +
-        '4. Verify network connectivity\n'
-      );
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('API Error - Request setup error:', error.message);
-    }
-    return Promise.reject(error);
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    // Return a rejected promise but with more context
+    return Promise.reject({
+      originalError: error,
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
   }
 );
+
+// Increase timeout for debugging
+api.defaults.timeout = 30000; 
 
 export default api;

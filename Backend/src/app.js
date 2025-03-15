@@ -3,19 +3,25 @@ const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const templateService = require('./services/template.service');
 
 // Load env variables
 dotenv.config();
 
 // Connect to database
-connectDB();
+connectDB().then(() => {
+  console.log('MongoDB Connected');
+  // Initialize default templates if needed
+  templateService.initializeDefaultTemplates()
+    .then(() => console.log('Template initialization check complete'))
+    .catch(err => console.error('Template initialization error:', err));
+}).catch(err => console.error('MongoDB connection error:', err));
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const resumeRoutes = require('./routes/resume.routes');
 const templateRoutes = require('./routes/template.routes');
 const userRoutes = require('./routes/user.routes');
-const uploadRoutes = require('./routes/upload.routes');
 
 
 const app = express();
@@ -48,7 +54,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/template", templateRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/upload", uploadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

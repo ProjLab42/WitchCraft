@@ -1,24 +1,66 @@
 const mongoose = require('mongoose');
 
 const templateSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: String,
+  imageSrc: {
+    type: String,
+    required: true
+  },
   thumbnail: String,
-  html: {
-    type: String,
-    required: true
-  },
-  css: {
-    type: String,
-    required: true
-  },
   category: {
     type: String,
     enum: ['Professional', 'Creative', 'Academic', 'Simple', 'Modern'],
     default: 'Professional'
+  },
+  version: {
+    type: String,
+    default: '1.0.0'
+  },
+  styles: {
+    fontFamily: {
+      heading: { type: String, default: 'Georgia, serif' },
+      body: { type: String, default: 'Arial, sans-serif' }
+    },
+    fontSize: {
+      name: { type: String, default: '24px' },
+      sectionHeading: { type: String, default: '18px' },
+      body: { type: String, default: '14px' }
+    },
+    layout: {
+      headerAlignment: { 
+        type: String, 
+        enum: ['left', 'center', 'right'],
+        default: 'left'
+      },
+      sectionStyle: {
+        type: String,
+        enum: ['underlined', 'boxed', 'simple'],
+        default: 'underlined'
+      },
+      useColumns: { type: Boolean, default: false }
+    },
+    colors: {
+      primary: { type: String, default: '#000000' },
+      secondary: { type: String, default: '#444444' },
+      accent: { type: String, default: '#0066cc' }
+    }
+  },
+  sections: {
+    defaultOrder: {
+      type: [String],
+      default: ['experience', 'education', 'skills', 'projects']
+    }
   },
   isActive: {
     type: Boolean,

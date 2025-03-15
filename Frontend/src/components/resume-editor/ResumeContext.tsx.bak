@@ -242,22 +242,42 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
 
   // Effect to load template styles when selectedTemplate changes
   useEffect(() => {
+    if (selectedTemplate) {
+      const template = templateService.getTemplateById(selectedTemplate);
+      if (template) {
+        // Update section order based on template
+        setResumeContent(prev => ({
+          ...prev,
+          sectionOrder: [...template.styles.sectionOrder]
+        }));
+        
+        // Set template styles
+        setTemplateStyles(template.styles);
+      }
+    }
+  }, [selectedTemplate]);
+
+  // Effect to load template styles when selectedTemplate changes
+  useEffect(() => {
     const loadTemplate = async () => {
       if (selectedTemplate) {
         try {
           const template = await templateService.getTemplateById(selectedTemplate);
-          if (template && template.sections && template.styles) {
-            // Update section order based on template
-            setResumeContent(prev => ({
-              ...prev,
-              sectionOrder: [...template.sections.defaultOrder]
-            }));
+          if (template && template.styles) {
+            // Update section order based on template if it exists
+            if (template.sections && template.sections.defaultOrder) {
+              setResumeContent(prev => ({
+                ...prev,
+                sectionOrder: [...template.sections.defaultOrder]
+              }));
+            }
             
             // Set template styles
             setTemplateStyles(template.styles);
           }
         } catch (error) {
           console.error('Error loading template:', error);
+          // Fallback to default template styles if needed
         }
       }
     };
