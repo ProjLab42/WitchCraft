@@ -1,6 +1,7 @@
 export const mockUser = {
   name: "Jane Doe",
   email: "jane.doe@example.com",
+  phone: "+1 (555) 123-4567",
   title: "Full Stack Developer",
   location: "San Francisco, CA",
   bio: "Passionate developer with 5+ years of experience building web applications. Specializing in React, TypeScript, and Node.js.",

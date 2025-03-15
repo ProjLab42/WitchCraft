@@ -111,6 +111,7 @@ const Profile = () => {
         name: profileForm.name,
         title: profileForm.title,
         email: profileForm.email,
+        phone: profileForm.phone,
         location: profileForm.location,
         bio: profileForm.bio,
         links: {
@@ -154,6 +155,7 @@ const Profile = () => {
     name: user.name,
     title: user.title,
     email: user.email,
+    phone: user.phone || "",
     location: user.location,
     bio: user.bio,
     avatarUrl: user.avatarUrl,
@@ -168,6 +170,7 @@ const Profile = () => {
       name: user.name,
       title: user.title,
       email: user.email,
+      phone: user.phone || "",
       location: user.location,
       bio: user.bio,
       avatarUrl: user.avatarUrl,

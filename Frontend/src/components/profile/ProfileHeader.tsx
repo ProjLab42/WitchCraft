@@ -17,6 +17,7 @@ interface ProfileHeaderProps {
     name: string;
     title: string;
     email: string;
+    phone?: string;
     location: string;
     bio: string;
     avatarUrl: string;
@@ -31,6 +32,7 @@ interface ProfileHeaderProps {
     name: string;
     title: string;
     email: string;
+    phone: string;
     location: string;
     bio: string;
     avatarUrl: string;
@@ -183,6 +185,15 @@ export const ProfileHeader = ({
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input 
+                  id="phone" 
+                  value={profileForm.phone} 
+                  onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
+                  placeholder="Your phone number"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="location">Location</Label>
                 <Input 
                   id="location" 
@@ -293,6 +304,10 @@ export const ProfileHeader = ({
               <div>
                 <p className="text-sm font-medium">Email</p>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Phone</p>
+                <p className="text-sm text-muted-foreground">{user.phone || "Not provided"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium">Location</p>
