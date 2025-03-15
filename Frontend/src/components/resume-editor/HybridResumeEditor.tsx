@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useDrop } from 'react-dnd';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Trash, GripVertical } from "lucide-react";
@@ -70,6 +70,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   resumeRef, 
   zoomLevel 
 }) => {
+  const draggingItemRef = useRef(null);
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -139,6 +140,14 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       const sectionType = type.replace('section-items-', '');
       reorderSectionItems(sectionType, source.index, destination.index);
     }
+    
+    // Reset dragging reference
+    draggingItemRef.current = null;
+  };
+  
+  // Handle drag start to track the dragging item
+  const handleDragStart = (event) => {
+    draggingItemRef.current = event.draggableId;
   };
 
   // Render section title
@@ -177,7 +186,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     }
 
     return (
-      <Droppable droppableId={`section-${type}`} type={`section-items-${type}`} direction="vertical">
+      <Droppable 
+        droppableId={`section-${type}`} 
+        type={`section-items-${type}`} 
+        direction="vertical"
+        // Reduce sensitivity of placeholder movement
+        ignoreContainerClipping={true}
+      >
         {(provided, snapshot) => (
           <div
             {...provided.droppableProps}
@@ -186,6 +201,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
             style={{
               transition: 'background-color 0.2s ease, padding 0.2s ease, margin 0.2s ease',
               minHeight: '10px',
+              position: 'relative',
             }}
           >
             {items.map((item, index) => (
@@ -201,10 +217,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       className={`p-3 border border-transparent hover:border-border rounded-md bg-card group ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
-                      style={getItemStyle(
-                        snapshot.isDragging,
-                        provided.draggableProps.style
-                      )}
+                      style={{
+                        ...getItemStyle(
+                          snapshot.isDragging,
+                          provided.draggableProps.style
+                        ),
+                        zIndex: snapshot.isDragging ? 1000 : 1,
+                      }}
                       data-is-dragging={snapshot.isDragging ? "true" : "false"}
                     >
                       {type === 'experience' && (
@@ -341,6 +360,21 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         overflow: 'visible',
       }}
     >
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Custom styles for dragging */
+          [data-is-dragging="true"] {
+            pointer-events: all !important;
+          }
+          
+          /* Reduce sensitivity of placeholder movements */
+          .react-beautiful-dnd-placeholder {
+            transition: all 0.2s ease !important;
+            opacity: 0.3 !important;
+          }
+        `
+      }} />
+      
       {/* Personal Info */}
       <div className="mb-6 border-b pb-4">
         <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
@@ -369,8 +403,12 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       </div>
       
       {/* Draggable Sections */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="sections" type="section" direction="vertical">
+      <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+        <Droppable 
+          droppableId="sections" 
+          type="section" 
+          direction="vertical"
+        >
           {(provided, snapshot) => (
             <div
               {...provided.droppableProps}
@@ -395,10 +433,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
-                        style={getSectionStyle(
-                          snapshot.isDragging,
-                          provided.draggableProps.style
-                        )}
+                        style={{
+                          ...getSectionStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style
+                          ),
+                          zIndex: snapshot.isDragging ? 1000 : 1,
+                        }}
                         data-is-dragging={snapshot.isDragging ? "true" : "false"}
                       >
                         <div className="flex items-center mb-2">
