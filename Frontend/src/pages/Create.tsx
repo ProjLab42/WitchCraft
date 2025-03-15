@@ -118,18 +118,6 @@ export default function Create() {
               />
             ))}
           </div>
-          
-          <div className="mt-12 flex justify-end">
-            <Button 
-              onClick={handleContinue} 
-              size="lg" 
-              className="gap-2"
-              disabled={!selectedTemplate}
-            >
-              <span>Continue</span>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </main>
       

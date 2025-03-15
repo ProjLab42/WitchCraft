@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -29,7 +28,7 @@ export default function Index() {
             
             <div className="animate-fade-in flex flex-col gap-4 sm:flex-row">
               <Button asChild size="lg" className="gap-2">
-                <Link to="/create">
+                <Link to="/templates">
                   <FileText className="h-5 w-5" />
                   <span>Build Your Resume</span>
                 </Link>
@@ -130,7 +129,7 @@ export default function Index() {
             </p>
             
             <Button asChild size="lg" className="gap-2">
-              <Link to="/create">
+              <Link to="/templates">
                 <span>Get Started</span>
                 <ArrowRight className="h-5 w-5" />
               </Link>

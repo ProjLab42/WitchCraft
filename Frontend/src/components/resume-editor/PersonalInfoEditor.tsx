@@ -54,6 +54,17 @@ export const PersonalInfoEditor: React.FC<PersonalInfoEditorProps> = ({
         </div>
         
         <div>
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input 
+            id="phone" 
+            type="tel"
+            value={editedPersonalInfo.phone || ''} 
+            onChange={(e) => onChange('phone', e.target.value)}
+            placeholder="(555) 123-4567"
+          />
+        </div>
+        
+        <div>
           <Label htmlFor="location">Location</Label>
           <Input 
             id="location" 
@@ -68,6 +79,15 @@ export const PersonalInfoEditor: React.FC<PersonalInfoEditorProps> = ({
             id="linkedin" 
             value={editedPersonalInfo.links?.linkedin || ''} 
             onChange={(e) => onChange('links.linkedin', e.target.value)}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="github">GitHub URL</Label>
+          <Input 
+            id="github" 
+            value={editedPersonalInfo.links?.github || ''} 
+            onChange={(e) => onChange('links.github', e.target.value)}
           />
         </div>
         

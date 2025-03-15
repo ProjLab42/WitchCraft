@@ -1,10 +1,9 @@
-
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { FileText, Plus, Download, Edit, Trash, Upload } from "lucide-react";
+import { FileText, Plus, Download, Edit, Trash, Upload, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 
 // Sample resume data
@@ -61,7 +60,7 @@ export default function Dashboard() {
               </Button>
               
               <Button asChild className="gap-2">
-                <Link to="/create">
+                <Link to="/templates">
                   <Plus className="h-4 w-4" />
                   <span>New Resume</span>
                 </Link>
@@ -117,6 +116,21 @@ export default function Dashboard() {
                 </CardFooter>
               </Card>
             ))}
+          </div>
+
+          <div className="flex flex-col items-center justify-center space-y-4 p-8">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold">Create Your First Resume</h3>
+              <p className="text-muted-foreground">
+                Get started by creating a professional resume
+              </p>
+            </div>
+            <Button asChild>
+              <Link to="/templates">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Resume
+              </Link>
+            </Button>
           </div>
         </div>
       </main>

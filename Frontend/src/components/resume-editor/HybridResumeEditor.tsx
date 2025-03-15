@@ -3,7 +3,7 @@ import { useDrop } from 'react-dnd';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Trash, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ResumeContent, SkillItem } from './ResumeContext';
+import { ResumeContent, SkillItem, useResumeContext } from './ResumeContext';
 
 interface HybridResumeEditorProps {
   onDrop: (item: any) => void;
@@ -73,6 +73,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   zoomLevel 
 }) => {
   const draggingItemRef = useRef(null);
+  const { templateStyles } = useResumeContext();
+  
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -154,31 +156,68 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
 
   // Render section title
   const renderSectionTitle = (type: string) => {
-    switch (type) {
-      case 'experience':
-        return 'Experience';
-      case 'education':
-        return 'Education';
-      case 'projects':
-        return 'Projects';
-      case 'certifications':
-        return 'Certifications';
-      case 'skills':
-        return 'Skills';
-      default:
-        return type.charAt(0).toUpperCase() + type.slice(1);
-    }
+    // Apply template styles if available
+    const titleStyle = templateStyles ? {
+      fontSize: templateStyles.sectionTitleSize || '16px',
+      fontWeight: templateStyles.sectionTitleWeight || 'bold',
+      color: templateStyles.primaryColor || '#333333',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+    } : {};
+    
+    const lineStyle = templateStyles ? {
+      backgroundColor: templateStyles.lineColor || '#dddddd',
+      height: '1px',
+      width: '100%',
+      marginTop: '4px',
+      marginBottom: '12px'
+    } : {};
+    
+    const title = (() => {
+      switch (type) {
+        case 'experience':
+          return 'Experience';
+        case 'education':
+          return 'Education';
+        case 'projects':
+          return 'Projects';
+        case 'certifications':
+          return 'Certifications';
+        case 'skills':
+          return 'Skills';
+        default:
+          return type.charAt(0).toUpperCase() + type.slice(1);
+      }
+    })();
+    
+    return (
+      <div>
+        <h3 style={titleStyle}>{title}</h3>
+        <div style={lineStyle}></div>
+      </div>
+    );
   };
 
   // Render section content
   const renderSectionContent = (type: string, items: any[]) => {
     if (type === 'skills') {
+      const skillStyle = templateStyles ? {
+        display: 'inline-block',
+        margin: '0 8px 8px 0',
+        padding: '4px 10px',
+        borderRadius: '16px',
+        fontSize: '12px',
+        backgroundColor: templateStyles.accentColor ? `${templateStyles.accentColor}15` : '#f0f4ff',
+        color: templateStyles.accentColor || '#2563eb',
+        fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      } : {};
+      
       return (
         <div className="flex flex-wrap gap-2 mt-2">
           {items.map((skill: SkillItem) => (
             <div 
               key={skill.id} 
-              className="px-3 py-1 bg-muted rounded-full text-sm hover:bg-muted/80 transition-colors"
+              style={skillStyle}
+              className="hover:opacity-90 transition-opacity"
             >
               {skill.name}
             </div>
@@ -186,6 +225,34 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         </div>
       );
     }
+
+    // Common styles for section items based on template
+    const itemTitleStyle = templateStyles ? {
+      fontWeight: 'bold',
+      color: templateStyles.primaryColor || '#333333',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      fontSize: '14px',
+    } : {};
+    
+    const itemSubtitleStyle = templateStyles ? {
+      fontStyle: 'italic',
+      color: templateStyles.secondaryColor || '#666666',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      fontSize: '13px',
+    } : {};
+    
+    const itemDateStyle = templateStyles ? {
+      color: templateStyles.secondaryColor || '#666666',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      fontSize: '12px',
+    } : {};
+    
+    const itemDescriptionStyle = templateStyles ? {
+      color: templateStyles.primaryColor || '#333333',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      fontSize: '13px',
+      marginTop: '8px',
+    } : {};
 
     return (
       <Droppable 
@@ -234,9 +301,9 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         <div>
                           <div className="flex justify-between">
                             <div>
-                              <h4 className="font-medium">{item.company}</h4>
-                              <p className="text-sm italic">{item.title}</p>
-                              <p className="text-xs text-muted-foreground">{item.period}</p>
+                              <h4 style={itemTitleStyle}>{item.company}</h4>
+                              <p style={itemSubtitleStyle}>{item.title}</p>
+                              <p style={itemDateStyle}>{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
@@ -252,7 +319,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               </Button>
                             </div>
                           </div>
-                          <p className="text-sm mt-2">{item.description}</p>
+                          <p style={itemDescriptionStyle}>{item.description}</p>
                         </div>
                       )}
                       
@@ -260,9 +327,9 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         <div>
                           <div className="flex justify-between">
                             <div>
-                              <h4 className="font-medium">{item.institution}</h4>
-                              <p className="text-sm italic">{item.degree}</p>
-                              <p className="text-xs text-muted-foreground">{item.period}</p>
+                              <h4 style={itemTitleStyle}>{item.institution}</h4>
+                              <p style={itemSubtitleStyle}>{item.degree}</p>
+                              <p style={itemDateStyle}>{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
@@ -278,7 +345,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               </Button>
                             </div>
                           </div>
-                          <p className="text-sm mt-2">{item.description}</p>
+                          <p style={itemDescriptionStyle}>{item.description}</p>
                         </div>
                       )}
                       
@@ -286,9 +353,9 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         <div>
                           <div className="flex justify-between">
                             <div>
-                              <h4 className="font-medium">{item.name}</h4>
-                              <p className="text-sm italic">{item.role}</p>
-                              <p className="text-xs text-muted-foreground">{item.period}</p>
+                              <h4 style={itemTitleStyle}>{item.name}</h4>
+                              <p style={itemSubtitleStyle}>{item.role}</p>
+                              <p style={itemDateStyle}>{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
@@ -304,7 +371,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               </Button>
                             </div>
                           </div>
-                          <p className="text-sm mt-2">{item.description}</p>
+                          <p style={itemDescriptionStyle}>{item.description}</p>
                         </div>
                       )}
                       
@@ -312,9 +379,9 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         <div>
                           <div className="flex justify-between">
                             <div>
-                              <h4 className="font-medium">{item.name}</h4>
-                              <p className="text-sm italic">{item.issuer}</p>
-                              <p className="text-xs text-muted-foreground">{item.date}</p>
+                              <h4 style={itemTitleStyle}>{item.name}</h4>
+                              <p style={itemSubtitleStyle}>{item.issuer}</p>
+                              <p style={itemDateStyle}>{item.date}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                               <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
@@ -330,7 +397,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               </Button>
                             </div>
                           </div>
-                          <p className="text-sm mt-2">{item.description}</p>
+                          <p style={itemDescriptionStyle}>{item.description}</p>
                         </div>
                       )}
                     </div>
@@ -342,6 +409,257 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
           </div>
         )}
       </Droppable>
+    );
+  };
+
+  // Render header with appropriate styling based on template
+  const renderHeader = () => {
+    const { name, title, email, phone, location, links } = resumeContent.personalInfo;
+    
+    // Default styles
+    const headerStyle = {
+      textAlign: 'center',
+      marginBottom: '20px',
+      fontFamily: templateStyles?.fontFamily || 'Arial, sans-serif',
+    };
+    
+    // Common link styles
+    const linkStyle = {
+      textDecoration: 'none',
+      color: 'inherit',
+      cursor: 'pointer',
+    };
+    
+    // Apply template-specific header styles
+    if (templateStyles) {
+      const headerType = templateStyles.headerStyle || 'centered';
+      
+      switch (headerType) {
+        case 'centered-with-accent':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <div 
+                style={{ 
+                  backgroundColor: templateStyles.accentColor || '#2563eb',
+                  height: templateStyles.accentHeight || '5px',
+                  width: '100%',
+                  marginBottom: '15px'
+                }}
+              ></div>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#2563eb',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered-with-gradient':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <div 
+                style={{ 
+                  background: `linear-gradient(to right, ${templateStyles.gradientColors?.[0] || '#8b5cf6'}, ${templateStyles.gradientColors?.[1] || '#ec4899'})`,
+                  height: templateStyles.accentHeight || '5px',
+                  width: '100%',
+                  marginBottom: '15px'
+                }}
+              ></div>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#8b5cf6',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered-minimal':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.secondaryColor || '#666666',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered':
+        default:
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#2563eb',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+                  {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                </div>
+              )}
+            </div>
+          );
+      }
+    }
+    
+    // Default header if no template styles
+    return (
+      <div style={headerStyle as React.CSSProperties}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 5px 0' }}>{name}</h1>
+        <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: '0 0 10px 0' }}>{title}</h2>
+        <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+          <a href={`mailto:${email}`} style={linkStyle}>{email}</a>
+          {phone && <span>• {phone}</span>}
+          {location && <span>• {location}</span>}
+        </div>
+        {links && (
+          <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '5px' }}>
+            {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
+            {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
+            {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -362,6 +680,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         margin: '0 auto',
         position: 'relative',
         overflow: 'hidden',
+        fontFamily: templateStyles?.fontFamily || 'Arial, sans-serif',
+        color: templateStyles?.primaryColor || '#333333',
       }}
     >
       <style dangerouslySetInnerHTML={{
@@ -388,30 +708,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       }} />
       
       {/* Personal Info */}
-      <div className="mb-6 border-b pb-4">
-        <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
-        <p className="text-lg text-muted-foreground">{resumeContent.personalInfo.title}</p>
-        
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
-          {resumeContent.personalInfo.email && (
-            <p>{resumeContent.personalInfo.email}</p>
-          )}
-          {resumeContent.personalInfo.location && (
-            <p>{resumeContent.personalInfo.location}</p>
-          )}
-        </div>
-        
-        <div className="flex gap-2 mt-2">
-          {resumeContent.personalInfo.links?.linkedin && (
-            <p className="text-sm">LinkedIn: {resumeContent.personalInfo.links.linkedin}</p>
-          )}
-          {resumeContent.personalInfo.links?.portfolio && (
-            <p className="text-sm">Portfolio: {resumeContent.personalInfo.links.portfolio}</p>
-          )}
-          {resumeContent.personalInfo.links?.additionalLinks?.map((link, index) => (
-            <p key={index} className="text-sm">{link.label}: {link.url}</p>
-          ))}
-        </div>
+      <div className="mb-6">
+        {renderHeader()}
       </div>
       
       {/* Draggable Sections */}
@@ -458,9 +756,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         data-is-dragging={snapshot.isDragging ? "true" : "false"}
                       >
                         <div className="flex items-center mb-2">
-                          <h3 className="text-lg font-semibold">
-                            {renderSectionTitle(type as string)}
-                          </h3>
+                          {renderSectionTitle(type as string)}
                           <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                             <GripVertical size={14} className="text-muted-foreground" />
                           </div>

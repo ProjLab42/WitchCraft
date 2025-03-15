@@ -37,8 +37,9 @@ const About = () => {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button asChild>
-                    <Link to="/create">
-                      Create Your Resume <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link to="/templates">
+                      <span>Get Started</span>
+                      <ArrowRight className="h-5 w-5" />
                     </Link>
                   </Button>
                   <Button variant="outline" asChild>

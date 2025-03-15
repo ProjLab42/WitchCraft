@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Link, useSearchParams } from "react-router-dom";
+import { templateService } from "@/services/template.service";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -67,9 +68,19 @@ function EditorContent() {
 
   // Set the template from URL parameter when component mounts
   useEffect(() => {
-    if (templateParam && templateParam !== selectedTemplate) {
-      setSelectedTemplate(templateParam);
-      toast.success(`Template "${templateParam}" applied`);
+    if (templateParam) {
+      // Get the template from the service
+      const template = templateService.getTemplateById(templateParam);
+      
+      if (template && templateParam !== selectedTemplate) {
+        console.log(`Applying template: ${template.name} with styles:`, template.styles);
+        
+        // Set the selected template in context
+        setSelectedTemplate(templateParam);
+        
+        // Apply template styles
+        toast.success(`Template "${template.name}" applied`);
+      }
     }
   }, [templateParam, selectedTemplate, setSelectedTemplate]);
 
@@ -850,6 +861,7 @@ function EditorContent() {
                       <h4 className="font-medium">{userData.name}</h4>
                       <p className="text-sm text-muted-foreground">{userData.title}</p>
                       <p className="text-xs text-muted-foreground">{userData.email}</p>
+                      <p className="text-xs text-muted-foreground">{userData.phone}</p>
                       <p className="text-xs text-muted-foreground">{userData.location}</p>
                     </div>
                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
