@@ -45,8 +45,11 @@ const conditionalAuth = (req, res, next) => {
   // Check if we're in development mode and auth is disabled for testing
   if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
     console.log('Auth middleware bypassed for development');
-    // Add a mock user for testing
-    req.user = { id: 'test-user-id', email: 'test@example.com' };
+    // Add a mock user for testing with a real user ID from the database
+    const mockUserId = '67cc399c00509fe14d181f23';
+    req.userId = mockUserId;
+    req.user = { id: mockUserId, email: 'test@example.com' };
+    console.log('Upload routes using mock user:', { userId: req.userId, user: req.user });
     return next();
   }
   

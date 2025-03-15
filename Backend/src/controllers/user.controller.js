@@ -465,7 +465,21 @@ exports.saveResumeData = async (req, res) => {
     if (parsedData.personalInfo && parsedData.personalInfo.selected) {
       console.log('Processing personal info');
       user.name = parsedData.personalInfo.name || user.name;
-      user.email = parsedData.personalInfo.email || user.email;
+      
+      // Handle email update carefully to avoid duplicate key errors
+      if (parsedData.personalInfo.email && parsedData.personalInfo.email !== user.email) {
+        console.log(`Email change requested from ${user.email} to ${parsedData.personalInfo.email}`);
+        
+        // Check if the new email already exists
+        const existingUser = await User.findOne({ email: parsedData.personalInfo.email });
+        if (existingUser) {
+          console.log('Email already exists, keeping current email');
+        } else {
+          console.log('Email does not exist, updating email');
+          user.email = parsedData.personalInfo.email;
+        }
+      }
+      
       user.phone = parsedData.personalInfo.phone || user.phone;
       user.title = parsedData.personalInfo.title || user.title;
       user.location = parsedData.personalInfo.location || user.location;

@@ -2,6 +2,7 @@ import { ParsedResume } from "@/types/resume-parser";
 import { mockUser } from "@/data/mockUser";
 import { toast } from "sonner";
 import { cvAPI } from "./cv-api.service";
+import axios from "axios";
 
 /**
  * Parse a resume file
@@ -52,10 +53,44 @@ export const parseResumeFile = async (file: File): Promise<ParsedResume> => {
  */
 export const saveParsedResumeToProfile = async (parsedData: Partial<ParsedResume>): Promise<void> => {
   console.log('Starting to save parsed resume data to profile...');
+  
   try {
+    // Make a copy of the data to avoid modifying the original
+    const dataToSend = JSON.parse(JSON.stringify(parsedData));
+    
+    // Get the current user's email from cookies or localStorage if available
+    // This is to avoid duplicate key errors in the database
+    const authToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('authToken='))
+      ?.split('=')[1];
+    
+    if (authToken) {
+      try {
+        // Decode the JWT token to get the user's email
+        const base64Url = authToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const payload = JSON.parse(jsonPayload);
+        if (payload.email && dataToSend.personalInfo) {
+          console.log('Using email from token:', payload.email);
+          dataToSend.personalInfo.email = payload.email;
+        }
+      } catch (e) {
+        console.error('Error decoding token:', e);
+      }
+    }
+    
+    console.log('Data being sent:', JSON.stringify(dataToSend, null, 2));
+    
     // Use the API to save the data
-    await cvAPI.saveResumeData(parsedData);
+    console.log('Calling API endpoint to save resume data...');
+    const response = await cvAPI.saveResumeData(dataToSend);
     console.log('Resume data saved successfully via API');
+    console.log('API response:', response);
     toast.success('Resume data saved to your profile!');
   } catch (error) {
     console.error('Error saving parsed resume with API:', error);
@@ -65,6 +100,15 @@ export const saveParsedResumeToProfile = async (parsedData: Partial<ParsedResume
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+    }
+    
+    if (axios.isAxiosError(error)) {
+      console.error('Axios error details:');
+      console.error('- Status:', error.response?.status);
+      console.error('- Status text:', error.response?.statusText);
+      console.error('- Data:', error.response?.data);
+      console.error('- Headers:', error.response?.headers);
+      console.error('- Config:', error.config);
     }
     
     // Show error toast

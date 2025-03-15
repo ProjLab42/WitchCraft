@@ -27,8 +27,16 @@ const uploadRoutes = require('./routes/upload.routes');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: '*', // Allow all origins during development
+const corsOptions = {
+  origin: function(origin, callback) {
+    // Allow requests from any localhost port
+    if (!origin || origin.match(/^https?:\/\/localhost:[0-9]+$/) || origin.match(/^https?:\/\/127\.0\.0\.1:[0-9]+$/)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked request from:', origin);
+      callback(null, false);
+    }
+  },
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -36,7 +44,7 @@ app.use(cors({
 
 console.log('CORS configured with options:', corsOptions);
 
-// Middleware
+// Apply middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

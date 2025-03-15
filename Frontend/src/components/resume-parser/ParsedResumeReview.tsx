@@ -14,6 +14,8 @@ import { ParsedSkillsSection } from './sections/ParsedSkillsSection';
 import { ParsedProjectsSection } from './sections/ParsedProjectsSection';
 import { ParsedCertificationsSection } from './sections/ParsedCertificationsSection';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import axios from 'axios';
 
 interface ParsedResumeReviewProps {
   onComplete: () => void;
@@ -40,9 +42,29 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
       const success = await saveSelectedItems();
       if (success) {
         setShowCompletionOptions(true);
+        toast.success('Resume data saved successfully!');
       }
     } catch (error) {
       console.error('Error saving items:', error);
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Failed to save resume data. Please try again.';
+      
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          errorMessage = 'You need to be logged in to save resume data.';
+        } else if (error.response?.status === 500) {
+          if (error.response.data?.error?.includes('duplicate key error')) {
+            errorMessage = 'Email already exists. Please use a different email.';
+          } else {
+            errorMessage = error.response.data?.message || 'Server error. Please try again later.';
+          }
+        } else if (!error.response) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection.';
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

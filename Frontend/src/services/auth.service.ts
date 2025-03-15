@@ -99,10 +99,22 @@ const AuthService = {
    */
   getProfile: async (): Promise<any> => {
     try {
-      const response = await api.get('/profile');
+      console.log('Fetching user profile...');
+      const response = await api.get('/user/profile');
+      console.log('Profile fetched successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('Get profile error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error('API Error details:', {
+          status: error.response?.status,
+          message: error.response?.data?.message || 'Unknown error',
+          data: error.response?.data,
+          url: error.config?.url
+        });
+      }
+      
       throw error;
     }
   },

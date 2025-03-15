@@ -146,17 +146,40 @@ export const cvAPI = {
   saveResumeData: async (parsedData: Partial<ParsedResume>): Promise<void> => {
     try {
       console.log('Saving parsed resume data to profile...');
+      console.log('API URL:', api.defaults.baseURL);
+      console.log('Endpoint: /user/profile/resume-data');
+      console.log('Data being sent:', JSON.stringify(parsedData, null, 2));
+      
+      // Get the auth token from cookies for logging
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('authToken='))
+        ?.split('=')[1];
+      
+      console.log('Auth token present:', !!token);
       
       // Call the API to save the data
       const response = await api.post('/user/profile/resume-data', parsedData);
       
       console.log('Resume data saved successfully:', response.data);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       toast.success('Resume data saved to your profile!');
       return response.data;
     } catch (error) {
       console.error('Error saving parsed resume to profile:', error);
       
       if (axios.isAxiosError(error)) {
+        console.error('Axios error details:');
+        console.error('- Status:', error.response?.status);
+        console.error('- Status text:', error.response?.statusText);
+        console.error('- Data:', error.response?.data);
+        console.error('- Headers:', error.response?.headers);
+        console.error('- Request URL:', error.config?.url);
+        console.error('- Request method:', error.config?.method);
+        console.error('- Request headers:', error.config?.headers);
+        
         const errorMessage = error.response?.data?.message || 'Failed to save resume data';
         toast.error(errorMessage);
       } else {
