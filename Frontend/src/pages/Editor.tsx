@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Link, useSearchParams } from "react-router-dom";
-import { templateService } from "@/services/template.service";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -129,19 +128,9 @@ function EditorContent() {
 
   // Set the template from URL parameter when component mounts
   useEffect(() => {
-    if (templateParam) {
-      // Get the template from the service
-      const template = templateService.getTemplateById(templateParam);
-      
-      if (template && templateParam !== selectedTemplate) {
-        console.log(`Applying template: ${template.name} with styles:`, template.styles);
-        
-        // Set the selected template in context
-        setSelectedTemplate(templateParam);
-        
-        // Apply template styles
-        toast.success(`Template "${template.name}" applied`);
-      }
+    if (templateParam && templateParam !== selectedTemplate) {
+      setSelectedTemplate(templateParam);
+      toast.success(`Template "${templateParam}" applied`);
     }
   }, [templateParam, selectedTemplate, setSelectedTemplate]);
 
@@ -895,7 +884,7 @@ function EditorContent() {
               Export
             </Button>
             
-            <Link to="/create">
+            <Link to="/templates">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Templates
@@ -904,220 +893,199 @@ function EditorContent() {
           </div>
         </div>
         
-        {/* Show loading state */}
-        {templateLoading ? (
-          <div className="flex flex-col items-center justify-center h-[70vh]">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
-            <p className="text-lg text-muted-foreground">Loading template...</p>
-          </div>
-        ) : templateError && !template ? (
-          <div className="flex flex-col items-center justify-center h-[70vh] text-center">
-            <div className="bg-destructive/10 p-6 rounded-lg border border-destructive/20 max-w-md">
-              <h3 className="text-xl font-medium text-destructive mb-2">Error Loading Template</h3>
-              <p className="text-muted-foreground mb-4">{templateError}</p>
-              <Link to="/create">
-                <Button>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Return to Templates
-                </Button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-[350px_1fr] gap-6">
-            {/* Left sidebar */}
-            <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
-              {/* Personal Info Section */}
-              <DraggableSection 
-                title="Personal Information" 
-                isOpen={openSections.personalInfo}
-                toggleOpen={() => toggleSection('personalInfo')}
-              >
-                {isEditingPersonalInfo ? (
-                  <PersonalInfoEditor
-                    personalInfo={resumeContent.personalInfo}
-                    editedPersonalInfo={editedPersonalInfo}
-                    onSave={handleSavePersonalInfo}
-                    onCancel={handleCancelPersonalInfo}
-                    onChange={handlePersonalInfoChange}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium">{userData.name}</h4>
-                        <p className="text-sm text-muted-foreground">{userData.title}</p>
-                        <p className="text-xs text-muted-foreground">{userData.email}</p>
-                        <p className="text-xs text-muted-foreground">{userData.location}</p>
-                      </div>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
-                        <Edit size={14} />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </DraggableSection>
-              
-              {/* Experience Section */}
-              <DraggableSection 
-                title="Experience" 
-                isOpen={openSections.experience}
-                toggleOpen={() => toggleSection('experience')}
-              >
-                <div className="space-y-4">
-                  {userData.sections.experience && userData.sections.experience.map(item => (
-                    <DraggableItem 
-                      key={item.id} 
-                      item={item} 
-                      type="experience" 
-                      onDrop={handleDrop}
-                      userData={userData}
-                      setUserData={setUserData}
-                      resumeContent={resumeContent}
-                      onDelete={(id) => deleteItemFromPanel('experience', id)}
-                    />
-                  ))}
-                  
-                  <Button variant="outline" size="sm" className="w-full" onClick={addExperience}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Experience
-                  </Button>
-                </div>
-              </DraggableSection>
-              
-              {/* Education Section */}
-              <DraggableSection 
-                title="Education" 
-                isOpen={openSections.education}
-                toggleOpen={() => toggleSection('education')}
-              >
-                <div className="space-y-4">
-                  {userData.sections.education && userData.sections.education.map(item => (
-                    <DraggableItem 
-                      key={item.id} 
-                      item={item} 
-                      type="education" 
-                      onDrop={handleDrop}
-                      userData={userData}
-                      setUserData={setUserData}
-                      resumeContent={resumeContent}
-                      onDelete={(id) => deleteItemFromPanel('education', id)}
-                    />
-                  ))}
-                  
-                  <Button variant="outline" size="sm" className="w-full" onClick={addEducation}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Education
-                  </Button>
-                </div>
-              </DraggableSection>
-              
-              {/* Skills Section */}
-              <DraggableSection 
-                title="Skills" 
-                isOpen={openSections.skills}
-                toggleOpen={() => toggleSection('skills')}
-              >
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    {userData.skills.map(skill => {
-                      const isSelected = resumeContent.selectedSkills.some(s => s.id === skill.id);
-                      return (
-                        <div 
-                          key={skill.id} 
-                          className={`px-3 py-1 rounded-full text-sm cursor-pointer flex items-center gap-1 ${
-                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                          }`}
-                          onClick={() => toggleSkill(skill)}
-                        >
-                          {skill.name}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setIsAddSkillDialogOpen(true)}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Skill
-                  </Button>
-                </div>
-              </DraggableSection>
-              
-              {/* Projects Section */}
-              <DraggableSection 
-                title="Projects" 
-                isOpen={openSections.projects}
-                toggleOpen={() => toggleSection('projects')}
-              >
-                <div className="space-y-4">
-                  {userData.sections.projects && userData.sections.projects.map(item => (
-                    <DraggableItem 
-                      key={item.id} 
-                      item={item} 
-                      type="projects" 
-                      onDrop={handleDrop}
-                      userData={userData}
-                      setUserData={setUserData}
-                      resumeContent={resumeContent}
-                      onDelete={(id) => deleteItemFromPanel('projects', id)}
-                    />
-                  ))}
-                  
-                  <Button variant="outline" size="sm" className="w-full" onClick={addProject}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Project
-                  </Button>
-                </div>
-              </DraggableSection>
-              
-              {/* Certifications Section */}
-              <DraggableSection 
-                title="Certifications" 
-                isOpen={openSections.certifications}
-                toggleOpen={() => toggleSection('certifications')}
-              >
-                <div className="space-y-4">
-                  {userData.sections.certifications && userData.sections.certifications.map(item => (
-                    <DraggableItem 
-                      key={item.id} 
-                      item={item} 
-                      type="certifications" 
-                      onDrop={handleDrop}
-                      userData={userData}
-                      setUserData={setUserData}
-                      resumeContent={resumeContent}
-                      onDelete={(id) => deleteItemFromPanel('certifications', id)}
-                    />
-                  ))}
-                  
-                  <Button variant="outline" size="sm" className="w-full" onClick={addCertification}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Certification
-                  </Button>
-                </div>
-              </DraggableSection>
-            </div>
-            
-            {/* Right side - Resume preview */}
-            <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
-              <div className="flex justify-end mb-4">
-                <ZoomControls
-                  zoomLevel={zoomLevel}
-                  onZoomIn={handleZoomIn}
-                  onZoomOut={handleZoomOut}
-                  onResetZoom={handleResetZoom}
+        <div className="grid lg:grid-cols-[350px_1fr] gap-6">
+          {/* Left sidebar */}
+          <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
+            {/* Personal Info Section */}
+            <DraggableSection 
+              title="Personal Information" 
+              isOpen={openSections.personalInfo}
+              toggleOpen={() => toggleSection('personalInfo')}
+            >
+              {isEditingPersonalInfo ? (
+                <PersonalInfoEditor
+                  personalInfo={resumeContent.personalInfo}
+                  editedPersonalInfo={editedPersonalInfo}
+                  onSave={handleSavePersonalInfo}
+                  onCancel={handleCancelPersonalInfo}
+                  onChange={handlePersonalInfoChange}
                 />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">{userData.name}</h4>
+                      <p className="text-sm text-muted-foreground">{userData.title}</p>
+                      <p className="text-xs text-muted-foreground">{userData.email}</p>
+                      <p className="text-xs text-muted-foreground">{userData.location}</p>
+                    </div>
+                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
+                      <Edit size={14} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DraggableSection>
+            
+            {/* Experience Section */}
+            <DraggableSection 
+              title="Experience" 
+              isOpen={openSections.experience}
+              toggleOpen={() => toggleSection('experience')}
+            >
+              <div className="space-y-4">
+                {userData.sections.experience && userData.sections.experience.map(item => (
+                  <DraggableItem 
+                    key={item.id} 
+                    item={item} 
+                    type="experience" 
+                    onDrop={handleDrop}
+                    userData={userData}
+                    setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('experience', id)}
+                  />
+                ))}
+                
+                <Button variant="outline" size="sm" className="w-full" onClick={addExperience}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Experience
+                </Button>
               </div>
-              
-              <HybridResumeEditor
-                onDrop={handleDrop}
-                resumeContent={resumeContent}
-                removeSection={removeSection}
-                reorderSections={reorderSections}
-                reorderSectionItems={reorderSectionItems}
-                setResumeContent={setResumeContent}
-                resumeRef={resumeRef}
+            </DraggableSection>
+            
+            {/* Education Section */}
+            <DraggableSection 
+              title="Education" 
+              isOpen={openSections.education}
+              toggleOpen={() => toggleSection('education')}
+            >
+              <div className="space-y-4">
+                {userData.sections.education && userData.sections.education.map(item => (
+                  <DraggableItem 
+                    key={item.id} 
+                    item={item} 
+                    type="education" 
+                    onDrop={handleDrop}
+                    userData={userData}
+                    setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('education', id)}
+                  />
+                ))}
+                
+                <Button variant="outline" size="sm" className="w-full" onClick={addEducation}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Education
+                </Button>
+              </div>
+            </DraggableSection>
+            
+            {/* Skills Section */}
+            <DraggableSection 
+              title="Skills" 
+              isOpen={openSections.skills}
+              toggleOpen={() => toggleSection('skills')}
+            >
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {userData.skills.map(skill => {
+                    const isSelected = resumeContent.selectedSkills.some(s => s.id === skill.id);
+                    return (
+                      <div 
+                        key={skill.id} 
+                        className={`px-3 py-1 rounded-full text-sm cursor-pointer flex items-center gap-1 ${
+                          isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                        }`}
+                        onClick={() => toggleSkill(skill)}
+                      >
+                        {skill.name}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <Button variant="outline" size="sm" className="w-full" onClick={() => setIsAddSkillDialogOpen(true)}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Skill
+                </Button>
+              </div>
+            </DraggableSection>
+            
+            {/* Projects Section */}
+            <DraggableSection 
+              title="Projects" 
+              isOpen={openSections.projects}
+              toggleOpen={() => toggleSection('projects')}
+            >
+              <div className="space-y-4">
+                {userData.sections.projects && userData.sections.projects.map(item => (
+                  <DraggableItem 
+                    key={item.id} 
+                    item={item} 
+                    type="projects" 
+                    onDrop={handleDrop}
+                    userData={userData}
+                    setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('projects', id)}
+                  />
+                ))}
+                
+                <Button variant="outline" size="sm" className="w-full" onClick={addProject}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Project
+                </Button>
+              </div>
+            </DraggableSection>
+            
+            {/* Certifications Section */}
+            <DraggableSection 
+              title="Certifications" 
+              isOpen={openSections.certifications}
+              toggleOpen={() => toggleSection('certifications')}
+            >
+              <div className="space-y-4">
+                {userData.sections.certifications && userData.sections.certifications.map(item => (
+                  <DraggableItem 
+                    key={item.id} 
+                    item={item} 
+                    type="certifications" 
+                    onDrop={handleDrop}
+                    userData={userData}
+                    setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('certifications', id)}
+                  />
+                ))}
+                
+                <Button variant="outline" size="sm" className="w-full" onClick={addCertification}>
+                  <Plus className="mr-1 h-4 w-4" /> Add Certification
+                </Button>
+              </div>
+            </DraggableSection>
+          </div>
+          
+          {/* Right side - Resume preview */}
+          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
+            <div className="flex justify-end mb-4">
+              <ZoomControls
                 zoomLevel={zoomLevel}
-                selectedTemplate={template}
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onResetZoom={handleResetZoom}
               />
             </div>
+            
+            <HybridResumeEditor
+              onDrop={handleDrop}
+              resumeContent={resumeContent}
+              removeSection={removeSection}
+              reorderSections={reorderSections}
+              reorderSectionItems={reorderSectionItems}
+              setResumeContent={setResumeContent}
+              resumeRef={resumeRef}
+              zoomLevel={zoomLevel}
+              selectedTemplate={template}
+            />
           </div>
-        )}
+        </div>
       </main>
       
       <Footer />
@@ -1138,6 +1106,16 @@ function EditorContent() {
         onExportPDF={handleExportPDF}
         onExportDOCX={handleExportDOCX}
       />
+      
+      {/* Add a loading indicator for template loading */}
+      {templateLoading && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p className="text-sm text-muted-foreground">Loading template...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
