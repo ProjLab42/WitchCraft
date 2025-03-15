@@ -114,10 +114,11 @@ const AuthService = {
     try {
       console.log('Testing connection to backend...');
       // Option 1: Use the api instance (preferred)
+      // The api instance already has /api in the baseURL, so we just need /health
       await api.get('/health');
       
       // Option 2: Use axios directly (make sure you imported axios above)
-      // await axios.get('http://localhost:5000/health', { timeout: 5000 });
+      // await axios.get('http://localhost:5001/api/health', { timeout: 5000 });
       
       console.log('Backend connection successful.');
       return true;

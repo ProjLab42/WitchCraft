@@ -26,10 +26,10 @@ const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 
-// Configure CORS with more detailed options
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://localhost:5173'],
-  credentials: true,
+// Middleware
+app.use(cors({
+  origin: '*', // Allow all origins during development
+  credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -48,9 +48,19 @@ app.use((req, res, next) => {
 });
 
 // Add a health endpoint for testing
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   console.log('Health check endpoint hit');
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Add an /api/health endpoint as well (for frontend connection testing)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Add an /api/health endpoint as well (for frontend connection testing)
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
 // Static folder for uploads

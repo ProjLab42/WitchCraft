@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { templateService } from '@/services/template.service';
 import { useSearchParams } from 'react-router-dom';
+import { profileAPI } from '@/services/api.service';
+import { toast } from "@/components/ui/use-toast";
 
 // Mock user data - move this to a separate file later if needed
 const mockUser = {
@@ -194,6 +196,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const templateParam = searchParams.get('template');
 
   const [userData, setUserData] = useState<UserData>(mockUser);
+  const [loading, setLoading] = useState(true);
   
   const [resumeContent, setResumeContent] = useState<ResumeContent>({
     personalInfo: {
@@ -207,6 +210,117 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     selectedSkills: [],
     sectionOrder: []
   });
+  
+  // Fetch user data from backend with fallback to mock data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if auth token exists
+        const authToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('authToken='));
+        
+        if (!authToken) {
+          console.log('No auth token found, using mock data');
+          setUserData(mockUser);
+          return;
+        }
+        
+        // Fetch user profile from backend
+        const fetchedUserData = await profileAPI.getProfile();
+        console.log('Fetched user data:', fetchedUserData);
+        
+        // Merge with mock data to ensure all fields have values
+        const completeUserData = mergeWithMockData(fetchedUserData);
+        
+        setUserData(completeUserData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast({
+          title: "Using sample data",
+          description: "Could not load your profile data. Using sample data instead.",
+          variant: "default"
+        });
+        // Fall back to mock data on error
+        setUserData(mockUser);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
+  
+  // Helper function to merge user data with mock data, using mock data as fallback
+  const mergeWithMockData = (fetchedData: any): UserData => {
+    // If fetchedData is empty or null, just return mock data
+    if (!fetchedData) return mockUser;
+    
+    // Create a deep merge of user data with mock data as fallback
+    const mergedData = {
+      // Basic user info
+      name: fetchedData.name || mockUser.name,
+      email: fetchedData.email || mockUser.email,
+      title: fetchedData.title || mockUser.title,
+      location: fetchedData.location || mockUser.location,
+      bio: fetchedData.bio || mockUser.bio,
+      avatarUrl: fetchedData.avatarUrl || mockUser.avatarUrl,
+      
+      // Links
+      links: {
+        linkedin: fetchedData.links?.linkedin || mockUser.links.linkedin,
+        portfolio: fetchedData.links?.portfolio || mockUser.links.portfolio,
+        additionalLinks: fetchedData.links?.additionalLinks || mockUser.links.additionalLinks
+      },
+      
+      // Sections
+      sections: {
+        // Experience section
+        experience: fetchedData.sections?.experience || mockUser.sections.experience,
+        
+        // Education section
+        education: fetchedData.sections?.education || mockUser.sections.education,
+        
+        // Projects section
+        projects: fetchedData.sections?.projects || mockUser.sections.projects,
+        
+        // Certifications section
+        certifications: fetchedData.sections?.certifications || mockUser.sections.certifications,
+      },
+      
+      // Skills
+      skills: fetchedData.skills || mockUser.skills,
+    };
+    
+    return mergedData as UserData;
+  };
+  
+  // Update resumeContent when userData changes
+  useEffect(() => {
+    if (!loading) {
+      setResumeContent(prevContent => ({
+        ...prevContent,
+        personalInfo: {
+          name: userData.name,
+          title: userData.title,
+          email: userData.email,
+          location: userData.location,
+          links: userData.links
+        }
+      }));
+      
+      // Update edited personal info as well
+      setEditedPersonalInfo({
+        name: userData.name,
+        title: userData.title,
+        email: userData.email,
+        location: userData.location,
+        links: userData.links
+      });
+    }
+  }, [userData, loading]);
   
   const [openSections, setOpenSections] = useState({
     personalInfo: true,
