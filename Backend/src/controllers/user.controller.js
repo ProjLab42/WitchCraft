@@ -104,6 +104,7 @@ exports.updateUserProfile = async (req, res) => {
     const { 
       name, 
       email, 
+      phone,
       title, 
       bio, 
       location, 
@@ -129,6 +130,7 @@ exports.updateUserProfile = async (req, res) => {
     // Update basic profile fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (phone !== undefined) user.phone = phone;
     if (title) user.title = title;
     if (bio) user.bio = bio;
     if (location) user.location = location;
@@ -342,7 +344,7 @@ exports.getUserById = async (req, res) => {
 // Update user (admin only)
 exports.updateUser = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, phone, role } = req.body;
     
     // Check if email already exists for another user
     if (email) {
@@ -360,6 +362,7 @@ exports.updateUser = async (req, res) => {
     // Update fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (phone !== undefined) user.phone = phone;
     if (role && ['user', 'admin'].includes(role)) user.role = role;
 
     await user.save();

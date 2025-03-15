@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ProfileSection } from "./ProfileSection";
 import { AddProjectDialog } from "../dialogs/AddProjectDialog";
+import { EditProjectDialog } from "../dialogs/EditProjectDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink } from "lucide-react";
 
@@ -20,7 +22,7 @@ interface ProjectsSectionProps {
   sectionName: string;
   items: Project[];
   onAddItem: (data: any) => void;
-  onEditItem: (id: string) => void;
+  onEditItem: (id: string, updatedItem: Project) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -31,6 +33,21 @@ export const ProjectsSection = ({
   onEditItem,
   onDeleteItem
 }: ProjectsSectionProps) => {
+  const [editingItem, setEditingItem] = useState<Project | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleEditClick = (item: Project) => {
+    setEditingItem(item);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingItem(undefined);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -59,7 +76,7 @@ export const ProjectsSection = ({
                   )}
                 </div>
               }
-              onEdit={() => onEditItem(item.id)}
+              onEdit={() => handleEditClick(item)}
               onDelete={() => onDeleteItem(item.id)}
             >
               <div className="space-y-2">
@@ -84,6 +101,19 @@ export const ProjectsSection = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Edit Dialog */}
+      {editingItem && (
+        <EditProjectDialog
+          id={`edit-projects-${editingItem.id}`}
+          project={editingItem}
+          open={dialogOpen}
+          onOpenChange={handleDialogClose}
+          onSave={(updatedProject) => {
+            onEditItem(updatedProject.id, updatedProject);
+          }}
+        />
+      )}
     </div>
   );
 }; 

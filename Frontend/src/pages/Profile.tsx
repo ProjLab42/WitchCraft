@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { TabsContent } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { mockUser } from "@/data/mockUser";
 import {
   ProfileHeader,
@@ -22,6 +22,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(mockUser);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,6 +112,7 @@ const Profile = () => {
         name: profileForm.name,
         title: profileForm.title,
         email: profileForm.email,
+        phone: profileForm.phone,
         location: profileForm.location,
         bio: profileForm.bio,
         links: {
@@ -154,6 +156,7 @@ const Profile = () => {
     name: user.name,
     title: user.title,
     email: user.email,
+    phone: user.phone || "",
     location: user.location,
     bio: user.bio,
     avatarUrl: user.avatarUrl,
@@ -168,6 +171,7 @@ const Profile = () => {
       name: user.name,
       title: user.title,
       email: user.email,
+      phone: user.phone || "",
       location: user.location,
       bio: user.bio,
       avatarUrl: user.avatarUrl,
@@ -661,6 +665,21 @@ const Profile = () => {
     handleAddItem(`custom-${sectionKey}`, customItemWithId);
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Delete the auth cookie
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Show success toast
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    
+    // Redirect to the main page
+    navigate("/");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -695,10 +714,18 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link to="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
         </Link>
+        
+        <Button 
+          variant="destructive" 
+          onClick={handleLogout}
+          className="flex items-center"
+        >
+          <LogOut className="h-4 w-4 mr-2" /> Logout
+        </Button>
       </div>
       
       <ProfileHeader 
@@ -737,7 +764,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.experience || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -746,7 +773,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.education || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -763,7 +790,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.projects || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -794,46 +821,7 @@ const Profile = () => {
         ))}
       </ProfileTabs>
       
-      {/* Edit Dialogs */}
-      {user.sections?.experience?.map(experience => (
-        <EditExperienceDialog 
-          key={experience.id}
-          id={`edit-experience-${experience.id}`}
-          experience={experience}
-          open={editingItemId === `edit-experience-${experience.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedExperience) => handleUpdateItem("experience", updatedExperience)}
-        />
-      ))}
-      
-      {user.sections?.education?.map(education => (
-        <EditEducationDialog 
-          key={education.id}
-          id={`edit-education-${education.id}`}
-          education={education}
-          open={editingItemId === `edit-education-${education.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedEducation) => handleUpdateItem("education", updatedEducation)}
-        />
-      ))}
-      
-      {user.sections?.projects?.map(project => (
-        <EditProjectDialog 
-          key={project.id}
-          id={`edit-projects-${project.id}`}
-          project={project}
-          open={editingItemId === `edit-projects-${project.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedProject) => handleUpdateItem("projects", updatedProject)}
-        />
-      ))}
-      
+      {/* Edit Dialogs - Only keep certifications since we haven't updated that component yet */}
       {user.sections?.certifications?.map(certification => (
         <EditCertificationDialog 
           key={certification.id}

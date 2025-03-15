@@ -20,6 +20,7 @@ router.get('/h', (req, res) => {
 router.put('/profile', [
   check('name', 'Name is required').optional().notEmpty(),
   check('email', 'Please include a valid email').optional().isEmail(),
+  check('phone', 'Phone number format is invalid').optional(),
 ], userController.updateUserProfile);
 
 // Change password

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { BulletPointsEditor } from "@/components/profile/BulletPointsEditor";
 
 interface BulletPoint {
   id: string;
@@ -47,11 +48,12 @@ export function EditCertificationDialog({
     bulletPoints: []
   });
 
-  const [newBulletPoint, setNewBulletPoint] = useState("");
-
   useEffect(() => {
     if (certification) {
-      setFormData(certification);
+      setFormData({
+        ...certification,
+        bulletPoints: certification.bulletPoints || []
+      });
     } else {
       // Create a new certification with default values
       setFormData({
@@ -78,34 +80,12 @@ export function EditCertificationDialog({
         credentialId: "",
         bulletPoints: []
       });
-      setNewBulletPoint("");
     }
   }, [open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const addBulletPoint = () => {
-    if (!newBulletPoint.trim()) return;
-    
-    setFormData(prev => ({
-      ...prev,
-      bulletPoints: [
-        ...(prev.bulletPoints || []),
-        { id: `bp-${Date.now()}`, text: newBulletPoint.trim() }
-      ]
-    }));
-    
-    setNewBulletPoint("");
-  };
-
-  const removeBulletPoint = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      bulletPoints: prev.bulletPoints?.filter(bp => bp.id !== id) || []
-    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -116,7 +96,7 @@ export function EditCertificationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Certification" : "Edit Certification"}</DialogTitle>
         </DialogHeader>
@@ -183,45 +163,10 @@ export function EditCertificationDialog({
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Bullet Points (optional)</Label>
-              {formData.bulletPoints && formData.bulletPoints.length > 0 && (
-                <ul className="space-y-2 mb-2">
-                  {formData.bulletPoints.map(point => (
-                    <li key={point.id} className="flex items-center gap-2">
-                      <Input 
-                        value={point.text} 
-                        readOnly 
-                        className="flex-grow"
-                      />
-                      <Button 
-                        type="button"
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => removeBulletPoint(point.id)}
-                      >
-                        Remove
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              
-              <div className="flex gap-2">
-                <Input 
-                  value={newBulletPoint}
-                  onChange={(e) => setNewBulletPoint(e.target.value)}
-                  placeholder="Add a new bullet point"
-                  className="flex-grow"
-                />
-                <Button 
-                  type="button"
-                  onClick={addBulletPoint}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
+            <BulletPointsEditor
+              bulletPoints={formData.bulletPoints}
+              onChange={(bulletPoints) => setFormData({...formData, bulletPoints})}
+            />
           </div>
           
           <DialogFooter>

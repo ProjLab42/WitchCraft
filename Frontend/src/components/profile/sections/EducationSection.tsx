@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ProfileSection } from "./ProfileSection";
 import { AddEducationDialog } from "../dialogs/AddEducationDialog";
+import { EditEducationDialog } from "../dialogs/EditEducationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface BulletPoint {
@@ -20,7 +22,7 @@ interface EducationSectionProps {
   sectionName: string;
   items: Education[];
   onAddItem: (data: any) => void;
-  onEditItem: (id: string) => void;
+  onEditItem: (id: string, updatedItem: Education) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -31,6 +33,21 @@ export const EducationSection = ({
   onEditItem,
   onDeleteItem
 }: EducationSectionProps) => {
+  const [editingItem, setEditingItem] = useState<Education | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleEditClick = (item: Education) => {
+    setEditingItem(item);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingItem(undefined);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -45,7 +62,7 @@ export const EducationSection = ({
               key={item.id}
               title={item.degree}
               description={`${item.institution} • ${item.year}`}
-              onEdit={() => onEditItem(item.id)}
+              onEdit={() => handleEditClick(item)}
               onDelete={() => onDeleteItem(item.id)}
             >
               <div className="space-y-2">
@@ -70,6 +87,19 @@ export const EducationSection = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Edit Dialog */}
+      {editingItem && (
+        <EditEducationDialog
+          id={`edit-education-${editingItem.id}`}
+          education={editingItem}
+          open={dialogOpen}
+          onOpenChange={handleDialogClose}
+          onSave={(updatedEducation) => {
+            onEditItem(updatedEducation.id, updatedEducation);
+          }}
+        />
+      )}
     </div>
   );
 }; 
