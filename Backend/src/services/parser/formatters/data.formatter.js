@@ -44,8 +44,13 @@ function formatParsedData(parsedData) {
     degree: edu.degree || '',
     institution: edu.school || '',
     year: formatDateRange(edu.startDate, edu.endDate),
-    description: '',
-    bulletPoints: [],
+    description: edu.description || '',
+    field: edu.field || '',
+    gpa: edu.gpa || '',
+    bulletPoints: edu.bulletPoints ? edu.bulletPoints.map((bullet, index) => ({
+      id: `bullet-${index}`,
+      text: bullet
+    })) : [],
     confidence: generateConfidence(),
     selected: true
   }));

@@ -43,6 +43,8 @@ export interface ParsedEducation {
   institution: string;
   year: string;
   description?: string;
+  field?: string;
+  gpa?: string;
   bulletPoints?: BulletPoint[];
   confidence: number;
   selected: boolean;

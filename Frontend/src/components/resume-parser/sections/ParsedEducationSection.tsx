@@ -122,7 +122,11 @@ export const ParsedEducationSection: React.FC = () => {
                 <AccordionTrigger className="hover:no-underline flex-1 py-0">
                   <div className="flex flex-col items-start text-left">
                     <div className="font-medium">{edu.degree}</div>
-                    <div className="text-sm text-muted-foreground">{edu.institution}, {edu.year}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {edu.institution}, {edu.year}
+                      {edu.field && ` • ${edu.field}`}
+                      {edu.gpa && ` • GPA: ${edu.gpa}`}
+                    </div>
                   </div>
                 </AccordionTrigger>
               </div>
@@ -154,6 +158,24 @@ export const ParsedEducationSection: React.FC = () => {
                           value={editedEducation?.year || ''} 
                           onChange={(e) => handleChange('year', e.target.value)}
                           placeholder="e.g. 2020"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`field-${edu.id}`}>Field of Study</Label>
+                        <Input 
+                          id={`field-${edu.id}`} 
+                          value={editedEducation?.field || ''} 
+                          onChange={(e) => handleChange('field', e.target.value)}
+                          placeholder="e.g. Computer Science"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`gpa-${edu.id}`}>GPA</Label>
+                        <Input 
+                          id={`gpa-${edu.id}`} 
+                          value={editedEducation?.gpa || ''} 
+                          onChange={(e) => handleChange('gpa', e.target.value)}
+                          placeholder="e.g. 3.8/4.0"
                         />
                       </div>
                     </div>
@@ -222,6 +244,20 @@ export const ParsedEducationSection: React.FC = () => {
                       <div>
                         <Label className="text-sm text-muted-foreground">Description</Label>
                         <p>{edu.description}</p>
+                      </div>
+                    )}
+                    
+                    {edu.field && !edu.description?.includes(edu.field) && (
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Field of Study</Label>
+                        <p>{edu.field}</p>
+                      </div>
+                    )}
+                    
+                    {edu.gpa && (
+                      <div>
+                        <Label className="text-sm text-muted-foreground">GPA</Label>
+                        <p>{edu.gpa}</p>
                       </div>
                     )}
                     
