@@ -9,13 +9,36 @@ import { cvAPI } from "./cv-api.service";
  * @returns Parsed resume data
  */
 export const parseResumeFile = async (file: File): Promise<ParsedResume> => {
+  console.log('Starting resume parsing process for file:', file.name);
+  
   try {
+    console.log('Attempting to parse resume with API...');
+    
+    // First, test the connection to the API
+    const isConnected = await cvAPI.testConnection();
+    if (!isConnected) {
+      console.warn('API connection test failed, will fall back to mock data');
+      throw new Error('Could not connect to the resume parsing service');
+    }
+    
+    console.log('API connection test successful, proceeding with parsing');
+    
     // Try to use the API first
     const parsedData = await cvAPI.parseResume(file);
+    console.log('Resume successfully parsed with API');
     return parsedData;
   } catch (error) {
-    console.error('Error parsing resume with API, falling back to mock data:', error);
+    console.error('Error parsing resume with API:', error);
+    
+    // Log detailed error information
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     toast.error('Could not connect to the resume parsing service. Using mock data instead.');
+    console.warn('Falling back to mock data for resume parsing');
     
     // Fall back to mock data
     return generateParsedResumeFromMockUser(file.name);

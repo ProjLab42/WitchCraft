@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 // Create an axios instance with default config
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+console.log('API URL configured as:', API_URL);
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_URL,
@@ -26,9 +28,40 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Log the request for debugging
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      headers: config.headers,
+      data: config.data instanceof FormData ? 'FormData (not shown)' : config.data
+    });
+    
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to log responses
+api.interceptors.response.use(
+  (response) => {
+    console.log(`API Response (${response.status}):`, {
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
+  (error) => {
+    console.error('API Response Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
 );
 
 // CV API calls
@@ -40,8 +73,15 @@ export const cvAPI = {
    */
   parseResume: async (file: File): Promise<ParsedResume> => {
     try {
+      console.log('Starting resume parsing process for file:', {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024).toFixed(2)} KB`
+      });
+      
       // Validate file type
       if (!file.type.includes('pdf') && !file.type.includes('word')) {
+        console.error('Invalid file type:', file.type);
         throw new Error('Invalid file type. Please upload a PDF or DOCX file.');
       }
 
@@ -49,25 +89,49 @@ export const cvAPI = {
       const formData = new FormData();
       formData.append('file', file);
       
+      console.log('Sending resume to API for parsing...');
+      
       // Call the API
       const response = await api.post('/upload/resume', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 60000, // 60 second timeout for large files
       });
       
       // Log the response for debugging
-      console.log('Resume parsing response:', response.data);
+      console.log('Resume parsing response received:', {
+        status: response.status,
+        hasData: !!response.data,
+        hasDataProperty: !!response.data?.data
+      });
+      
+      if (!response.data || !response.data.data) {
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid response format from server');
+      }
       
       return response.data.data;
     } catch (error) {
       console.error('Error parsing resume:', error);
       
       if (axios.isAxiosError(error)) {
+        const statusCode = error.response?.status;
         const errorMessage = error.response?.data?.message || 'Failed to parse resume';
-        toast.error(errorMessage);
+        
+        console.error('Axios error details:', {
+          status: statusCode,
+          message: errorMessage,
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        });
+        
+        toast.error(`${errorMessage} (${statusCode || 'Network Error'})`);
       } else {
-        toast.error(error instanceof Error ? error.message : 'Failed to parse resume. Please try again.');
+        const errorMsg = error instanceof Error ? error.message : 'Failed to parse resume. Please try again.';
+        console.error('Non-Axios error:', errorMsg);
+        toast.error(errorMsg);
       }
       
       throw error;
@@ -81,9 +145,12 @@ export const cvAPI = {
    */
   saveResumeData: async (parsedData: Partial<ParsedResume>): Promise<void> => {
     try {
+      console.log('Saving parsed resume data to profile...');
+      
       // Call the API to save the data
       const response = await api.post('/user/profile/resume-data', parsedData);
       
+      console.log('Resume data saved successfully:', response.data);
       toast.success('Resume data saved to your profile!');
       return response.data;
     } catch (error) {
@@ -106,7 +173,9 @@ export const cvAPI = {
    */
   testConnection: async (): Promise<boolean> => {
     try {
-      await api.get('/health');
+      console.log('Testing connection to API...');
+      const response = await api.get('/health');
+      console.log('Connection test successful:', response.data);
       return true;
     } catch (error) {
       console.error('Error testing connection:', error);
