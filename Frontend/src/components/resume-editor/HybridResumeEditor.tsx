@@ -28,8 +28,9 @@ const getItemStyle = (isDragging, draggableStyle) => ({
   // and add smooth transitions for a better drop experience
   ...(isDragging && {
     transform: draggableStyle.transform,
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 5px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
     zIndex: 9999,
+    background: 'white',
   }),
   
   // Add transition for smooth drop animation
@@ -50,8 +51,9 @@ const getSectionStyle = (isDragging, draggableStyle) => ({
   // and add smooth transitions for a better drop experience
   ...(isDragging && {
     transform: draggableStyle.transform,
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 5px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
     zIndex: 9999,
+    background: 'white',
   }),
   
   // Add transition for smooth drop animation
@@ -191,7 +193,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         type={`section-items-${type}`} 
         direction="vertical"
         // Reduce sensitivity of placeholder movement
-        ignoreContainerClipping={true}
+        ignoreContainerClipping={false}
       >
         {(provided, snapshot) => (
           <div
@@ -202,6 +204,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
               transition: 'background-color 0.2s ease, padding 0.2s ease, margin 0.2s ease',
               minHeight: '10px',
               position: 'relative',
+              overflow: 'hidden',
             }}
           >
             {items.map((item, index) => (
@@ -223,6 +226,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                           provided.draggableProps.style
                         ),
                         zIndex: snapshot.isDragging ? 1000 : 1,
+                        maxWidth: '100%',
                       }}
                       data-is-dragging={snapshot.isDragging ? "true" : "false"}
                     >
@@ -235,13 +239,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               <p className="text-xs text-muted-foreground">{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                                <GripVertical size={14} />
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
+                                <GripVertical size={14} className="text-muted-foreground" />
                               </div>
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
-                                className="h-6 w-6 text-destructive"
+                                className="h-6 w-6 text-destructive rounded-full"
                                 onClick={() => removeSection(item.id)}
                               >
                                 <Trash size={14} />
@@ -261,13 +265,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               <p className="text-xs text-muted-foreground">{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                                <GripVertical size={14} />
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
+                                <GripVertical size={14} className="text-muted-foreground" />
                               </div>
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
-                                className="h-6 w-6 text-destructive"
+                                className="h-6 w-6 text-destructive rounded-full"
                                 onClick={() => removeSection(item.id)}
                               >
                                 <Trash size={14} />
@@ -287,13 +291,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               <p className="text-xs text-muted-foreground">{item.period}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                                <GripVertical size={14} />
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
+                                <GripVertical size={14} className="text-muted-foreground" />
                               </div>
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
-                                className="h-6 w-6 text-destructive"
+                                className="h-6 w-6 text-destructive rounded-full"
                                 onClick={() => removeSection(item.id)}
                               >
                                 <Trash size={14} />
@@ -313,13 +317,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                               <p className="text-xs text-muted-foreground">{item.date}</p>
                             </div>
                             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
-                                <GripVertical size={14} />
+                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
+                                <GripVertical size={14} className="text-muted-foreground" />
                               </div>
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
-                                className="h-6 w-6 text-destructive"
+                                className="h-6 w-6 text-destructive rounded-full"
                                 onClick={() => removeSection(item.id)}
                               >
                                 <Trash size={14} />
@@ -357,7 +361,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         width: '21cm',
         margin: '0 auto',
         position: 'relative',
-        overflow: 'visible',
+        overflow: 'hidden',
       }}
     >
       <style dangerouslySetInnerHTML={{
@@ -370,7 +374,15 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
           /* Reduce sensitivity of placeholder movements */
           .react-beautiful-dnd-placeholder {
             transition: all 0.2s ease !important;
-            opacity: 0.3 !important;
+            opacity: 0.2 !important;
+            background-color: #f9fafb !important;
+            border-radius: 0.375rem !important;
+            margin: 0.75rem 0 !important;
+          }
+          
+          /* Ensure dragging container doesn't spill */
+          .react-beautiful-dnd-dragging {
+            contain: layout !important;
           }
         `
       }} />
@@ -408,6 +420,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
           droppableId="sections" 
           type="section" 
           direction="vertical"
+          ignoreContainerClipping={false}
         >
           {(provided, snapshot) => (
             <div
@@ -418,6 +431,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                 transition: 'background-color 0.3s ease, padding 0.3s ease, margin 0.3s ease',
                 minHeight: '20px',
                 position: 'relative',
+                overflow: 'hidden',
               }}
             >
               {allSections.map(([type, items], index) => (
@@ -439,6 +453,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                             provided.draggableProps.style
                           ),
                           zIndex: snapshot.isDragging ? 1000 : 1,
+                          maxWidth: '100%',
                         }}
                         data-is-dragging={snapshot.isDragging ? "true" : "false"}
                       >
@@ -446,8 +461,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                           <h3 className="text-lg font-semibold">
                             {renderSectionTitle(type as string)}
                           </h3>
-                          <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                            <GripVertical size={14} />
+                          <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <GripVertical size={14} className="text-muted-foreground" />
                           </div>
                         </div>
                         {renderSectionContent(type as string, items)}
