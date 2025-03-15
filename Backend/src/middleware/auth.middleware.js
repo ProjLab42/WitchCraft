@@ -6,7 +6,7 @@ const authMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === 'development' && process.env.DISABLE_AUTH === 'true') {
     console.log('Auth middleware bypassed for development');
     // Add a mock user for testing with a real user ID from the database
-    const mockUserId = '67cc399c00509fe14d181f23';
+    const mockUserId = '67d5622e0d84c6e93939751d';
     req.userId = mockUserId;
     req.user = { id: mockUserId, email: 'test@example.com' };
     console.log('Using mock user:', { userId: req.userId, user: req.user });
