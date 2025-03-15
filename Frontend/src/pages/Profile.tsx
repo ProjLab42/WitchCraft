@@ -740,7 +740,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.experience || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -749,7 +749,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.education || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -766,7 +766,7 @@ const Profile = () => {
                 sectionName={formatSectionName(key)}
                 items={user.sections?.projects || []}
                 onAddItem={(data) => handleAddItem(key, data)}
-                onEditItem={(id) => handleEditItem(key, id)}
+                onEditItem={(id, updatedItem) => handleUpdateItem(key, updatedItem)}
                 onDeleteItem={(id) => handleDeleteItem(key, id)}
               />
             )}
@@ -797,46 +797,7 @@ const Profile = () => {
         ))}
       </ProfileTabs>
       
-      {/* Edit Dialogs */}
-      {user.sections?.experience?.map(experience => (
-        <EditExperienceDialog 
-          key={experience.id}
-          id={`edit-experience-${experience.id}`}
-          experience={experience}
-          open={editingItemId === `edit-experience-${experience.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedExperience) => handleUpdateItem("experience", updatedExperience)}
-        />
-      ))}
-      
-      {user.sections?.education?.map(education => (
-        <EditEducationDialog 
-          key={education.id}
-          id={`edit-education-${education.id}`}
-          education={education}
-          open={editingItemId === `edit-education-${education.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedEducation) => handleUpdateItem("education", updatedEducation)}
-        />
-      ))}
-      
-      {user.sections?.projects?.map(project => (
-        <EditProjectDialog 
-          key={project.id}
-          id={`edit-projects-${project.id}`}
-          project={project}
-          open={editingItemId === `edit-projects-${project.id}`}
-          onOpenChange={(open) => {
-            if (!open) setEditingItemId("");
-          }}
-          onSave={(updatedProject) => handleUpdateItem("projects", updatedProject)}
-        />
-      ))}
-      
+      {/* Edit Dialogs - Only keep certifications since we haven't updated that component yet */}
       {user.sections?.certifications?.map(certification => (
         <EditCertificationDialog 
           key={certification.id}

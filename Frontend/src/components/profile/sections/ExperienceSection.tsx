@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { ProfileSection } from "./ProfileSection";
 import { AddExperienceDialog } from "../dialogs/AddExperienceDialog";
+import { EditExperienceDialog } from "../dialogs/EditExperienceDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
@@ -23,7 +25,7 @@ interface ExperienceSectionProps {
   sectionName: string;
   items: Experience[];
   onAddItem: (data: any) => void;
-  onEditItem: (id: string) => void;
+  onEditItem: (id: string, updatedItem: Experience) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -34,6 +36,21 @@ export const ExperienceSection = ({
   onEditItem,
   onDeleteItem
 }: ExperienceSectionProps) => {
+  const [editingItem, setEditingItem] = useState<Experience | undefined>(undefined);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleEditClick = (item: Experience) => {
+    setEditingItem(item);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingItem(undefined);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -48,7 +65,7 @@ export const ExperienceSection = ({
               key={item.id}
               title={item.title}
               description={`${item.company} • ${item.period}`}
-              onEdit={() => onEditItem(item.id)}
+              onEdit={() => handleEditClick(item)}
               onDelete={() => onDeleteItem(item.id)}
             >
               <div className="space-y-2">
@@ -73,6 +90,19 @@ export const ExperienceSection = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Edit Dialog */}
+      {editingItem && (
+        <EditExperienceDialog
+          id={`edit-experience-${editingItem.id}`}
+          experience={editingItem}
+          open={dialogOpen}
+          onOpenChange={handleDialogClose}
+          onSave={(updatedExperience) => {
+            onEditItem(updatedExperience.id, updatedExperience);
+          }}
+        />
+      )}
     </div>
   );
 }; 
