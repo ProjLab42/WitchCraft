@@ -44,10 +44,6 @@ const Terms = () => {
           <h2 className="text-2xl font-bold mt-8 mb-4">3. User Accounts</h2>
           <ul className="list-disc pl-6 space-y-2">
             <li>
-              When you create an account with us, you must provide accurate, complete, and current information. Failure to do so constitutes a breach of the Terms, 
-              which may result in immediate termination of your account.
-            </li>
-            <li>
               You are responsible for safeguarding the password you use to access the Service and for any activities or actions under your password. We encourage you to 
               use "strong" passwords (passwords that use a combination of upper and lowercase letters, numbers, and symbols) with your account.
             </li>

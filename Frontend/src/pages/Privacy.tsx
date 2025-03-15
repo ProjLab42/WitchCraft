@@ -74,7 +74,7 @@ const Privacy = () => {
           <p>
             We implement appropriate security measures to protect against unauthorized access, alteration, 
             disclosure, or destruction of your personal information. However, no method of transmission over 
-            the Internet or electronic storage is 100% secure, so we cannot guarantee absolute security.
+            the Internet or electronic storage is 100% secure, so we cannot guarantee absolute security, use it at your own risk.
           </p>
           
           <h2 className="text-2xl font-bold mt-8 mb-4">Your Data Rights</h2>
