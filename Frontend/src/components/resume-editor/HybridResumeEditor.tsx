@@ -199,7 +199,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className={`p-3 border rounded-md bg-card ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
+                    className={`p-3 border border-transparent hover:border-border rounded-md bg-card group ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
                     style={getItemStyle(
                       snapshot.isDragging,
                       provided.draggableProps.style
@@ -213,7 +213,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                             <p className="text-sm italic">{item.title}</p>
                             <p className="text-xs text-muted-foreground">{item.period}</p>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
                               <GripVertical size={14} />
                             </div>
@@ -239,7 +239,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                             <p className="text-sm italic">{item.degree}</p>
                             <p className="text-xs text-muted-foreground">{item.period}</p>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
                               <GripVertical size={14} />
                             </div>
@@ -265,7 +265,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                             <p className="text-sm italic">{item.role}</p>
                             <p className="text-xs text-muted-foreground">{item.period}</p>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
                               <GripVertical size={14} />
                             </div>
@@ -291,7 +291,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                             <p className="text-sm italic">{item.issuer}</p>
                             <p className="text-xs text-muted-foreground">{item.date}</p>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded">
                               <GripVertical size={14} />
                             </div>
@@ -381,7 +381,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
-                      className={`pb-4 border-b last:border-b-0 ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
+                      className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
                       style={getSectionStyle(
                         snapshot.isDragging,
                         provided.draggableProps.style
@@ -391,7 +391,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                         <h3 className="text-lg font-semibold">
                           {renderSectionTitle(type as string)}
                         </h3>
-                        <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
+                        <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity">
                           <GripVertical size={14} />
                         </div>
                       </div>
