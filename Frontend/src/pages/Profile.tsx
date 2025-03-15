@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { TabsContent } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, LogOut } from "lucide-react";
 import { mockUser } from "@/data/mockUser";
 import {
   ProfileHeader,
@@ -22,6 +22,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(mockUser);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -664,6 +665,21 @@ const Profile = () => {
     handleAddItem(`custom-${sectionKey}`, customItemWithId);
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Delete the auth cookie
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Show success toast
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    
+    // Redirect to the main page
+    navigate("/");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -698,10 +714,18 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <Link to="/dashboard" className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
         </Link>
+        
+        <Button 
+          variant="destructive" 
+          onClick={handleLogout}
+          className="flex items-center"
+        >
+          <LogOut className="h-4 w-4 mr-2" /> Logout
+        </Button>
       </div>
       
       <ProfileHeader 
