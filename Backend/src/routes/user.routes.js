@@ -29,6 +29,9 @@ router.put('/password', [
   check('newPassword', 'Password must be at least 6 characters').isLength({ min: 6 }),
 ], userController.changePassword);
 
+// Save parsed resume data to profile
+router.post('/profile/resume-data', userController.saveResumeData);
+
 // Upload profile picture
 router.post('/profile-picture', userController.uploadProfilePicture);
 
