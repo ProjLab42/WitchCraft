@@ -35,23 +35,24 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Export Resume</DialogTitle>
+      <DialogContent className="sm:max-w-[480px] px-8 py-6 overflow-hidden">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl">Export Resume</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="page-format" className="text-right col-span-1">
+        
+        <div className="py-4 border-y">
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="page-format" className="text-sm font-medium">
               Page Format
             </label>
             <Select
               value={pageFormat}
               onValueChange={onPageFormatChange}
             >
-              <SelectTrigger className="col-span-3" id="page-format">
+              <SelectTrigger id="page-format" className="w-full">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" sideOffset={4} className="max-w-[calc(100%-2rem)] z-[60]">
                 <SelectItem value="A4">A4</SelectItem>
                 <SelectItem value="Letter">Letter</SelectItem>
                 <SelectItem value="Legal">Legal</SelectItem>
@@ -59,16 +60,24 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             </Select>
           </div>
         </div>
-        <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={onClose}>
+        
+        <DialogFooter className="flex justify-between pt-4">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <div className="flex gap-2">
-            <Button onClick={onExportDOCX} variant="outline">
+          <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+            <Button 
+              onClick={onExportDOCX} 
+              variant="outline" 
+              className="w-full sm:w-auto"
+            >
               <FileText className="mr-2 h-4 w-4" />
               Export as DOCX
             </Button>
-            <Button onClick={onExportPDF}>
+            <Button 
+              onClick={onExportPDF}
+              className="w-full sm:w-auto"
+            >
               <Download className="mr-2 h-4 w-4" />
               Export as PDF
             </Button>
