@@ -23,12 +23,13 @@ interface Education {
 
 interface EditEducationDialogProps {
   id: string;
-  education: Education;
+  education?: Education;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSave: (education: Education) => void;
 }
 
-export const EditEducationDialog = ({ id, education, onSave }: EditEducationDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const EditEducationDialog = ({ id, education, open, onOpenChange, onSave }: EditEducationDialogProps) => {
   const [data, setData] = useState<Education>({
     ...education,
     bulletPoints: education.bulletPoints || []
@@ -46,11 +47,11 @@ export const EditEducationDialog = ({ id, education, onSave }: EditEducationDial
       ...education,
       ...data
     });
-    setOpen(false);
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <button id={id} className="hidden"></button>
       </DialogTrigger>
