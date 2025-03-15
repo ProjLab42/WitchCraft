@@ -64,9 +64,10 @@ const splitIntoSections = (text) => {
     'education', 'academic',
     'skills', 'abilities', 'competencies',
     'languages',
-    'certifications', 'certificates',
+    'certifications', 'certificates', 'certification', 'certificate', 'credentials', 'credential', 'qualifications',
     'projects',
-    'references'
+    'references',
+    'courses', 'workshops', 'training'
   ];
   
   // Process each line
@@ -79,7 +80,12 @@ const splitIntoSections = (text) => {
     // Check if this line is a section header
     const isHeader = sectionHeaders.some(header => 
       trimmedLine.toLowerCase().includes(header) && 
-      (trimmedLine.toUpperCase() === trimmedLine || /^[A-Z]/.test(trimmedLine))
+      (
+        trimmedLine.toUpperCase() === trimmedLine || 
+        /^[A-Z]/.test(trimmedLine) ||
+        trimmedLine.toLowerCase() === header ||
+        new RegExp(`^${header}s?:?$`, 'i').test(trimmedLine)
+      )
     );
     
     if (isHeader) {
@@ -91,6 +97,15 @@ const splitIntoSections = (text) => {
       // Start a new section
       currentSection = trimmedLine;
       currentContent = [];
+      
+      // Special case: If we find a line that's just "Certifications" or similar,
+      // and the next few lines look like certifications, include them
+      if (
+        trimmedLine.toLowerCase().includes('certif') || 
+        trimmedLine.toLowerCase().includes('credential')
+      ) {
+        console.log(`Found certification section header: "${trimmedLine}"`);
+      }
     } else {
       // Add to current section
       currentContent.push(trimmedLine);
@@ -100,6 +115,32 @@ const splitIntoSections = (text) => {
   // Save the last section
   if (currentContent.length > 0) {
     sections[currentSection] = currentContent.join('\n');
+  }
+  
+  // If we don't have a certifications section but have certification-like content in other sections,
+  // extract it into a certifications section
+  if (!Object.keys(sections).some(key => key.toLowerCase().includes('certif'))) {
+    console.log("No explicit certifications section found, looking for certification content...");
+    
+    // Look for certification-like content in other sections
+    const certificationLines = [];
+    const certKeywords = ['certified', 'certificate', 'certification', 'credential', 'CCNA', 'CompTIA'];
+    
+    for (const [section, content] of Object.entries(sections)) {
+      if (section.toLowerCase().includes('certif')) continue; // Skip if already a cert section
+      
+      const contentLines = content.split('\n');
+      for (const line of contentLines) {
+        if (certKeywords.some(keyword => line.toLowerCase().includes(keyword))) {
+          certificationLines.push(line);
+        }
+      }
+    }
+    
+    if (certificationLines.length > 0) {
+      console.log(`Found ${certificationLines.length} certification-like lines in other sections`);
+      sections['Certifications'] = certificationLines.join('\n');
+    }
   }
   
   return sections;

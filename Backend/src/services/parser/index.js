@@ -89,11 +89,31 @@ function parseResumeText(text) {
     else if (normalizedTitle.includes('language')) {
       resumeData.languages = content.trim();
     } 
-    else if (normalizedTitle.includes('certification') || normalizedTitle.includes('certificate')) {
+    else if (
+      normalizedTitle.includes('certification') || 
+      normalizedTitle.includes('certificate') || 
+      normalizedTitle.includes('credential') || 
+      normalizedTitle.includes('qualifications')
+    ) {
+      console.log(`Found certifications section: "${title}"`);
+      console.log(`Certification content length: ${content.length} characters`);
       resumeData.certifications = extractCertifications(content);
     }
     else if (normalizedTitle.includes('project')) {
       resumeData.projects = extractProjects(content.trim());
+    }
+    else if (normalizedTitle.includes('course') || normalizedTitle.includes('workshop') || normalizedTitle.includes('training')) {
+      // Courses and workshops might contain certifications
+      console.log(`Found courses/workshops section: "${title}"`);
+      
+      // If we don't already have certifications, try to extract them from this section
+      if (resumeData.certifications.length === 0) {
+        const possibleCerts = extractCertifications(content);
+        if (possibleCerts.length > 0) {
+          console.log(`Found ${possibleCerts.length} certifications in courses/workshops section`);
+          resumeData.certifications = possibleCerts;
+        }
+      }
     }
   }
   
