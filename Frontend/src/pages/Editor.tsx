@@ -321,32 +321,6 @@ function EditorContent() {
       };
     });
     
-    // Also remove from userData to keep them in sync
-    if (sectionToRemove && sectionToRemove.itemType !== 'skills') {
-      const sectionType = sectionToRemove.itemType;
-      
-      setUserData(prev => {
-        // Create a deep copy of the sections
-        const updatedSections = { ...prev.sections };
-        
-        // Get the array for this section type
-        const sectionArray = updatedSections[sectionType] || [];
-        console.log("Section array before removal:", sectionArray);
-        
-        // Filter out the item with the matching ID
-        const updatedArray = sectionArray.filter(item => item.id !== id);
-        console.log("Section array after removal:", updatedArray);
-        
-        // Update the section with the new array
-        updatedSections[sectionType] = updatedArray;
-        
-        return {
-          ...prev,
-          sections: updatedSections
-        };
-      });
-    }
-    
     toast.success("Item removed from resume");
   };
   
