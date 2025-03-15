@@ -30,10 +30,20 @@ function formatParsedData(parsedData) {
     company: exp.company || '',
     period: formatDateRange(exp.startDate, exp.endDate),
     description: exp.description || '',
-    bulletPoints: exp.bulletPoints ? exp.bulletPoints.map((bullet, index) => ({
-      id: `bullet-${index}`,
-      text: bullet
-    })) : [],
+    bulletPoints: Array.isArray(exp.bulletPoints) ? exp.bulletPoints.map((bullet, index) => {
+      // Handle both string bullets and object bullets
+      if (typeof bullet === 'string') {
+        return {
+          id: `bullet-${index}`,
+          text: bullet
+        };
+      } else {
+        return {
+          id: bullet.id || `bullet-${index}`,
+          text: bullet.text || bullet
+        };
+      }
+    }) : [],
     confidence: generateConfidence(),
     selected: true
   }));
@@ -47,10 +57,20 @@ function formatParsedData(parsedData) {
     description: edu.description || '',
     field: edu.field || '',
     gpa: edu.gpa || '',
-    bulletPoints: edu.bulletPoints ? edu.bulletPoints.map((bullet, index) => ({
-      id: `bullet-${index}`,
-      text: bullet
-    })) : [],
+    bulletPoints: Array.isArray(edu.bulletPoints) ? edu.bulletPoints.map((bullet, index) => {
+      // Handle both string bullets and object bullets
+      if (typeof bullet === 'string') {
+        return {
+          id: `bullet-${index}`,
+          text: bullet
+        };
+      } else {
+        return {
+          id: bullet.id || `bullet-${index}`,
+          text: bullet.text || bullet
+        };
+      }
+    }) : [],
     confidence: generateConfidence(),
     selected: true
   }));
@@ -69,7 +89,20 @@ function formatParsedData(parsedData) {
     name: project.name,
     description: project.description,
     link: project.link || '',
-    bulletPoints: extractBulletPoints(project.description),
+    bulletPoints: Array.isArray(project.bulletPoints) ? project.bulletPoints.map((bullet, index) => {
+      // Handle both string bullets and object bullets
+      if (typeof bullet === 'string') {
+        return {
+          id: `bullet-${index}`,
+          text: bullet
+        };
+      } else {
+        return {
+          id: bullet.id || `bullet-${index}`,
+          text: bullet.text || bullet
+        };
+      }
+    }) : extractBulletPoints(project.description),
     confidence: generateConfidence(),
     selected: true
   }));

@@ -93,7 +93,7 @@ function parseResumeText(text) {
       resumeData.certifications = extractCertifications(content);
     }
     else if (normalizedTitle.includes('project')) {
-      resumeData.projects = extractProjects({ projects: content.trim() });
+      resumeData.projects = extractProjects(content.trim());
     }
   }
   
