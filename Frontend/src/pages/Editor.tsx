@@ -47,6 +47,92 @@ function EditorContent() {
   const resumeRef = useRef(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
+  // Clean up duplicates on component mount
+  useEffect(() => {
+    // Only run on initial mount
+    const initialCleanup = setTimeout(() => {
+      cleanupDuplicates();
+    }, 500);
+    
+    return () => clearTimeout(initialCleanup);
+  }, []);
+
+  // Function to clean up existing duplicates
+  const cleanupDuplicates = () => {
+    console.log("Cleaning up duplicates...");
+    
+    // Group sections by type
+    const sectionsByType = resumeContent.sections.reduce((acc, section) => {
+      if (!acc[section.itemType]) {
+        acc[section.itemType] = [];
+      }
+      acc[section.itemType].push(section);
+      return acc;
+    }, {} as Record<string, any[]>);
+    
+    console.log("Sections grouped by type:", sectionsByType);
+    
+    // Check for duplicates in each section type
+    let hasDuplicates = false;
+    const cleanedSections = [];
+    const duplicateIds = new Set<string>();
+    
+    // For each section type, find duplicates and keep only unique items
+    Object.entries(sectionsByType).forEach(([type, sections]) => {
+      const uniqueItems = new Map<string, any>();
+      
+      // First pass: identify unique items by their content
+      sections.forEach((section: any) => {
+        let key = '';
+        
+        // Create a unique key based on section type
+        switch (type) {
+          case 'experience':
+            key = `${section.company?.toLowerCase()}-${section.title?.toLowerCase()}-${section.period}`;
+            break;
+          case 'education':
+            key = `${section.institution?.toLowerCase()}-${section.degree?.toLowerCase()}-${section.period}`;
+            break;
+          case 'projects':
+            key = `${section.name?.toLowerCase()}-${section.role?.toLowerCase()}`;
+            break;
+          case 'certifications':
+            key = `${section.name?.toLowerCase()}-${section.issuer?.toLowerCase()}`;
+            break;
+          default:
+            key = section.id;
+        }
+        
+        // If we've seen this key before, it's a duplicate
+        if (uniqueItems.has(key)) {
+          duplicateIds.add(section.id);
+          hasDuplicates = true;
+        } else {
+          uniqueItems.set(key, section);
+        }
+      });
+      
+      // Add all unique items to the cleaned sections
+      uniqueItems.forEach((section) => {
+        cleanedSections.push(section);
+      });
+    });
+    
+    console.log("Duplicate IDs found:", [...duplicateIds]);
+    console.log("Cleaned sections:", cleanedSections);
+    
+    // If we found duplicates, update with the cleaned sections
+    if (hasDuplicates) {
+      // Update resumeContent with the cleaned sections
+      setResumeContent(prev => ({
+        ...prev,
+        sections: cleanedSections
+      }));
+      
+      toast.success("Duplicate items have been removed");
+    }
+  };
+  
   // Toggle section open/closed
   const toggleSection = (section) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -66,10 +152,15 @@ function EditorContent() {
   
   // Handle dropping an item onto the resume
   const handleDrop = (item) => {
-    // Check if the item already exists in the resume
+    console.log("Dropping item:", item);
+    console.log("Current resumeContent.sections:", resumeContent.sections);
+    
+    // Check if the item already exists in the resume by ID
     const existingItemIndex = resumeContent.sections.findIndex(
       section => section.id === item.id
     );
+    
+    console.log("Existing item index:", existingItemIndex);
     
     if (existingItemIndex >= 0) {
       // Update existing item
@@ -83,6 +174,17 @@ function EditorContent() {
       
       toast.success("Item updated");
     } else {
+      // Check if a similar item already exists in the resume
+      // We'll check based on content similarity rather than just ID
+      const isDuplicate = checkForDuplicate(item, resumeContent.sections);
+      
+      console.log("Is duplicate check result:", isDuplicate);
+      
+      if (isDuplicate) {
+        toast.error("This item already exists in your resume");
+        return;
+      }
+      
       // Add new item
       setResumeContent(prev => {
         // Create a new sections array with the new item
@@ -94,6 +196,8 @@ function EditorContent() {
           newSectionOrder.push(item.itemType);
         }
         
+        console.log("New sections after adding:", newSections);
+        
         return {
           ...prev,
           sections: newSections,
@@ -101,30 +205,113 @@ function EditorContent() {
         };
       });
       
+      // Run cleanup to remove any duplicates that might have been created
+      setTimeout(() => {
+        cleanupDuplicates();
+      }, 100);
+      
       toast.success("Item added to resume");
+    }
+  };
+  
+  // Helper function to check if an item is a duplicate
+  const checkForDuplicate = (newItem, existingSections) => {
+    console.log("Checking for duplicate:", newItem);
+    console.log("Against existing sections:", existingSections);
+    
+    // For each section type, we'll define what makes an item a duplicate
+    switch (newItem.itemType) {
+      case 'experience':
+        const expDuplicates = existingSections.filter(section => {
+          if (section.itemType !== 'experience') return false;
+          
+          // Type assertion to access experience-specific properties
+          const expSection = section as any;
+          const expNewItem = newItem as any;
+          
+          return expSection.company?.toLowerCase() === expNewItem.company?.toLowerCase() &&
+                 expSection.title?.toLowerCase() === expNewItem.title?.toLowerCase() &&
+                 expSection.period === expNewItem.period;
+        });
+        console.log("Experience duplicates found:", expDuplicates);
+        return expDuplicates.length > 0;
+        
+      case 'education':
+        const eduDuplicates = existingSections.filter(section => {
+          if (section.itemType !== 'education') return false;
+          
+          // Type assertion to access education-specific properties
+          const eduSection = section as any;
+          const eduNewItem = newItem as any;
+          
+          return eduSection.institution?.toLowerCase() === eduNewItem.institution?.toLowerCase() &&
+                 eduSection.degree?.toLowerCase() === eduNewItem.degree?.toLowerCase() &&
+                 eduSection.period === eduNewItem.period;
+        });
+        console.log("Education duplicates found:", eduDuplicates);
+        return eduDuplicates.length > 0;
+        
+      case 'projects':
+        const projDuplicates = existingSections.filter(section => {
+          if (section.itemType !== 'projects') return false;
+          
+          // Type assertion to access project-specific properties
+          const projSection = section as any;
+          const projNewItem = newItem as any;
+          
+          return projSection.name?.toLowerCase() === projNewItem.name?.toLowerCase() &&
+                 projSection.role?.toLowerCase() === projNewItem.role?.toLowerCase();
+        });
+        console.log("Project duplicates found:", projDuplicates);
+        return projDuplicates.length > 0;
+        
+      case 'certifications':
+        const certDuplicates = existingSections.filter(section => {
+          if (section.itemType !== 'certifications') return false;
+          
+          // Type assertion to access certification-specific properties
+          const certSection = section as any;
+          const certNewItem = newItem as any;
+          
+          return certSection.name?.toLowerCase() === certNewItem.name?.toLowerCase() &&
+                 certSection.issuer?.toLowerCase() === certNewItem.issuer?.toLowerCase();
+        });
+        console.log("Certification duplicates found:", certDuplicates);
+        return certDuplicates.length > 0;
+        
+      default:
+        return false;
     }
   };
   
   // Remove a section from the resume
   const removeSection = (id) => {
+    console.log("Removing section with ID:", id);
+    
+    // First, find the section to remove to get its type
+    const sectionToRemove = resumeContent.sections.find(section => section.id === id);
+    console.log("Section to remove:", sectionToRemove);
+    
+    if (!sectionToRemove) {
+      toast.error("Item not found");
+      return;
+    }
+    
+    // Update resumeContent
     setResumeContent(prev => {
-      // Find the section to remove
-      const sectionToRemove = prev.sections.find(section => section.id === id);
-      
       // Filter out the section
       const newSections = prev.sections.filter(section => section.id !== id);
+      console.log("New sections after removal:", newSections);
       
       // Check if we need to update the section order
       let newSectionOrder = [...prev.sectionOrder];
       
       // If this was the last item of its type, remove the type from the order
-      if (sectionToRemove) {
-        const sectionType = sectionToRemove.itemType;
-        const hasMoreOfType = newSections.some(section => section.itemType === sectionType);
-        
-        if (!hasMoreOfType && sectionType !== 'skills') {
-          newSectionOrder = newSectionOrder.filter(type => type !== sectionType);
-        }
+      const sectionType = sectionToRemove.itemType;
+      const hasMoreOfType = newSections.some(section => section.itemType === sectionType);
+      
+      if (!hasMoreOfType && sectionType !== 'skills') {
+        newSectionOrder = newSectionOrder.filter(type => type !== sectionType);
       }
       
       return {
@@ -133,6 +320,32 @@ function EditorContent() {
         sectionOrder: newSectionOrder
       };
     });
+    
+    // Also remove from userData to keep them in sync
+    if (sectionToRemove && sectionToRemove.itemType !== 'skills') {
+      const sectionType = sectionToRemove.itemType;
+      
+      setUserData(prev => {
+        // Create a deep copy of the sections
+        const updatedSections = { ...prev.sections };
+        
+        // Get the array for this section type
+        const sectionArray = updatedSections[sectionType] || [];
+        console.log("Section array before removal:", sectionArray);
+        
+        // Filter out the item with the matching ID
+        const updatedArray = sectionArray.filter(item => item.id !== id);
+        console.log("Section array after removal:", updatedArray);
+        
+        // Update the section with the new array
+        updatedSections[sectionType] = updatedArray;
+        
+        return {
+          ...prev,
+          sections: updatedSections
+        };
+      });
+    }
     
     toast.success("Item removed from resume");
   };
@@ -147,6 +360,30 @@ function EditorContent() {
       description: "Describe your responsibilities and achievements",
       itemType: "experience"
     };
+    
+    // Check if a similar experience already exists in userData
+    const isDuplicateInUserData = userData.sections.experience && userData.sections.experience.some(exp => 
+      exp.company.toLowerCase() === newExperience.company.toLowerCase() &&
+      exp.title.toLowerCase() === newExperience.title.toLowerCase() &&
+      exp.period === newExperience.period
+    );
+    
+    // Also check if it already exists in resumeContent
+    const isDuplicateInResume = resumeContent.sections.some(section => {
+      if (section.itemType !== 'experience') return false;
+      
+      // Type assertion to access experience-specific properties
+      const expSection = section as any;
+      
+      return expSection.company?.toLowerCase() === newExperience.company.toLowerCase() &&
+             expSection.title?.toLowerCase() === newExperience.title.toLowerCase() &&
+             expSection.period === newExperience.period;
+    });
+    
+    if (isDuplicateInUserData || isDuplicateInResume) {
+      toast.error("A similar experience already exists");
+      return;
+    }
     
     // Add to user data
     setUserData(prev => ({
@@ -170,6 +407,30 @@ function EditorContent() {
       description: "Describe your education, achievements, GPA, etc.",
       itemType: "education"
     };
+    
+    // Check if a similar education already exists in userData
+    const isDuplicateInUserData = userData.sections.education && userData.sections.education.some(edu => 
+      edu.institution.toLowerCase() === newEducation.institution.toLowerCase() &&
+      edu.degree.toLowerCase() === newEducation.degree.toLowerCase() &&
+      edu.period === newEducation.period
+    );
+    
+    // Also check if it already exists in resumeContent
+    const isDuplicateInResume = resumeContent.sections.some(section => {
+      if (section.itemType !== 'education') return false;
+      
+      // Type assertion to access education-specific properties
+      const eduSection = section as any;
+      
+      return eduSection.institution?.toLowerCase() === newEducation.institution.toLowerCase() &&
+             eduSection.degree?.toLowerCase() === newEducation.degree.toLowerCase() &&
+             eduSection.period === newEducation.period;
+    });
+    
+    if (isDuplicateInUserData || isDuplicateInResume) {
+      toast.error("A similar education already exists");
+      return;
+    }
     
     // Add to user data
     setUserData(prev => ({
@@ -221,6 +482,17 @@ function EditorContent() {
         // Remove skill
         selectedSkills.splice(skillIndex, 1);
       } else {
+        // Check if a skill with the same name already exists in selected skills
+        const duplicateSkill = selectedSkills.find(s => 
+          s.name.toLowerCase() === skill.name.toLowerCase()
+        );
+        
+        if (duplicateSkill) {
+          // Don't add duplicate and show a toast message
+          toast.error("This skill is already selected");
+          return prev; // Return previous state unchanged
+        }
+        
         // Add skill
         selectedSkills.push(skill);
       }
@@ -243,6 +515,16 @@ function EditorContent() {
   
   // Add a new skill
   const addSkill = (skillName) => {
+    // Check if a skill with the same name already exists
+    const isDuplicate = userData.skills.some(skill => 
+      skill.name.toLowerCase() === skillName.toLowerCase()
+    );
+    
+    if (isDuplicate) {
+      toast.error("This skill already exists");
+      return;
+    }
+    
     const newSkill = {
       id: generateId('skill'),
       name: skillName,
@@ -257,6 +539,16 @@ function EditorContent() {
     
     // Also select it
     setResumeContent(prev => {
+      // Check if a skill with the same name already exists in selected skills
+      const duplicateSkill = prev.selectedSkills.find(s => 
+        s.name.toLowerCase() === skillName.toLowerCase()
+      );
+      
+      if (duplicateSkill) {
+        toast.warning("This skill is already selected");
+        return prev;
+      }
+      
       const selectedSkills = [...prev.selectedSkills, newSkill];
       
       // Update section order if needed
@@ -264,6 +556,7 @@ function EditorContent() {
       if (!newSectionOrder.includes('skills')) {
         newSectionOrder.push('skills');
       }
+      
       
       return {
         ...prev,
@@ -285,6 +578,28 @@ function EditorContent() {
       description: "Describe the project, your role, technologies used, and outcomes",
       itemType: "projects"
     };
+    
+    // Check if a similar project already exists in userData
+    const isDuplicateInUserData = userData.sections.projects && userData.sections.projects.some(proj => 
+      proj.name.toLowerCase() === newProject.name.toLowerCase() &&
+      proj.role.toLowerCase() === newProject.role.toLowerCase()
+    );
+    
+    // Also check if it already exists in resumeContent
+    const isDuplicateInResume = resumeContent.sections.some(section => {
+      if (section.itemType !== 'projects') return false;
+      
+      // Type assertion to access project-specific properties
+      const projSection = section as any;
+      
+      return projSection.name?.toLowerCase() === newProject.name.toLowerCase() &&
+             projSection.role?.toLowerCase() === newProject.role.toLowerCase();
+    });
+    
+    if (isDuplicateInUserData || isDuplicateInResume) {
+      toast.error("A similar project already exists");
+      return;
+    }
     
     // Add to user data
     setUserData(prev => ({
@@ -308,6 +623,28 @@ function EditorContent() {
       description: "Describe what you learned and skills acquired",
       itemType: "certifications"
     };
+    
+    // Check if a similar certification already exists in userData
+    const isDuplicateInUserData = userData.sections.certifications && userData.sections.certifications.some(cert => 
+      cert.name.toLowerCase() === newCertification.name.toLowerCase() &&
+      cert.issuer.toLowerCase() === newCertification.issuer.toLowerCase()
+    );
+    
+    // Also check if it already exists in resumeContent
+    const isDuplicateInResume = resumeContent.sections.some(section => {
+      if (section.itemType !== 'certifications') return false;
+      
+      // Type assertion to access certification-specific properties
+      const certSection = section as any;
+      
+      return certSection.name?.toLowerCase() === newCertification.name.toLowerCase() &&
+             certSection.issuer?.toLowerCase() === newCertification.issuer.toLowerCase();
+    });
+    
+    if (isDuplicateInUserData || isDuplicateInResume) {
+      toast.error("A similar certification already exists");
+      return;
+    }
     
     // Add to user data
     setUserData(prev => ({
