@@ -183,6 +183,34 @@ function EditorContent() {
     toast.success("New education added");
   };
   
+  // Delete an item from the left panel
+  const deleteItemFromPanel = (type: string, id: string) => {
+    setUserData(prev => {
+      const updatedSections = { ...prev.sections };
+      
+      if (updatedSections[type as keyof typeof updatedSections]) {
+        const sectionArray = updatedSections[type as keyof typeof updatedSections] as any[];
+        const updatedArray = sectionArray.filter(item => item.id !== id);
+        
+        // Update the section with the filtered array
+        updatedSections[type as keyof typeof updatedSections] = updatedArray as any;
+      }
+      
+      return {
+        ...prev,
+        sections: updatedSections
+      };
+    });
+    
+    // Also remove from resume if it's there
+    const isInResume = resumeContent.sections.some(section => section.id === id);
+    if (isInResume) {
+      removeSection(id);
+    }
+    
+    toast.success("Item deleted");
+  };
+  
   // Toggle a skill selection
   const toggleSkill = (skill) => {
     setResumeContent(prev => {
@@ -520,6 +548,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('experience', id)}
                   />
                 ))}
                 
@@ -544,6 +574,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('education', id)}
                   />
                 ))}
                 
@@ -598,6 +630,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('projects', id)}
                   />
                 ))}
                 
@@ -622,6 +656,8 @@ function EditorContent() {
                     onDrop={handleDrop}
                     userData={userData}
                     setUserData={setUserData}
+                    resumeContent={resumeContent}
+                    onDelete={(id) => deleteItemFromPanel('certifications', id)}
                   />
                 ))}
                 

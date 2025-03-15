@@ -16,6 +16,7 @@ interface DraggableItemProps {
   userData?: UserData;
   setUserData?: React.Dispatch<React.SetStateAction<UserData>>;
   onDelete?: (id: string) => void;
+  resumeContent?: any; // Add resumeContent prop to check if item is already in resume
 }
 
 export const DraggableItem: React.FC<DraggableItemProps> = ({ 
@@ -24,10 +25,16 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
   onDrop, 
   userData, 
   setUserData,
-  onDelete
+  onDelete,
+  resumeContent
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedItem, setEditedItem] = useState<ItemType>({ ...item });
+  
+  // Check if the item is already in the resume
+  const isAlreadyInResume = resumeContent?.sections?.some(
+    (section: any) => section.id === item.id
+  );
   
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'RESUME_ITEM',
@@ -38,7 +45,7 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-    canDrag: !isEditing, // Prevent dragging while editing
+    canDrag: !isEditing && !isAlreadyInResume, // Prevent dragging while editing or if already in resume
   }));
   
   const handleEditClick = (e: React.MouseEvent) => {
@@ -376,11 +383,16 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
   
   return (
     <div 
-      ref={drag}
-      className={`p-3 mb-2 border rounded-md cursor-move ${isDragging ? 'opacity-50' : ''}`}
+      ref={isAlreadyInResume ? null : drag}
+      className={`p-3 mb-2 border rounded-md ${isAlreadyInResume ? 'opacity-50 cursor-not-allowed bg-muted' : 'cursor-move'} ${isDragging ? 'opacity-50' : ''}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       {renderContent()}
+      {isAlreadyInResume && (
+        <div className="mt-2 text-xs font-medium text-muted-foreground">
+          Already added to resume
+        </div>
+      )}
     </div>
   );
 }; 
