@@ -243,17 +243,27 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   // Effect to load template styles when selectedTemplate changes
   useEffect(() => {
     if (selectedTemplate) {
-      const template = templateService.getTemplateById(selectedTemplate);
-      if (template) {
-        // Update section order based on template
-        setResumeContent(prev => ({
-          ...prev,
-          sectionOrder: [...template.styles.sectionOrder]
-        }));
-        
-        // Set template styles
-        setTemplateStyles(template.styles);
-      }
+      const loadTemplate = async () => {
+        try {
+          const template = await templateService.getTemplateById(selectedTemplate);
+          if (template && template.styles) {
+            // Update section order based on template
+            if (template.sections?.defaultOrder) {
+              setResumeContent(prev => ({
+                ...prev,
+                sectionOrder: [...template.sections.defaultOrder]
+              }));
+            }
+            
+            // Set template styles
+            setTemplateStyles(template.styles);
+          }
+        } catch (error) {
+          console.error('Error loading template styles:', error);
+        }
+      };
+      
+      loadTemplate();
     }
   }, [selectedTemplate]);
 
@@ -285,10 +295,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
 };
 
 // Custom hook for using the resume context
-export const useResumeContext = () => {
+export function useResumeContext() {
   const context = useContext(ResumeContext);
   if (context === undefined) {
     throw new Error('useResumeContext must be used within a ResumeProvider');
   }
   return context;
-}; 
+} 

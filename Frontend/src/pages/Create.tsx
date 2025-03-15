@@ -3,53 +3,45 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TemplateCard } from "@/components/resume/TemplateCard";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronRight, ArrowLeft } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
-import { templateService } from "@/services/template.service";
-
-// Sample template data
-const templates = [
-  {
-    id: "classic",
-    name: "Classic Professional",
-    imageSrc: "/assets/templates/classic-resume-template.svg",
-  },
-  {
-    id: "modern",
-    name: "Modern Professional",
-    imageSrc: "/assets/templates/modern-resume-template.svg",
-  },
-  {
-    id: "student",
-    name: "Modern Student",
-    imageSrc: "/assets/templates/student-resume-template.svg",
-  },
-  {
-    id: "creative",
-    name: "Creative Professional",
-    imageSrc: "/assets/templates/creative-resume-template.svg",
-  },
-  {
-    id: "executive",
-    name: "Executive",
-    imageSrc: "/assets/templates/executive-resume-template.svg",
-  },
-  {
-    id: "minimal",
-    name: "Minimal",
-    imageSrc: "/assets/templates/minimal-resume-template.svg",
-  },
-];
+import { templateService, TemplateMetadata } from "@/services/template.service";
 
 export default function Create() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<TemplateMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
   
-  // Get templates from the service
-  const templates = templateService.getAllTemplates();
+  // Fetch templates on component mount
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        const data = await templateService.getAllTemplates();
+        
+        // Verify we got valid data
+        if (Array.isArray(data) && data.length > 0) {
+          setTemplates(data);
+          setError(null);
+        } else {
+          console.error('Empty or invalid template data received:', data);
+          setError('No templates are available. Please try again later.');
+        }
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+        setError('Failed to load templates. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTemplates();
+  }, []);
   
   // If template is provided in URL, set it as selected
   useEffect(() => {
@@ -99,25 +91,43 @@ export default function Create() {
       
       <main className="flex-1 py-8 md:py-12">
         <div className="container">
-          <div className="mb-8 max-w-2xl">
-            <h1 className="mb-3 text-3xl font-bold">Choose a Template</h1>
-            <p className="text-muted-foreground">
-              Select a template to get started. You can always change it later.
-            </p>
+          <div className="flex justify-between items-center mb-8">
+            <div className="max-w-2xl">
+              <h1 className="mb-3 text-3xl font-bold">Choose a Template</h1>
+              <p className="text-muted-foreground">
+                Select a template to get started. You can always change it later.
+              </p>
+            </div>
+            <Link to="/">
+              <Button variant="outline" size="sm" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
+              </Button>
+            </Link>
           </div>
           
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
-            {templates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                id={template.id}
-                name={template.name}
-                imageSrc={template.thumbnail}
-                selected={selectedTemplate === template.id}
-                onSelect={handleSelectTemplate}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <p className="text-muted-foreground">Loading templates...</p>
+            </div>
+          ) : error ? (
+            <div className="p-4 mb-6 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+              {error}
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+              {templates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  id={template.id}
+                  name={template.name}
+                  imageSrc={template.thumbnail || template.imageSrc}
+                  selected={selectedTemplate === template.id}
+                  onSelect={handleSelectTemplate}
+                />
+              ))}
+            </div>
+          )}
           
           <div className="mt-12 flex justify-end">
             <Button 

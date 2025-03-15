@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Trash, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResumeContent, SkillItem } from './ResumeContext';
+import { Template } from '@/services/template.service';
 
 interface HybridResumeEditorProps {
   onDrop: (item: any) => void;
@@ -14,6 +15,7 @@ interface HybridResumeEditorProps {
   setResumeContent: React.Dispatch<React.SetStateAction<ResumeContent>>;
   resumeRef: React.RefObject<HTMLDivElement>;
   zoomLevel: number;
+  selectedTemplate?: Template | null;
 }
 
 // Custom styles for dragging items within sections
@@ -70,9 +72,11 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   reorderSectionItems,
   setResumeContent, 
   resumeRef, 
-  zoomLevel 
+  zoomLevel,
+  selectedTemplate 
 }) => {
   const draggingItemRef = useRef(null);
+  const prevTemplateId = useRef<string | null>(null);
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -80,6 +84,121 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       isOver: !!monitor.isOver(),
     }),
   }));
+
+  // Apply template styles when template changes
+  useEffect(() => {
+    if (selectedTemplate && selectedTemplate.id !== prevTemplateId.current) {
+      // Apply the template styles to the resume
+      applyTemplateStyles(selectedTemplate);
+      
+      // Track which template we've applied
+      prevTemplateId.current = selectedTemplate.id;
+      
+      // Update section order if template has default order
+      if (selectedTemplate.sections?.defaultOrder?.length) {
+        setResumeContent(prev => ({
+          ...prev,
+          sectionOrder: [...selectedTemplate.sections.defaultOrder]
+        }));
+      }
+    }
+  }, [selectedTemplate, setResumeContent]);
+
+  // Function to apply template styles to the resume
+  const applyTemplateStyles = (template: Template) => {
+    // Ensure template has all required properties
+    if (!template || !template.styles) {
+      console.error('Invalid template or missing styles:', template);
+      return;
+    }
+
+    // Create a style element for template-specific CSS
+    const styleId = 'resume-template-styles';
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+    
+    // Get default values for missing styles
+    const fontFamily = template.styles.fontFamily || { heading: 'Georgia, serif', body: 'Arial, sans-serif' };
+    const fontSize = template.styles.fontSize || { name: '24px', sectionHeading: '18px', body: '14px' };
+    const layout = template.styles.layout || { headerAlignment: 'left', sectionStyle: 'underlined', useColumns: false };
+    const colors = template.styles.colors || { primary: '#333333', secondary: '#666666', accent: '#2563eb' };
+    
+    // Create CSS from template styles
+    const css = `
+      .resume-container {
+        --heading-font: ${fontFamily.heading};
+        --body-font: ${fontFamily.body};
+        --name-size: ${fontSize.name};
+        --heading-size: ${fontSize.sectionHeading};
+        --body-size: ${fontSize.body};
+        --primary-color: ${colors.primary};
+        --secondary-color: ${colors.secondary};
+        --accent-color: ${colors.accent};
+      }
+      
+      .resume-container .resume-name {
+        font-family: var(--heading-font);
+        font-size: var(--name-size);
+        color: var(--primary-color);
+      }
+      
+      .resume-container .resume-section-heading {
+        font-family: var(--heading-font);
+        font-size: var(--heading-size);
+        color: var(--primary-color);
+      }
+      
+      .resume-container .resume-text {
+        font-family: var(--body-font);
+        font-size: var(--body-size);
+        color: var(--secondary-color);
+      }
+      
+      /* Layout specific styles */
+      .resume-container.header-center .resume-header {
+        text-align: center;
+      }
+      
+      .resume-container.header-right .resume-header {
+        text-align: right;
+      }
+      
+      /* Section styles */
+      .resume-container.section-underlined .resume-section-heading {
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 0.25rem;
+      }
+      
+      .resume-container.section-boxed .resume-section-heading {
+        background-color: var(--accent-color);
+        color: white;
+        padding: 0.25rem 0.5rem;
+      }
+      
+      /* Column layout */
+      .resume-container.use-columns .resume-content {
+        display: flex;
+        gap: 2rem;
+      }
+      
+      .resume-container.use-columns .resume-main {
+        flex: 2;
+      }
+      
+      .resume-container.use-columns .resume-sidebar {
+        flex: 1;
+        border-left: 1px solid var(--accent-color);
+        padding-left: 1rem;
+      }
+    `;
+    
+    styleEl.textContent = css;
+  };
 
   // Get all selected skills
   const selectedSkills = resumeContent.selectedSkills || [];
@@ -353,7 +472,15 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
           (resumeRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
         }
       }}
-      className={`bg-white border rounded-md shadow-sm p-8 w-full max-w-[21cm] mx-auto transition-all ${isOver ? 'ring-2 ring-primary' : ''}`}
+      className={`resume-container 
+        bg-white border rounded-md shadow-sm p-8 w-full max-w-[21cm] mx-auto transition-all 
+        ${isOver ? 'ring-2 ring-primary' : ''}
+        ${selectedTemplate && selectedTemplate.styles ? `
+          header-${selectedTemplate.styles.layout?.headerAlignment || 'left'} 
+          section-${selectedTemplate.styles.layout?.sectionStyle || 'underlined'}
+          ${selectedTemplate.styles.layout?.useColumns ? 'use-columns' : ''}
+        ` : ''}
+      `}
       style={{ 
         transform: `scale(${zoomLevel})`,
         transformOrigin: 'top center',
@@ -387,95 +514,101 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         `
       }} />
       
-      {/* Personal Info */}
-      <div className="mb-6 border-b pb-4">
-        <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
-        <p className="text-lg text-muted-foreground">{resumeContent.personalInfo.title}</p>
+      {/* Personal Info with template-specific classes */}
+      <div className="resume-header mb-6 border-b pb-4">
+        <h1 className="resume-name font-bold">{resumeContent.personalInfo.name}</h1>
+        <p className="resume-text text-lg text-muted-foreground">{resumeContent.personalInfo.title}</p>
         
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
+        {/* Contact info */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
           {resumeContent.personalInfo.email && (
-            <p>{resumeContent.personalInfo.email}</p>
+            <span className="resume-text text-sm">{resumeContent.personalInfo.email}</span>
           )}
           {resumeContent.personalInfo.location && (
-            <p>{resumeContent.personalInfo.location}</p>
+            <span className="resume-text text-sm">{resumeContent.personalInfo.location}</span>
           )}
-        </div>
-        
-        <div className="flex gap-2 mt-2">
           {resumeContent.personalInfo.links?.linkedin && (
-            <p className="text-sm">LinkedIn: {resumeContent.personalInfo.links.linkedin}</p>
+            <span className="resume-text text-sm">LinkedIn: {resumeContent.personalInfo.links.linkedin}</span>
           )}
           {resumeContent.personalInfo.links?.portfolio && (
-            <p className="text-sm">Portfolio: {resumeContent.personalInfo.links.portfolio}</p>
+            <span className="resume-text text-sm">Portfolio: {resumeContent.personalInfo.links.portfolio}</span>
           )}
-          {resumeContent.personalInfo.links?.additionalLinks?.map((link, index) => (
-            <p key={index} className="text-sm">{link.label}: {link.url}</p>
-          ))}
         </div>
       </div>
       
       {/* Draggable Sections */}
-      <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-        <Droppable 
-          droppableId="sections" 
-          type="section" 
-          direction="vertical"
-          ignoreContainerClipping={false}
-        >
-          {(provided, snapshot) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className={`space-y-6 ${snapshot.isDraggingOver ? 'bg-muted/20 p-4 -mx-4 rounded-md' : ''}`}
-              style={{
-                transition: 'background-color 0.3s ease, padding 0.3s ease, margin 0.3s ease',
-                minHeight: '20px',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
+      <div className="resume-content">
+        <div className={selectedTemplate?.styles?.layout?.useColumns ? 'resume-main' : ''}>
+          <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+            <Droppable 
+              droppableId="sections" 
+              type="section" 
+              direction="vertical"
+              ignoreContainerClipping={false}
             >
-              {allSections.map(([type, items], index) => (
-                <Draggable key={type as string} draggableId={type as string} index={index}>
-                  {(provided, snapshot) => {
-                    // Fix for horizontal positioning
-                    if (snapshot.isDragging) {
-                      provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
-                    }
-                    
-                    return (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
-                        style={{
-                          ...getSectionStyle(
-                            snapshot.isDragging,
-                            provided.draggableProps.style
-                          ),
-                          zIndex: snapshot.isDragging ? 1000 : 1,
-                          maxWidth: '100%',
-                        }}
-                        data-is-dragging={snapshot.isDragging ? "true" : "false"}
-                      >
-                        <div className="flex items-center mb-2">
-                          <h3 className="text-lg font-semibold">
-                            {renderSectionTitle(type as string)}
-                          </h3>
-                          <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                            <GripVertical size={14} className="text-muted-foreground" />
-                          </div>
-                        </div>
-                        {renderSectionContent(type as string, items)}
-                      </div>
-                    );
+              {(provided, snapshot) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className={`space-y-6 ${snapshot.isDraggingOver ? 'bg-muted/20 p-4 -mx-4 rounded-md' : ''}`}
+                  style={{
+                    transition: 'background-color 0.3s ease, padding 0.3s ease, margin 0.3s ease',
+                    minHeight: '20px',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                >
+                  {allSections.map(([type, items], index) => (
+                    <Draggable key={type as string} draggableId={type as string} index={index}>
+                      {(provided, snapshot) => {
+                        // Fix for horizontal positioning
+                        if (snapshot.isDragging) {
+                          provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
+                        }
+                        
+                        return (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`pb-4 border-b last:border-b-0 group ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
+                            style={{
+                              ...getSectionStyle(
+                                snapshot.isDragging,
+                                provided.draggableProps.style
+                              ),
+                              zIndex: snapshot.isDragging ? 1000 : 1,
+                              maxWidth: '100%',
+                            }}
+                            data-is-dragging={snapshot.isDragging ? "true" : "false"}
+                          >
+                            <div className="flex items-center mb-2">
+                              <h3 className="text-lg font-semibold">
+                                {renderSectionTitle(type as string)}
+                              </h3>
+                              <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <GripVertical size={14} className="text-muted-foreground" />
+                              </div>
+                            </div>
+                            {renderSectionContent(type as string, items)}
+                          </div>
+                        );
+                      }}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
+        
+        {selectedTemplate?.styles?.layout?.useColumns && (
+          <div className="resume-sidebar">
+            {/* Content for the sidebar column if using columns */}
+            {/* You can move certain sections here based on template */}
+          </div>
+        )}
+      </div>
     </div>
   );
 }; 

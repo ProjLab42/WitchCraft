@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Edit } from "lucide-react";
+import { Download, Plus, Edit, ArrowLeft } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
@@ -21,12 +21,18 @@ import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
 import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-editor/utils";
+import { templateService, Template } from "@/services/template.service";
 
 // Main Editor component
 function EditorContent() {
   // Get URL parameters
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
+  
+  // Template state
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [templateLoading, setTemplateLoading] = useState<boolean>(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   
   // Get all state from context
   const {
@@ -54,6 +60,61 @@ function EditorContent() {
   const [isAddSkillDialogOpen, setIsAddSkillDialogOpen] = useState(false);
   const resumeRef = useRef(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // Fetch template data when templateParam changes
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      if (!templateParam) {
+        // If no template is specified, use the first default template
+        try {
+          const templates = await templateService.getAllTemplates();
+          if (templates && templates.length > 0) {
+            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
+            setTemplate(defaultTemplate);
+            setSelectedTemplate(templates[0].id);
+          }
+        } catch (error) {
+          console.error('Error fetching default template:', error);
+          setTemplateError('Failed to load default template. Using basic styling.');
+        }
+        return;
+      }
+      
+      try {
+        setTemplateLoading(true);
+        setTemplateError(null);
+        
+        console.log('Fetching template with ID:', templateParam);
+        const templateData = await templateService.getTemplateById(templateParam);
+        console.log('Template data received:', templateData);
+        
+        if (!templateData || !templateData.styles) {
+          throw new Error('Invalid template data received');
+        }
+        
+        setTemplate(templateData);
+        setSelectedTemplate(templateParam);
+      } catch (error) {
+        console.error('Error fetching template:', error);
+        setTemplateError('Failed to load template. Using default styling.');
+        
+        // Try to load a default template as fallback
+        try {
+          const templates = await templateService.getAllTemplates();
+          if (templates && templates.length > 0) {
+            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
+            setTemplate(defaultTemplate);
+          }
+        } catch (innerError) {
+          console.error('Error fetching fallback template:', innerError);
+        }
+      } finally {
+        setTemplateLoading(false);
+      }
+    };
+    
+    fetchTemplate();
+  }, [templateParam, setSelectedTemplate]);
 
   // Clean up duplicates on component mount
   useEffect(() => {
@@ -810,7 +871,12 @@ function EditorContent() {
       
       <main className="container py-8 pb-16">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Resume Builder</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Resume Builder</h1>
+            {templateError && (
+              <span className="text-sm text-destructive">{templateError}</span>
+            )}
+          </div>
           
           <div className="flex gap-2">
             <Button onClick={openExportDialog}>
@@ -818,206 +884,229 @@ function EditorContent() {
               Export
             </Button>
             
-            <Link to="/">
+            <Link to="/create">
               <Button variant="outline">
-                Back to Dashboard
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Templates
               </Button>
             </Link>
           </div>
         </div>
         
-        <div className="grid lg:grid-cols-[350px_1fr] gap-6">
-          {/* Left sidebar */}
-          <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
-            {/* Personal Info Section */}
-            <DraggableSection 
-              title="Personal Information" 
-              isOpen={openSections.personalInfo}
-              toggleOpen={() => toggleSection('personalInfo')}
-            >
-              {isEditingPersonalInfo ? (
-                <PersonalInfoEditor
-                  personalInfo={resumeContent.personalInfo}
-                  editedPersonalInfo={editedPersonalInfo}
-                  onSave={handleSavePersonalInfo}
-                  onCancel={handleCancelPersonalInfo}
-                  onChange={handlePersonalInfoChange}
-                />
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium">{userData.name}</h4>
-                      <p className="text-sm text-muted-foreground">{userData.title}</p>
-                      <p className="text-xs text-muted-foreground">{userData.email}</p>
-                      <p className="text-xs text-muted-foreground">{userData.location}</p>
-                    </div>
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
-                      <Edit size={14} />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </DraggableSection>
-            
-            {/* Experience Section */}
-            <DraggableSection 
-              title="Experience" 
-              isOpen={openSections.experience}
-              toggleOpen={() => toggleSection('experience')}
-            >
-              <div className="space-y-4">
-                {userData.sections.experience && userData.sections.experience.map(item => (
-                  <DraggableItem 
-                    key={item.id} 
-                    item={item} 
-                    type="experience" 
-                    onDrop={handleDrop}
-                    userData={userData}
-                    setUserData={setUserData}
-                    resumeContent={resumeContent}
-                    onDelete={(id) => deleteItemFromPanel('experience', id)}
-                  />
-                ))}
-                
-                <Button variant="outline" size="sm" className="w-full" onClick={addExperience}>
-                  <Plus className="mr-1 h-4 w-4" /> Add Experience
-                </Button>
-              </div>
-            </DraggableSection>
-            
-            {/* Education Section */}
-            <DraggableSection 
-              title="Education" 
-              isOpen={openSections.education}
-              toggleOpen={() => toggleSection('education')}
-            >
-              <div className="space-y-4">
-                {userData.sections.education && userData.sections.education.map(item => (
-                  <DraggableItem 
-                    key={item.id} 
-                    item={item} 
-                    type="education" 
-                    onDrop={handleDrop}
-                    userData={userData}
-                    setUserData={setUserData}
-                    resumeContent={resumeContent}
-                    onDelete={(id) => deleteItemFromPanel('education', id)}
-                  />
-                ))}
-                
-                <Button variant="outline" size="sm" className="w-full" onClick={addEducation}>
-                  <Plus className="mr-1 h-4 w-4" /> Add Education
-                </Button>
-              </div>
-            </DraggableSection>
-            
-            {/* Skills Section */}
-            <DraggableSection 
-              title="Skills" 
-              isOpen={openSections.skills}
-              toggleOpen={() => toggleSection('skills')}
-            >
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  {userData.skills.map(skill => {
-                    const isSelected = resumeContent.selectedSkills.some(s => s.id === skill.id);
-                    return (
-                      <div 
-                        key={skill.id} 
-                        className={`px-3 py-1 rounded-full text-sm cursor-pointer flex items-center gap-1 ${
-                          isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                        }`}
-                        onClick={() => toggleSkill(skill)}
-                      >
-                        {skill.name}
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <Button variant="outline" size="sm" className="w-full" onClick={() => setIsAddSkillDialogOpen(true)}>
-                  <Plus className="mr-1 h-4 w-4" /> Add Skill
-                </Button>
-              </div>
-            </DraggableSection>
-            
-            {/* Projects Section */}
-            <DraggableSection 
-              title="Projects" 
-              isOpen={openSections.projects}
-              toggleOpen={() => toggleSection('projects')}
-            >
-              <div className="space-y-4">
-                {userData.sections.projects && userData.sections.projects.map(item => (
-                  <DraggableItem 
-                    key={item.id} 
-                    item={item} 
-                    type="projects" 
-                    onDrop={handleDrop}
-                    userData={userData}
-                    setUserData={setUserData}
-                    resumeContent={resumeContent}
-                    onDelete={(id) => deleteItemFromPanel('projects', id)}
-                  />
-                ))}
-                
-                <Button variant="outline" size="sm" className="w-full" onClick={addProject}>
-                  <Plus className="mr-1 h-4 w-4" /> Add Project
-                </Button>
-              </div>
-            </DraggableSection>
-            
-            {/* Certifications Section */}
-            <DraggableSection 
-              title="Certifications" 
-              isOpen={openSections.certifications}
-              toggleOpen={() => toggleSection('certifications')}
-            >
-              <div className="space-y-4">
-                {userData.sections.certifications && userData.sections.certifications.map(item => (
-                  <DraggableItem 
-                    key={item.id} 
-                    item={item} 
-                    type="certifications" 
-                    onDrop={handleDrop}
-                    userData={userData}
-                    setUserData={setUserData}
-                    resumeContent={resumeContent}
-                    onDelete={(id) => deleteItemFromPanel('certifications', id)}
-                  />
-                ))}
-                
-                <Button variant="outline" size="sm" className="w-full" onClick={addCertification}>
-                  <Plus className="mr-1 h-4 w-4" /> Add Certification
-                </Button>
-              </div>
-            </DraggableSection>
+        {/* Show loading state */}
+        {templateLoading ? (
+          <div className="flex flex-col items-center justify-center h-[70vh]">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mb-4"></div>
+            <p className="text-lg text-muted-foreground">Loading template...</p>
           </div>
-          
-          {/* Right side - Resume preview */}
-          <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
-            <div className="flex justify-end mb-4">
-              <ZoomControls
-                zoomLevel={zoomLevel}
-                onZoomIn={handleZoomIn}
-                onZoomOut={handleZoomOut}
-                onResetZoom={handleResetZoom}
-              />
+        ) : templateError && !template ? (
+          <div className="flex flex-col items-center justify-center h-[70vh] text-center">
+            <div className="bg-destructive/10 p-6 rounded-lg border border-destructive/20 max-w-md">
+              <h3 className="text-xl font-medium text-destructive mb-2">Error Loading Template</h3>
+              <p className="text-muted-foreground mb-4">{templateError}</p>
+              <Link to="/create">
+                <Button>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Return to Templates
+                </Button>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-[350px_1fr] gap-6">
+            {/* Left sidebar */}
+            <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
+              {/* Personal Info Section */}
+              <DraggableSection 
+                title="Personal Information" 
+                isOpen={openSections.personalInfo}
+                toggleOpen={() => toggleSection('personalInfo')}
+              >
+                {isEditingPersonalInfo ? (
+                  <PersonalInfoEditor
+                    personalInfo={resumeContent.personalInfo}
+                    editedPersonalInfo={editedPersonalInfo}
+                    onSave={handleSavePersonalInfo}
+                    onCancel={handleCancelPersonalInfo}
+                    onChange={handlePersonalInfoChange}
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{userData.name}</h4>
+                        <p className="text-sm text-muted-foreground">{userData.title}</p>
+                        <p className="text-xs text-muted-foreground">{userData.email}</p>
+                        <p className="text-xs text-muted-foreground">{userData.location}</p>
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditPersonalInfo}>
+                        <Edit size={14} />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </DraggableSection>
+              
+              {/* Experience Section */}
+              <DraggableSection 
+                title="Experience" 
+                isOpen={openSections.experience}
+                toggleOpen={() => toggleSection('experience')}
+              >
+                <div className="space-y-4">
+                  {userData.sections.experience && userData.sections.experience.map(item => (
+                    <DraggableItem 
+                      key={item.id} 
+                      item={item} 
+                      type="experience" 
+                      onDrop={handleDrop}
+                      userData={userData}
+                      setUserData={setUserData}
+                      resumeContent={resumeContent}
+                      onDelete={(id) => deleteItemFromPanel('experience', id)}
+                    />
+                  ))}
+                  
+                  <Button variant="outline" size="sm" className="w-full" onClick={addExperience}>
+                    <Plus className="mr-1 h-4 w-4" /> Add Experience
+                  </Button>
+                </div>
+              </DraggableSection>
+              
+              {/* Education Section */}
+              <DraggableSection 
+                title="Education" 
+                isOpen={openSections.education}
+                toggleOpen={() => toggleSection('education')}
+              >
+                <div className="space-y-4">
+                  {userData.sections.education && userData.sections.education.map(item => (
+                    <DraggableItem 
+                      key={item.id} 
+                      item={item} 
+                      type="education" 
+                      onDrop={handleDrop}
+                      userData={userData}
+                      setUserData={setUserData}
+                      resumeContent={resumeContent}
+                      onDelete={(id) => deleteItemFromPanel('education', id)}
+                    />
+                  ))}
+                  
+                  <Button variant="outline" size="sm" className="w-full" onClick={addEducation}>
+                    <Plus className="mr-1 h-4 w-4" /> Add Education
+                  </Button>
+                </div>
+              </DraggableSection>
+              
+              {/* Skills Section */}
+              <DraggableSection 
+                title="Skills" 
+                isOpen={openSections.skills}
+                toggleOpen={() => toggleSection('skills')}
+              >
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {userData.skills.map(skill => {
+                      const isSelected = resumeContent.selectedSkills.some(s => s.id === skill.id);
+                      return (
+                        <div 
+                          key={skill.id} 
+                          className={`px-3 py-1 rounded-full text-sm cursor-pointer flex items-center gap-1 ${
+                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          }`}
+                          onClick={() => toggleSkill(skill)}
+                        >
+                          {skill.name}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setIsAddSkillDialogOpen(true)}>
+                    <Plus className="mr-1 h-4 w-4" /> Add Skill
+                  </Button>
+                </div>
+              </DraggableSection>
+              
+              {/* Projects Section */}
+              <DraggableSection 
+                title="Projects" 
+                isOpen={openSections.projects}
+                toggleOpen={() => toggleSection('projects')}
+              >
+                <div className="space-y-4">
+                  {userData.sections.projects && userData.sections.projects.map(item => (
+                    <DraggableItem 
+                      key={item.id} 
+                      item={item} 
+                      type="projects" 
+                      onDrop={handleDrop}
+                      userData={userData}
+                      setUserData={setUserData}
+                      resumeContent={resumeContent}
+                      onDelete={(id) => deleteItemFromPanel('projects', id)}
+                    />
+                  ))}
+                  
+                  <Button variant="outline" size="sm" className="w-full" onClick={addProject}>
+                    <Plus className="mr-1 h-4 w-4" /> Add Project
+                  </Button>
+                </div>
+              </DraggableSection>
+              
+              {/* Certifications Section */}
+              <DraggableSection 
+                title="Certifications" 
+                isOpen={openSections.certifications}
+                toggleOpen={() => toggleSection('certifications')}
+              >
+                <div className="space-y-4">
+                  {userData.sections.certifications && userData.sections.certifications.map(item => (
+                    <DraggableItem 
+                      key={item.id} 
+                      item={item} 
+                      type="certifications" 
+                      onDrop={handleDrop}
+                      userData={userData}
+                      setUserData={setUserData}
+                      resumeContent={resumeContent}
+                      onDelete={(id) => deleteItemFromPanel('certifications', id)}
+                    />
+                  ))}
+                  
+                  <Button variant="outline" size="sm" className="w-full" onClick={addCertification}>
+                    <Plus className="mr-1 h-4 w-4" /> Add Certification
+                  </Button>
+                </div>
+              </DraggableSection>
             </div>
             
-            <HybridResumeEditor
-              onDrop={handleDrop}
-              resumeContent={resumeContent}
-              removeSection={removeSection}
-              reorderSections={reorderSections}
-              reorderSectionItems={reorderSectionItems}
-              setResumeContent={setResumeContent}
-              resumeRef={resumeRef}
-              zoomLevel={zoomLevel}
-            />
+            {/* Right side - Resume preview */}
+            <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
+              <div className="flex justify-end mb-4">
+                <ZoomControls
+                  zoomLevel={zoomLevel}
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  onResetZoom={handleResetZoom}
+                />
+              </div>
+              
+              <HybridResumeEditor
+                onDrop={handleDrop}
+                resumeContent={resumeContent}
+                removeSection={removeSection}
+                reorderSections={reorderSections}
+                reorderSectionItems={reorderSectionItems}
+                setResumeContent={setResumeContent}
+                resumeRef={resumeRef}
+                zoomLevel={zoomLevel}
+                selectedTemplate={template}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </main>
       
       <Footer />
