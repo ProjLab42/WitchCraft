@@ -1,0 +1,55 @@
+<svg width="300" height="400" viewBox="0 0 300 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="400" fill="#ffffff" />
+  
+  <!-- Gradient header -->
+  <rect width="300" height="10" fill="url(#gradient)" />
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="300" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8b5cf6" />
+      <stop offset="1" stop-color="#ec4899" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Header area -->
+  <text x="150" y="40" font-family="Arial" font-size="18" font-weight="bold" fill="#333333" text-anchor="middle">Jane Doe</text>
+  <text x="150" y="60" font-family="Arial" font-size="12" fill="#666666" text-anchor="middle">UI/UX Designer</text>
+  
+  <!-- Contact info -->
+  <text x="150" y="80" font-family="Arial" font-size="10" fill="#666666" text-anchor="middle">jane.doe@example.com • San Francisco, CA</text>
+  
+  <!-- Experience Section -->
+  <text x="30" y="110" font-family="Arial" font-size="14" font-weight="bold" fill="#8b5cf6">Experience</text>
+  <rect x="30" y="120" width="240" height="1" fill="#dddddd" />
+  
+  <!-- Job 1 -->
+  <text x="30" y="140" font-family="Arial" font-size="12" font-weight="bold" fill="#333333">Senior UI/UX Designer</text>
+  <text x="30" y="155" font-family="Arial" font-size="11" fill="#666666">Creative Studio</text>
+  <text x="240" y="155" font-family="Arial" font-size="10" fill="#666666" text-anchor="end">2020 - Present</text>
+  <rect x="30" y="165" width="240" height="2" rx="1" fill="#f5f5f5" />
+  <rect x="30" y="172" width="240" height="2" rx="1" fill="#f5f5f5" />
+  <rect x="30" y="179" width="200" height="2" rx="1" fill="#f5f5f5" />
+  
+  <!-- Job 2 -->
+  <text x="30" y="200" font-family="Arial" font-size="12" font-weight="bold" fill="#333333">UI Designer</text>
+  <text x="30" y="215" font-family="Arial" font-size="11" fill="#666666">Design Agency</text>
+  <text x="240" y="215" font-family="Arial" font-size="10" fill="#666666" text-anchor="end">2018 - 2020</text>
+  <rect x="30" y="225" width="240" height="2" rx="1" fill="#f5f5f5" />
+  <rect x="30" y="232" width="240" height="2" rx="1" fill="#f5f5f5" />
+  <rect x="30" y="239" width="200" height="2" rx="1" fill="#f5f5f5" />
+  
+  <!-- Education Section -->
+  <text x="30" y="270" font-family="Arial" font-size="14" font-weight="bold" fill="#8b5cf6">Education</text>
+  <rect x="30" y="280" width="240" height="1" fill="#dddddd" />
+  
+  <!-- Education 1 -->
+  <text x="30" y="300" font-family="Arial" font-size="12" font-weight="bold" fill="#333333">Bachelor of Fine Arts in Graphic Design</text>
+  <text x="30" y="315" font-family="Arial" font-size="11" fill="#666666">Art Institute</text>
+  <text x="240" y="315" font-family="Arial" font-size="10" fill="#666666" text-anchor="end">2014 - 2018</text>
+  <rect x="30" y="325" width="240" height="2" rx="1" fill="#f5f5f5" />
+  <rect x="30" y="332" width="200" height="2" rx="1" fill="#f5f5f5" />
+  
+  <!-- Skills Section -->
+  <text x="30" y="360" font-family="Arial" font-size="14" font-weight="bold" fill="#8b5cf6">Skills</text>
+  <rect x="30" y="370" width="240" height="1" fill="#dddddd" />
+</svg> 

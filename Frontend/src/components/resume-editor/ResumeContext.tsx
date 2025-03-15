@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { templateService } from '@/services/template.service';
+import { useSearchParams } from 'react-router-dom';
 
 // Mock user data - move this to a separate file later if needed
 const mockUser = {
@@ -161,7 +163,7 @@ export type UserData = {
 };
 
 // Context type
-type ResumeContextType = {
+interface ResumeContextType {
   userData: UserData;
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   resumeContent: ResumeContent;
@@ -178,13 +180,19 @@ type ResumeContextType = {
   setPageFormat: React.Dispatch<React.SetStateAction<string>>;
   isExportDialogOpen: boolean;
   setIsExportDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
+  selectedTemplate: string | null;
+  setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
+  templateStyles: any;
+}
 
 // Create context
-export const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
+const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
 // Provider component
 export const ResumeProvider = ({ children }: { children: ReactNode }) => {
+  const [searchParams] = useSearchParams();
+  const templateParam = searchParams.get('template');
+
   const [userData, setUserData] = useState<UserData>(mockUser);
   
   const [resumeContent, setResumeContent] = useState<ResumeContent>({
@@ -226,6 +234,29 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [pageFormat, setPageFormat] = useState("A4");
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
+  // State for selected template
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateParam || 'classic');
+  
+  // State for template styles
+  const [templateStyles, setTemplateStyles] = useState<any>(null);
+
+  // Effect to load template styles when selectedTemplate changes
+  useEffect(() => {
+    if (selectedTemplate) {
+      const template = templateService.getTemplateById(selectedTemplate);
+      if (template) {
+        // Update section order based on template
+        setResumeContent(prev => ({
+          ...prev,
+          sectionOrder: [...template.styles.sectionOrder]
+        }));
+        
+        // Set template styles
+        setTemplateStyles(template.styles);
+      }
+    }
+  }, [selectedTemplate]);
+
   return (
     <ResumeContext.Provider value={{
       userData,
@@ -243,7 +274,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       pageFormat,
       setPageFormat,
       isExportDialogOpen,
-      setIsExportDialogOpen
+      setIsExportDialogOpen,
+      selectedTemplate,
+      setSelectedTemplate,
+      templateStyles
     }}>
       {children}
     </ResumeContext.Provider>

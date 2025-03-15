@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -22,6 +22,10 @@ import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-edito
 
 // Main Editor component
 function EditorContent() {
+  // Get URL parameters
+  const [searchParams] = useSearchParams();
+  const templateParam = searchParams.get('template');
+  
   // Get all state from context
   const {
     userData,
@@ -39,7 +43,9 @@ function EditorContent() {
     pageFormat,
     setPageFormat,
     isExportDialogOpen,
-    setIsExportDialogOpen
+    setIsExportDialogOpen,
+    selectedTemplate,
+    setSelectedTemplate
   } = useResumeContext();
 
   // Local state
@@ -56,6 +62,14 @@ function EditorContent() {
     
     return () => clearTimeout(initialCleanup);
   }, []);
+
+  // Set the template from URL parameter when component mounts
+  useEffect(() => {
+    if (templateParam && templateParam !== selectedTemplate) {
+      setSelectedTemplate(templateParam);
+      toast.success(`Template "${templateParam}" applied`);
+    }
+  }, [templateParam, selectedTemplate, setSelectedTemplate]);
 
   // Function to clean up existing duplicates
   const cleanupDuplicates = () => {

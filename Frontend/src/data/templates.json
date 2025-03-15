@@ -1,0 +1,115 @@
+[
+  {
+    "id": "classic",
+    "name": "Classic Professional",
+    "description": "A traditional resume layout with a clean, formal design suitable for most professional settings",
+    "thumbnail": "/assets/thumbnails/classic-resume-thumbnail.svg",
+    "category": "Professional",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#2563eb",
+      "lineColor": "#dddddd",
+      "headerStyle": "centered",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["experience", "education"]
+    }
+  },
+  {
+    "id": "modern",
+    "name": "Modern Professional",
+    "description": "A contemporary design with a blue accent color and skills section first",
+    "thumbnail": "/assets/thumbnails/modern-resume-thumbnail.svg",
+    "category": "Modern",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#2563eb",
+      "lineColor": "#dddddd",
+      "headerStyle": "centered-with-accent",
+      "accentHeight": "5px",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["skills", "experience", "education"]
+    }
+  },
+  {
+    "id": "student",
+    "name": "Modern Student",
+    "description": "A student-focused layout emphasizing education, projects, and relevant coursework",
+    "thumbnail": "/assets/thumbnails/student-resume-thumbnail.svg",
+    "category": "Academic",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#10b981",
+      "lineColor": "#dddddd",
+      "headerStyle": "centered-with-accent",
+      "accentHeight": "5px",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["education", "experience", "skills"]
+    }
+  },
+  {
+    "id": "creative",
+    "name": "Creative Professional",
+    "description": "A visually distinctive design with a gradient header and decorative elements for creative fields",
+    "thumbnail": "/assets/thumbnails/creative-resume-thumbnail.svg",
+    "category": "Creative",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#8b5cf6",
+      "gradientColors": ["#8b5cf6", "#ec4899"],
+      "lineColor": "#dddddd",
+      "headerStyle": "centered-with-gradient",
+      "accentHeight": "5px",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["experience", "education", "skills"]
+    }
+  },
+  {
+    "id": "executive",
+    "name": "Executive",
+    "description": "A sophisticated design with navy blue and gold accents, focused on executive summary and leadership experience",
+    "thumbnail": "/assets/thumbnails/executive-resume-thumbnail.svg",
+    "category": "Professional",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#1e3a5f",
+      "lineColor": "#c9a959",
+      "headerStyle": "centered-with-accent",
+      "accentHeight": "5px",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["experience", "education"]
+    }
+  },
+  {
+    "id": "minimal",
+    "name": "Minimal",
+    "description": "A clean, minimalist design with ample white space and subtle styling",
+    "thumbnail": "/assets/thumbnails/minimal-resume-thumbnail.svg",
+    "category": "Simple",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "primaryColor": "#333333",
+      "secondaryColor": "#666666",
+      "accentColor": "#333333",
+      "lineColor": "#dddddd",
+      "headerStyle": "centered-minimal",
+      "sectionTitleSize": "16px",
+      "sectionTitleWeight": "bold",
+      "sectionOrder": ["experience", "education"]
+    }
+  }
+] 

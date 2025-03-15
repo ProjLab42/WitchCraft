@@ -13,7 +13,11 @@
     "test:custom-item": "node src/tests/test-add-custom-item.cjs"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@hookform/resolvers": "^3.9.0",
+    "@mui/icons-material": "^6.4.7",
+    "@mui/material": "^6.4.7",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",

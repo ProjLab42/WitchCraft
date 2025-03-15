@@ -30,6 +30,9 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
   resumeRef, 
   zoomLevel 
 }) => {
+  // Get template styles from context
+  const { templateStyles } = useResumeContext();
+  
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
@@ -101,22 +104,32 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
     }
   };
 
-  // Render section title
+  // Render section title with appropriate styling
   const renderSectionTitle = (type: string) => {
-    switch (type) {
-      case 'experience':
-        return 'Experience';
-      case 'education':
-        return 'Education';
-      case 'projects':
-        return 'Projects';
-      case 'certifications':
-        return 'Certifications';
-      case 'skills':
-        return 'Skills';
-      default:
-        return type.charAt(0).toUpperCase() + type.slice(1);
-    }
+    const title = type.charAt(0).toUpperCase() + type.slice(1);
+    
+    // Apply template styles if available
+    const titleStyle = templateStyles ? {
+      fontSize: templateStyles.sectionTitleSize || '16px',
+      fontWeight: templateStyles.sectionTitleWeight || 'bold',
+      color: templateStyles.primaryColor || '#333333',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+    } : {};
+    
+    const lineStyle = templateStyles ? {
+      backgroundColor: templateStyles.lineColor || '#dddddd',
+      height: '1px',
+      width: '100%',
+      marginTop: '4px',
+      marginBottom: '12px'
+    } : {};
+    
+    return (
+      <div className="mb-4">
+        <h3 style={titleStyle}>{title}</h3>
+        <div style={lineStyle}></div>
+      </div>
+    );
   };
 
   // Render section content
@@ -247,6 +260,279 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
     );
   };
 
+  // Render header with appropriate styling based on template
+  const renderHeader = () => {
+    const { name, title, email, phone, location, links } = resumeContent.personalInfo;
+    
+    // Default styles
+    const headerStyle = {
+      textAlign: 'center',
+      marginBottom: '20px',
+      fontFamily: templateStyles?.fontFamily || 'Arial, sans-serif',
+    };
+    
+    // Apply template-specific header styles
+    if (templateStyles) {
+      const headerType = templateStyles.headerStyle || 'centered';
+      
+      switch (headerType) {
+        case 'centered-with-accent':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <div 
+                style={{ 
+                  backgroundColor: templateStyles.accentColor || '#2563eb',
+                  height: templateStyles.accentHeight || '5px',
+                  width: '100%',
+                  marginBottom: '15px'
+                }}
+              ></div>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <span>{email}</span>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#2563eb',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <span>{links.linkedin}</span>}
+                  {links.github && <span>• {links.github}</span>}
+                  {links.portfolio && <span>• {links.portfolio}</span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered-with-gradient':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <div 
+                style={{ 
+                  background: `linear-gradient(to right, ${templateStyles.gradientColors?.[0] || '#8b5cf6'}, ${templateStyles.gradientColors?.[1] || '#ec4899'})`,
+                  height: templateStyles.accentHeight || '5px',
+                  width: '100%',
+                  marginBottom: '15px'
+                }}
+              ></div>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <span>{email}</span>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#8b5cf6',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <span>{links.linkedin}</span>}
+                  {links.github && <span>• {links.github}</span>}
+                  {links.portfolio && <span>• {links.portfolio}</span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered-minimal':
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <span>{email}</span>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.secondaryColor || '#666666',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <span>{links.linkedin}</span>}
+                  {links.github && <span>• {links.github}</span>}
+                  {links.portfolio && <span>• {links.portfolio}</span>}
+                </div>
+              )}
+            </div>
+          );
+          
+        case 'centered':
+        default:
+          return (
+            <div style={headerStyle as React.CSSProperties}>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold',
+                color: templateStyles.primaryColor || '#333333',
+                margin: '0 0 5px 0'
+              }}>
+                {name}
+              </h1>
+              <h2 style={{ 
+                fontSize: '16px', 
+                fontWeight: 'normal',
+                color: templateStyles.secondaryColor || '#666666',
+                margin: '0 0 10px 0'
+              }}>
+                {title}
+              </h2>
+              <div style={{ 
+                fontSize: '12px',
+                color: templateStyles.secondaryColor || '#666666',
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '10px'
+              }}>
+                <span>{email}</span>
+                {phone && <span>• {phone}</span>}
+                {location && <span>• {location}</span>}
+              </div>
+              {links && (
+                <div style={{ 
+                  fontSize: '12px',
+                  color: templateStyles.accentColor || '#2563eb',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: '5px'
+                }}>
+                  {links.linkedin && <span>{links.linkedin}</span>}
+                  {links.github && <span>• {links.github}</span>}
+                  {links.portfolio && <span>• {links.portfolio}</span>}
+                </div>
+              )}
+            </div>
+          );
+      }
+    }
+    
+    // Default header if no template styles
+    return (
+      <div style={headerStyle as React.CSSProperties}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 5px 0' }}>{name}</h1>
+        <h2 style={{ fontSize: '16px', fontWeight: 'normal', margin: '0 0 10px 0' }}>{title}</h2>
+        <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+          <span>{email}</span>
+          {phone && <span>• {phone}</span>}
+          {location && <span>• {location}</span>}
+        </div>
+        {links && (
+          <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '5px' }}>
+            {links.linkedin && <span>{links.linkedin}</span>}
+            {links.github && <span>• {links.github}</span>}
+            {links.portfolio && <span>• {links.portfolio}</span>}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render skills section
+  const renderSkills = () => {
+    if (!selectedSkills.length) return null;
+    
+    const skillStyle = templateStyles ? {
+      display: 'inline-block',
+      margin: '0 8px 8px 0',
+      padding: '4px 10px',
+      borderRadius: '16px',
+      fontSize: '12px',
+      backgroundColor: templateStyles.accentColor ? `${templateStyles.accentColor}15` : '#f0f4ff',
+      color: templateStyles.accentColor || '#2563eb',
+      fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+    } : {};
+    
+    return (
+      <div className="mb-6">
+        {renderSectionTitle('skills')}
+        <div className="flex flex-wrap">
+          {selectedSkills.map(skill => (
+            <div key={skill.id} style={skillStyle as React.CSSProperties}>
+              {skill.name}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div 
       ref={(node) => {
@@ -266,46 +552,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
     >
       {/* Personal Info Section */}
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold">{resumeContent.personalInfo.name}</h1>
-        <p className="text-lg">{resumeContent.personalInfo.title}</p>
-        <div className="flex justify-center gap-2 text-sm mt-1">
-          <span>{resumeContent.personalInfo.email}</span>
-          {resumeContent.personalInfo.location && (
-            <>
-              <span>•</span>
-              <span>{resumeContent.personalInfo.location}</span>
-            </>
-          )}
-        </div>
-        
-        {resumeContent.personalInfo.links && (
-          <div className="flex justify-center gap-2 text-sm mt-1">
-            {resumeContent.personalInfo.links.linkedin && (
-              <a href={resumeContent.personalInfo.links.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary">
-                LinkedIn
-              </a>
-            )}
-            
-            {resumeContent.personalInfo.links.portfolio && (
-              <>
-                {resumeContent.personalInfo.links.linkedin && <span>•</span>}
-                <a href={resumeContent.personalInfo.links.portfolio} target="_blank" rel="noopener noreferrer" className="text-primary">
-                  Portfolio
-                </a>
-              </>
-            )}
-            
-            {resumeContent.personalInfo.links.additionalLinks && 
-             resumeContent.personalInfo.links.additionalLinks.map((link, index) => (
-              <React.Fragment key={index}>
-                <span>•</span>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary">
-                  {link.label}
-                </a>
-              </React.Fragment>
-            ))}
-          </div>
-        )}
+        {renderHeader()}
       </div>
       
       {/* Draggable Sections */}
@@ -329,7 +576,7 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                       <h3 className="text-lg font-semibold mb-2">
                         {renderSectionTitle(type as string)}
                       </h3>
-                      {renderSectionContent(type as string, items)}
+                      {type === 'skills' ? renderSkills() : renderSectionContent(type as string, items)}
                     </div>
                   )}
                 </Draggable>

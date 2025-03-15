@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Templates from "./pages/Templates";
 import Test from "./pages/Test";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/create" element={<Create />} />
           <Route path="/editor" element={<Editor />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/templates" element={<Templates />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

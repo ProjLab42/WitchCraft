@@ -1,0 +1,601 @@
+[
+  {
+    "id": "classic",
+    "name": "Classic Professional",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#2563eb"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#dddddd",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["experience", "education", "skills", "projects", "certifications"],
+      "header": "centered"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "Full Stack Developer",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe",
+          "portfolio": "janedoe.dev"
+        }
+      },
+      "sections": {
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Tech Solutions Inc.",
+            "title": "Senior Frontend Developer",
+            "period": "2020 - Present",
+            "description": "Led the development of a React-based dashboard used by over 10,000 customers. Improved performance by 40% through code optimization.",
+            "itemType": "experience"
+          },
+          {
+            "id": "exp2",
+            "company": "WebDev Agency",
+            "title": "Frontend Developer",
+            "period": "2018 - 2020",
+            "description": "Developed responsive web applications for clients in various industries. Collaborated with designers to implement pixel-perfect UIs.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "University of Technology",
+            "degree": "Master of Computer Science",
+            "period": "2016 - 2018",
+            "description": "Specialized in Human-Computer Interaction. Graduated with honors.",
+            "itemType": "education"
+          },
+          {
+            "id": "edu2",
+            "institution": "State University",
+            "degree": "Bachelor of Science in Computer Science",
+            "period": "2012 - 2016",
+            "description": "Dean's List, 3.8 GPA. Participated in ACM programming competitions.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "JavaScript", "React", "Node.js", "TypeScript", "HTML/CSS", 
+          "GraphQL", "MongoDB", "AWS", "Git", "Docker"
+        ]
+      }
+    }
+  },
+  {
+    "id": "modern",
+    "name": "Modern Professional",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "accentColor": "#2563eb",
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#2563eb",
+        "accentHeight": "5px"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#dddddd",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["skills", "experience", "education", "projects", "certifications"],
+      "header": "centered-accent"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "Full Stack Developer",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe",
+          "portfolio": "janedoe.dev"
+        }
+      },
+      "sections": {
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Tech Solutions Inc.",
+            "title": "Senior Frontend Developer",
+            "period": "2020 - Present",
+            "description": "Led the development of a React-based dashboard used by over 10,000 customers. Improved performance by 40% through code optimization.",
+            "itemType": "experience"
+          },
+          {
+            "id": "exp2",
+            "company": "WebDev Agency",
+            "title": "Frontend Developer",
+            "period": "2018 - 2020",
+            "description": "Developed responsive web applications for clients in various industries. Collaborated with designers to implement pixel-perfect UIs.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "University of Technology",
+            "degree": "Master of Computer Science",
+            "period": "2016 - 2018",
+            "description": "Specialized in Human-Computer Interaction. Graduated with honors.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "JavaScript", "React", "Node.js", "TypeScript", "HTML/CSS", 
+          "GraphQL", "MongoDB", "AWS", "Git", "Docker"
+        ]
+      }
+    }
+  },
+  {
+    "id": "student",
+    "name": "Modern Student",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "accentColor": "#10b981",
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#2563eb",
+        "accentHeight": "5px"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#dddddd",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["education", "experience", "skills", "projects", "certifications"],
+      "header": "centered-accent"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "Computer Science Student",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe",
+          "portfolio": "janedoe.dev"
+        }
+      },
+      "sections": {
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Tech Solutions Inc.",
+            "title": "Software Engineering Intern",
+            "period": "Summer 2022",
+            "description": "Developed features for the company's main product using React and Node.js. Participated in code reviews and agile development processes.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "University of Technology",
+            "degree": "Master of Computer Science",
+            "period": "2016 - 2018",
+            "description": "Specialized in Human-Computer Interaction. Graduated with honors.",
+            "itemType": "education"
+          },
+          {
+            "id": "edu2",
+            "institution": "State University",
+            "degree": "Bachelor of Science in Computer Science",
+            "period": "2012 - 2016",
+            "description": "Dean's List, 3.8 GPA. Participated in ACM programming competitions.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "JavaScript", "React", "Node.js", "Python", "Java", 
+          "HTML/CSS", "SQL", "Git", "Data Structures", "Algorithms"
+        ],
+        "projects": [
+          {
+            "id": "proj1",
+            "name": "Inventory Management System",
+            "role": "Lead Developer",
+            "period": "Spring 2023",
+            "description": "Developed a full-stack web application using React and Node.js. Implemented RESTful API and MongoDB database.",
+            "itemType": "projects"
+          },
+          {
+            "id": "proj2",
+            "name": "Machine Learning Classifier",
+            "role": "Researcher",
+            "period": "Fall 2022",
+            "description": "Built an image classification model using TensorFlow. Achieved 92% accuracy on test dataset.",
+            "itemType": "projects"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "creative",
+    "name": "Creative Professional",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "accentColor": {
+        "gradient": {
+          "start": "#8b5cf6",
+          "end": "#ec4899"
+        }
+      },
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#8b5cf6",
+        "accentHeight": "5px"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#dddddd",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["experience", "skills", "education", "projects", "certifications"],
+      "header": "centered-gradient"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "UI/UX Designer & Developer",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe",
+          "portfolio": "janedoe.design"
+        }
+      },
+      "sections": {
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Creative Design Studio",
+            "title": "Senior UI/UX Designer",
+            "period": "2020 - Present",
+            "description": "Led redesign of flagship product resulting in 35% increase in user engagement. Created comprehensive design systems and component libraries.",
+            "itemType": "experience"
+          },
+          {
+            "id": "exp2",
+            "company": "Digital Agency",
+            "title": "UI Designer",
+            "period": "2018 - 2020",
+            "description": "Designed mobile app interfaces and websites for various clients. Collaborated with development team to ensure pixel-perfect implementation.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "Design Institute",
+            "degree": "Master of Design",
+            "period": "2016 - 2018",
+            "description": "Focused on interaction design and user experience. Graduated with distinction.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "UI Design", "UX Research", "Figma", "Adobe Creative Suite", 
+          "HTML/CSS", "JavaScript", "React", "Prototyping", "Design Systems", "Typography"
+        ]
+      }
+    }
+  },
+  {
+    "id": "executive",
+    "name": "Executive",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "accentColor": "#1e3a5f",
+      "secondaryAccentColor": "#c9a959",
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#1e3a5f",
+        "accentHeight": "5px"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#c9a959",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["summary", "experience", "education", "skills", "certifications"],
+      "header": "centered-accent"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "Chief Executive Officer",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe"
+        }
+      },
+      "sections": {
+        "summary": [
+          {
+            "id": "summary1",
+            "content": "Visionary executive with 15+ years of leadership experience driving organizational growth and transformation. Proven track record of increasing revenue, optimizing operations, and leading high-performing teams across global markets.",
+            "itemType": "summary"
+          }
+        ],
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Global Enterprises Inc.",
+            "title": "Chief Executive Officer",
+            "period": "2018 - Present",
+            "description": "Led company through digital transformation, resulting in 35% revenue growth. Expanded operations to 5 new international markets. Restructured executive team and implemented strategic vision.",
+            "itemType": "experience"
+          },
+          {
+            "id": "exp2",
+            "company": "Strategic Solutions Ltd.",
+            "title": "Chief Operations Officer",
+            "period": "2013 - 2018",
+            "description": "Optimized supply chain operations, reducing costs by 22%. Led merger and acquisition activities valued at $50M. Improved operational efficiency across all departments.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "Harvard Business School",
+            "degree": "Master of Business Administration (MBA)",
+            "period": "2008",
+            "description": "Specialized in Strategic Management and Leadership.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "Strategic Planning", "Leadership", "Business Development", 
+          "Financial Management", "Mergers & Acquisitions", "Team Building", 
+          "Change Management", "Digital Transformation", "Public Speaking", "Negotiation"
+        ]
+      }
+    }
+  },
+  {
+    "id": "minimal",
+    "name": "Minimal",
+    "styles": {
+      "fontFamily": "Arial, sans-serif",
+      "header": {
+        "nameAlign": "center",
+        "nameSize": "24px",
+        "nameWeight": "bold",
+        "nameColor": "#333333",
+        "titleAlign": "center",
+        "titleSize": "16px",
+        "titleWeight": "normal",
+        "titleColor": "#666666",
+        "contactAlign": "center",
+        "contactSize": "12px",
+        "contactColor": "#666666",
+        "linksAlign": "center",
+        "linksColor": "#333333"
+      },
+      "section": {
+        "titleSize": "18px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "titleCase": "capitalize",
+        "dividerColor": "#dddddd",
+        "dividerWidth": "1px"
+      },
+      "item": {
+        "titleSize": "16px",
+        "titleWeight": "bold",
+        "titleColor": "#333333",
+        "subtitleSize": "14px",
+        "subtitleStyle": "italic",
+        "subtitleColor": "#666666",
+        "dateSize": "12px",
+        "dateColor": "#666666",
+        "contentSize": "12px",
+        "contentColor": "#666666"
+      }
+    },
+    "layout": {
+      "order": ["experience", "education", "skills"],
+      "header": "centered-minimal"
+    },
+    "mockData": {
+      "personalInfo": {
+        "name": "Jane Doe",
+        "title": "Content Strategist",
+        "email": "jane.doe@example.com",
+        "location": "San Francisco, CA",
+        "links": {
+          "linkedin": "linkedin.com/in/janedoe",
+          "portfolio": "janedoe.com"
+        }
+      },
+      "sections": {
+        "experience": [
+          {
+            "id": "exp1",
+            "company": "Minimal Media Group",
+            "title": "Content Director",
+            "period": "2019 - Present",
+            "description": "Developed content strategy across digital platforms. Led team of 5 content creators and editors.",
+            "itemType": "experience"
+          },
+          {
+            "id": "exp2",
+            "company": "Clean Design Agency",
+            "title": "Senior Content Strategist",
+            "period": "2016 - 2019",
+            "description": "Created content guidelines for major brands. Increased client engagement by 40%.",
+            "itemType": "experience"
+          }
+        ],
+        "education": [
+          {
+            "id": "edu1",
+            "institution": "Pacific Northwest University",
+            "degree": "Bachelor of Arts in Communications",
+            "period": "2012 - 2016",
+            "description": "Graduated with honors. Focus on digital media and content creation.",
+            "itemType": "education"
+          }
+        ],
+        "skills": [
+          "Content Strategy", "Copywriting", "SEO", "Social Media", 
+          "Brand Messaging", "Content Management", "Analytics", "Editing"
+        ]
+      }
+    }
+  }
+] 
