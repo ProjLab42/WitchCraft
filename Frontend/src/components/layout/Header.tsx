@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { FileText, User, History, Plus, LogIn } from "lucide-react";
+import { FileText, User, Sparkles, Plus, LogIn } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function Header() {
@@ -45,8 +45,8 @@ export function Header() {
           <Link to="/templates" className="text-sm font-medium hover:text-primary transition-colors">
             Templates
           </Link>
-          <Link to="/history" className="text-sm font-medium hover:text-primary transition-colors">
-            History
+          <Link to="/ai-features" className="text-sm font-medium hover:text-primary transition-colors">
+            AI Features
           </Link>
         </nav>
         <div className="flex items-center gap-4">

@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 console.log('API URL configured as:', API_URL);
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -153,6 +153,71 @@ export const resumeAPI = {
     return response.data;
   },
   
+  // Server-side PDF/DOCX download
+  downloadResume: async (id: string, format: 'pdf' | 'docx', template?: string) => {
+    try {
+      console.log(`Requesting download format=${format}, template=${template}, resumeId=${id}`);
+      
+      // Create URL with query params if template is provided
+      const url = template 
+        ? `/resume/download/${id}/${format}?template=${template}` 
+        : `/resume/download/${id}/${format}`;
+      
+      // Make request with responseType blob to handle binary data
+      const response = await api.get(url, {
+        responseType: 'blob'
+      });
+      
+      // Check if we received a valid blob (PDF/DOCX)
+      if (!response.data || response.data.size === 0) {
+        console.error('Empty response received from server');
+        return false;
+      }
+      
+      // Log response details for debugging
+      console.log('Download response received:', { 
+        contentType: response.data.type,
+        size: response.data.size,
+        statusCode: response.status
+      });
+      
+      // Verify content type
+      const contentType = response.headers['content-type'] || 
+        (format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      
+      // Create file name
+      const fileName = `resume.${format}`;
+      
+      // Create blob URL and trigger download (using a more robust approach)
+      const blob = new Blob([response.data], { type: contentType });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      
+      // Create and trigger download link
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      }, 100);
+      
+      return true;
+    } catch (error) {
+      console.error('Error downloading resume:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
+      return false;
+    }
+  },
+  
   // Section-specific API calls
   addSectionItem: async (resumeId: string, sectionType: string, itemData: any) => {
     const response = await api.post(`/resume/create/${resumeId}/sections/${sectionType}`, itemData);
@@ -175,4 +240,5 @@ export const resumeAPI = {
   }
 };
 
+// Export the api instance as default
 export default api; 

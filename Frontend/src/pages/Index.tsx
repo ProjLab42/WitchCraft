@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "react-router-dom";
-import { FileText, Upload, ArrowRight, CheckCircle } from "lucide-react";
+import { FileText, Upload, ArrowRight, CheckCircle, Sparkles } from "lucide-react";
 
 export default function Index() {
   return (
@@ -38,6 +38,13 @@ export default function Index() {
                 <Link to="/upload">
                   <Upload className="h-5 w-5" />
                   <span>Upload Existing Resume</span>
+                </Link>
+              </Button>
+
+              <Button asChild variant="secondary" size="lg" className="gap-2">
+                <Link to="/ai-features">
+                  <Sparkles className="h-5 w-5" />
+                  <span>AI Resume Tools</span>
                 </Link>
               </Button>
             </div>
@@ -79,6 +86,16 @@ export default function Index() {
               
               <div className="animate-fade-in group rounded-lg border bg-card p-6 transition-all hover:shadow-md">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">AI-Powered Tools</h3>
+                <p className="text-muted-foreground">
+                  Let AI create or tune your resume based on job descriptions to maximize your chances of getting hired.
+                </p>
+              </div>
+              
+              <div className="animate-fade-in group rounded-lg border bg-card p-6 transition-all hover:shadow-md">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
                   <CheckCircle className="h-6 w-6" />
                 </div>
                 <h3 className="mb-2 text-xl font-semibold">Easy Customization</h3>
@@ -106,16 +123,6 @@ export default function Index() {
                   See changes to your resume in real-time as you make them for perfect results.
                 </p>
               </div>
-              
-              <div className="animate-fade-in group rounded-lg border bg-card p-6 transition-all hover:shadow-md">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                  <CheckCircle className="h-6 w-6" />
-                </div>
-                <h3 className="mb-2 text-xl font-semibold">Resume Parsing</h3>
-                <p className="text-muted-foreground">
-                  Upload your existing resume and our system will extract the information automatically.
-                </p>
-              </div>
             </div>
           </div>
         </section>
@@ -128,12 +135,21 @@ export default function Index() {
               Join thousands of job seekers who have successfully landed interviews with resumes created on our platform.
             </p>
             
-            <Button asChild size="lg" className="gap-2">
-              <Link to="/templates">
-                <span>Get Started</span>
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button asChild size="lg" className="gap-2">
+                <Link to="/templates">
+                  <span>Get Started</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+              
+              <Button asChild size="lg" variant="secondary" className="gap-2">
+                <Link to="/ai-features">
+                  <Sparkles className="h-5 w-5" />
+                  <span>Try AI Resume Tools</span>
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
       </main>

@@ -22,6 +22,7 @@ import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEdito
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
 import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
+import { resumeAPI } from "@/services/api.service";
 
 // Main Editor component
 function EditorContent() {
@@ -60,6 +61,9 @@ function EditorContent() {
   const [isAddSkillDialogOpen, setIsAddSkillDialogOpen] = useState(false);
   const resumeRef = useRef(null);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // State for current resume ID (from DB)
+  const [resumeId, setResumeId] = useState<string | null>(null);
 
   // Fetch template data when templateParam changes
   useEffect(() => {
@@ -824,15 +828,120 @@ function EditorContent() {
     setPageFormat(value);
   };
   
+  // Save the current resume state to the server
+  const saveResumeState = async () => {
+    try {
+      console.log("Preparing resume data for save...");
+      
+      // Create properly formatted resume data according to backend schema
+      const resumeData = {
+        title: resumeContent.personalInfo.name 
+          ? `${resumeContent.personalInfo.name}'s Resume` 
+          : 'Untitled Resume',
+        template: template?.name || 'default',
+        format: pageFormat || 'A4',
+        lastEdited: new Date(),
+        
+        // Format personal info data according to backend schema
+        data: {
+          name: resumeContent.personalInfo.name || '',
+          jobTitle: resumeContent.personalInfo.title || '',
+          email: resumeContent.personalInfo.email || '',
+          linkedin: resumeContent.personalInfo.links?.linkedin || '',
+          website: resumeContent.personalInfo.links?.portfolio || '',
+          // Only include optional fields if they exist in PersonalInfo
+          ...(resumeContent.personalInfo.phone && { phone: resumeContent.personalInfo.phone }),
+          ...(resumeContent.personalInfo.summary && { summary: resumeContent.personalInfo.summary }),
+          ...(resumeContent.personalInfo.location && { location: resumeContent.personalInfo.location })
+        },
+        
+        // Format sections according to backend schema
+        sections: {
+          experience: resumeContent.sections.filter(s => s.itemType === 'experience') || [],
+          education: resumeContent.sections.filter(s => s.itemType === 'education') || [],
+          skills: resumeContent.selectedSkills || [],
+          projects: resumeContent.sections.filter(s => s.itemType === 'projects') || [],
+          certifications: resumeContent.sections.filter(s => s.itemType === 'certifications') || []
+        }
+      };
+      
+      console.log("Prepared data:", resumeData);
+      
+      let savedResume;
+      
+      if (resumeId) {
+        console.log("Updating existing resume with ID:", resumeId);
+        // Update existing resume
+        savedResume = await resumeAPI.updateResume(resumeId, resumeData);
+        console.log("Resume updated successfully:", savedResume);
+      } else {
+        console.log("Creating new resume...");
+        // Create new resume
+        savedResume = await resumeAPI.createResume(resumeData);
+        console.log("New resume created:", savedResume);
+        if (savedResume && savedResume._id) {
+          setResumeId(savedResume._id);
+        }
+      }
+      
+      return savedResume;
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      return null;
+    }
+  };
+  
   // Export as PDF
   const handleExportPDF = async () => {
-    const success = await exportAsPDF(resumeRef, pageFormat);
+    let success = false;
     
-    if (success) {
-      toast.success("Resume exported as PDF");
-      closeExportDialog();
-    } else {
-      toast.error("Failed to export PDF");
+    // Show loading toast
+    const loadingToast = toast.loading("Exporting resume as PDF...");
+    
+    try {
+      console.log("Starting PDF export process");
+      // First save the current resume state to get an ID
+      console.log("Current resume content:", resumeContent);
+      const savedResume = await saveResumeState();
+      console.log("Save resume result:", savedResume);
+      
+      if (savedResume && savedResume._id) {
+        // Use server-side PDF generation
+        console.log("Using server-side PDF generation with resume ID:", savedResume._id);
+        success = await resumeAPI.downloadResume(
+          savedResume._id, 
+          'pdf',
+          template?.name // Pass current template name
+        );
+        
+        if (success) {
+          toast.success("Resume exported as PDF");
+          closeExportDialog();
+        } else {
+          toast.error("Failed to export PDF. Please try again.");
+        }
+      } else {
+        toast.error("Failed to save resume. Please try again.");
+      }
+    } catch (error) {
+      console.error("PDF export error:", error);
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
+      toast.error("Failed to export PDF. Please try again.");
+    } finally {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
     }
     
     return success;
@@ -840,13 +949,52 @@ function EditorContent() {
   
   // Export as DOCX
   const handleExportDOCX = async () => {
-    const success = await exportAsDOCX(resumeContent, pageFormat);
+    let success = false;
     
-    if (success) {
-      toast.success("Resume exported as DOCX");
-      closeExportDialog();
-    } else {
-      toast.error("Failed to export DOCX");
+    // Show loading toast
+    const loadingToast = toast.loading("Exporting resume as DOCX...");
+    
+    try {
+      // First try to save the current resume state to get an ID
+      const savedResume = await saveResumeState();
+      
+      if (savedResume && savedResume._id) {
+        // Use server-side DOCX generation
+        success = await resumeAPI.downloadResume(
+          savedResume._id, 
+          'docx',
+          template?.name // Pass current template name
+        );
+      } else {
+        // Fallback to client-side generation if we couldn't save
+        console.warn("Falling back to client-side DOCX generation");
+        success = await exportAsDOCX(resumeContent, pageFormat);
+      }
+      
+      if (success) {
+        toast.success("Resume exported as DOCX");
+        closeExportDialog();
+      } else {
+        toast.error("Failed to export DOCX");
+      }
+    } catch (error) {
+      console.error("DOCX export error:", error);
+      // Fallback to client-side generation on error
+      try {
+        success = await exportAsDOCX(resumeContent, pageFormat);
+        if (success) {
+          toast.success("Resume exported as DOCX (fallback method)");
+          closeExportDialog();
+        } else {
+          toast.error("Failed to export DOCX");
+        }
+      } catch (fallbackError) {
+        console.error("Fallback DOCX export error:", fallbackError);
+        toast.error("Failed to export DOCX");
+      }
+    } finally {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
     }
     
     return success;

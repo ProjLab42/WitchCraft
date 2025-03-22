@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -38,6 +39,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       <DialogContent className="sm:max-w-[480px] px-8 py-6 overflow-hidden">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl">Export Resume</DialogTitle>
+          <DialogDescription>
+            Choose your preferred page format and export your resume as PDF or DOCX.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="py-4 border-y">

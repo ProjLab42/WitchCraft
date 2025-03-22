@@ -85,6 +85,8 @@ export type PersonalInfo = {
   title: string;
   email: string;
   location: string;
+  phone?: string;
+  summary?: string;
   links?: {
     linkedin?: string;
     portfolio?: string;

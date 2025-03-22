@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { FileText, Plus, Download, Edit, Trash, Upload, PlusCircle } from "lucide-react";
+import { FileText, Plus, Download, Edit, Trash, Upload, PlusCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 // Sample resume data
@@ -68,6 +68,33 @@ export default function Dashboard() {
             </div>
           </div>
           
+          {/* AI Features Card */}
+          <Card className="mb-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                AI Resume Tools
+              </CardTitle>
+              <CardDescription>
+                Use AI to generate tailored resumes based on your profile and job descriptions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                Our AI can analyze job descriptions and create optimized resumes that highlight your
+                most relevant skills and experiences, increasing your chances of getting interviews.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button asChild>
+                <Link to="/ai-features">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Try AI Resume Builder
+                </Link>
+              </Button>
+            </CardFooter>
+          </Card>
+          
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {resumes.map((resume) => (
               <Card key={resume.id} className="animate-fade-in overflow-hidden transition-all hover:shadow-md">
@@ -118,20 +145,22 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <div className="flex flex-col items-center justify-center space-y-4 p-8">
-            <div className="text-center">
-              <h3 className="text-xl font-semibold">Create Your First Resume</h3>
-              <p className="text-muted-foreground">
-                Get started by creating a professional resume
-              </p>
+          {resumes.length === 0 && (
+            <div className="flex flex-col items-center justify-center space-y-4 p-8">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold">Create Your First Resume</h3>
+                <p className="text-muted-foreground">
+                  Get started by creating a professional resume
+                </p>
+              </div>
+              <Button asChild>
+                <Link to="/templates">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Resume
+                </Link>
+              </Button>
             </div>
-            <Button asChild>
-              <Link to="/templates">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Resume
-              </Link>
-            </Button>
-          </div>
+          )}
         </div>
       </main>
       
