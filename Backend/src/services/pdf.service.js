@@ -318,25 +318,25 @@ exports.generatePDF = async (cv, template) => {
     try {
       // First try to use puppeteer for best rendering
       console.log('Launching Puppeteer browser with minimal configuration...');
-      const browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
       
       console.log('Browser launched successfully');
-      
-      const page = await browser.newPage();
+    
+    const page = await browser.newPage();
       console.log('Page created');
       
       // Set HTML directly
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'networkidle0' });
       console.log('Content set, generating PDF...');
-      
+    
       // Generate PDF with minimal settings to ensure it works
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: {
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
           top: '20px',
           right: '20px',
           bottom: '20px',
@@ -345,11 +345,11 @@ exports.generatePDF = async (cv, template) => {
       });
       
       console.log(`PDF generated successfully, size: ${pdfBuffer.length} bytes`);
-      
-      await browser.close();
+    
+    await browser.close();
       console.log('Browser closed');
       
-      return pdfBuffer;
+    return pdfBuffer;
     } catch (puppeteerError) {
       // If puppeteer fails, log the error and fall back to pdf-lib
       console.error('Puppeteer PDF generation error:', puppeteerError);
