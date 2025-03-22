@@ -338,8 +338,10 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   marginTop: '5px'
                 }}>
                   {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
-                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
                   {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                  {links.additionalLinks && links.additionalLinks.map((link, index) => (
+                    <span key={index}>• <a href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}>{link.label}</a></span>
+                  ))}
                 </div>
               )}
             </div>
@@ -393,8 +395,10 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   marginTop: '5px'
                 }}>
                   {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
-                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
                   {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                  {links.additionalLinks && links.additionalLinks.map((link, index) => (
+                    <span key={index}>• <a href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}>{link.label}</a></span>
+                  ))}
                 </div>
               )}
             </div>
@@ -440,8 +444,10 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   marginTop: '5px'
                 }}>
                   {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
-                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
                   {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                  {links.additionalLinks && links.additionalLinks.map((link, index) => (
+                    <span key={index}>• <a href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}>{link.label}</a></span>
+                  ))}
                 </div>
               )}
             </div>
@@ -488,8 +494,10 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
                   marginTop: '5px'
                 }}>
                   {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
-                  {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
                   {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+                  {links.additionalLinks && links.additionalLinks.map((link, index) => (
+                    <span key={index}>• <a href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}>{link.label}</a></span>
+                  ))}
                 </div>
               )}
             </div>
@@ -510,8 +518,10 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
         {links && (
           <div style={{ fontSize: '12px', display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '5px' }}>
             {links.linkedin && <a href={links.linkedin} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.linkedin}</a>}
-            {links.github && <span>• <a href={links.github} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.github}</a></span>}
             {links.portfolio && <span>• <a href={links.portfolio} target="_blank" rel="noopener noreferrer" style={linkStyle}>{links.portfolio}</a></span>}
+            {links.additionalLinks && links.additionalLinks.map((link, index) => (
+              <span key={index}>• <a href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}>{link.label}</a></span>
+            ))}
           </div>
         )}
       </div>

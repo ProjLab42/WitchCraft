@@ -167,7 +167,7 @@ export type UserData = {
 };
 
 // Context type
-interface ResumeContextType {
+export interface ResumeContextType {
   userData: UserData;
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   resumeContent: ResumeContent;
@@ -187,6 +187,8 @@ interface ResumeContextType {
   selectedTemplate: string | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateStyles: any;
+  autoScalingEnabled: boolean;
+  setAutoScalingEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 // Create context
@@ -356,6 +358,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   // State for template styles
   const [templateStyles, setTemplateStyles] = useState<any>(null);
 
+  // Auto-scaling toggle
+  const [autoScalingEnabled, setAutoScalingEnabled] = useState(true);
+
   // Effect to load template styles when selectedTemplate changes
   useEffect(() => {
     const loadTemplate = async () => {
@@ -401,7 +406,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       setIsExportDialogOpen,
       selectedTemplate,
       setSelectedTemplate,
-      templateStyles
+      templateStyles,
+      autoScalingEnabled,
+      setAutoScalingEnabled
     }}>
       {children}
     </ResumeContext.Provider>
