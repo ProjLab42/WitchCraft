@@ -39,7 +39,9 @@ const corsOptions = {
   },
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Authorization'],
+  preflightContinue: false
 };
 
 console.log('CORS configured with options:', corsOptions);

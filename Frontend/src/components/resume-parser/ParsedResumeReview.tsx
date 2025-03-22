@@ -13,6 +13,7 @@ import { ParsedEducationSection } from './sections/ParsedEducationSection';
 import { ParsedSkillsSection } from './sections/ParsedSkillsSection';
 import { ParsedProjectsSection } from './sections/ParsedProjectsSection';
 import { ParsedCertificationsSection } from './sections/ParsedCertificationsSection';
+import { ATSScoreDisplay } from './ATSScoreDisplay';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -27,7 +28,8 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
     parsingStatus, 
     selectAllItems, 
     deselectAllItems, 
-    saveSelectedItems 
+    saveSelectedItems,
+    atsScore 
   } = useResumeParser();
   
   const navigate = useNavigate();
@@ -224,6 +226,9 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
         </div>
       </CardHeader>
       <CardContent>
+        {/* Display ATS Score if available */}
+        {atsScore && <ATSScoreDisplay scoreResult={atsScore} />}
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-4">
             <TabsTrigger value="personal-info" className="relative">

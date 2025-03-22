@@ -17,26 +17,39 @@ const api = axios.create({
 // Add request interceptor to add auth token to requests
 api.interceptors.request.use(
   (config) => {
+    console.log('Request interceptor triggered for:', config.url);
+    console.log('Request headers before token:', config.headers);
+    
     // Get token from cookies instead of localStorage
     const token = document.cookie
       .split('; ')
       .find(row => row.startsWith('authToken='))
       ?.split('=')[1];
       
+    console.log('Current cookies:', document.cookie);
+    console.log('Found auth token:', token ? `${token.substring(0, 10)}...` : 'No token');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('Added Authorization header:', config.headers.Authorization);
+    } else {
+      console.log('No auth token found in cookies');
     }
     
-    // Log the request for debugging
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+    // Log the full request configuration
+    console.log('Final request config:', {
+      url: config.url,
+      method: config.method,
+      baseURL: config.baseURL,
       headers: config.headers,
+      withCredentials: config.withCredentials,
       data: config.data
     });
     
     return config;
   },
   (error) => {
-    console.error('API Request Error:', error);
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -44,8 +57,10 @@ api.interceptors.request.use(
 // Add response interceptor to log responses
 api.interceptors.response.use(
   (response) => {
-    console.log(`API Response (${response.status}):`, {
+    console.log(`API Response Success (${response.status}):`, {
       url: response.config.url,
+      method: response.config.method,
+      headers: response.headers,
       data: response.data
     });
     return response;
@@ -53,8 +68,10 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Response Error:', {
       url: error.config?.url,
+      method: error.config?.method,
       status: error.response?.status,
       statusText: error.response?.statusText,
+      headers: error.response?.headers,
       data: error.response?.data,
       message: error.message
     });

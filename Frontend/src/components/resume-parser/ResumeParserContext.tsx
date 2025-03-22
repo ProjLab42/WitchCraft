@@ -6,6 +6,7 @@ import {
   ResumeParserContextType 
 } from '@/types/resume-parser';
 import { parseResumeFile, saveParsedResumeToProfile } from '@/services/resume-parser.service';
+import { scoreResumeForATS, ATSScoreResult } from '@/services/ats-scorer.service';
 import { toast } from 'sonner';
 
 // Create the context with a default undefined value
@@ -22,6 +23,8 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   const [parsedResume, setParsedResume] = useState<ParsedResume | null>(null);
   // State for parsing status
   const [parsingStatus, setParsingStatus] = useState<ParsingStatus>(ParsingStatus.IDLE);
+  // State for ATS score
+  const [atsScore, setAtsScore] = useState<ATSScoreResult | null>(null);
 
   // Parse a resume file
   const parseResume = async (file: File): Promise<void> => {
@@ -38,6 +41,11 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
       
       // Update state with parsed data
       setParsedResume(parsedData);
+
+      // Generate ATS score
+      const atsScoreResult = scoreResumeForATS(parsedData);
+      setAtsScore(atsScoreResult);
+      
       setParsingStatus(ParsingStatus.COMPLETED);
       
       toast.success('Resume parsed successfully!');
@@ -52,7 +60,7 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   const updateParsedItem = <T extends keyof ParsedResume>(
     section: T,
     index: number,
-    updates: Partial<ParsedResume[T][0]>
+    updates: Partial<ParsedResume[T] extends Array<infer U> ? U : never>
   ): void => {
     if (!parsedResume) return;
 
@@ -62,10 +70,16 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
       const sectionItems = [...prev[section]];
       sectionItems[index] = { ...sectionItems[index], ...updates };
 
-      return {
+      const updatedResume = {
         ...prev,
         [section]: sectionItems
       };
+
+      // Recalculate ATS score when parsed resume is updated
+      const newAtsScore = scoreResumeForATS(updatedResume);
+      setAtsScore(newAtsScore);
+
+      return updatedResume;
     });
   };
 
@@ -76,13 +90,19 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
     setParsedResume(prev => {
       if (!prev) return prev;
 
-      return {
+      const updatedResume = {
         ...prev,
         personalInfo: {
           ...prev.personalInfo,
           ...updates
         }
       };
+
+      // Recalculate ATS score when personal info is updated
+      const newAtsScore = scoreResumeForATS(updatedResume);
+      setAtsScore(newAtsScore);
+
+      return updatedResume;
     });
   };
 
@@ -158,6 +178,7 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   const value: ResumeParserContextType = {
     parsedResume,
     parsingStatus,
+    atsScore,
     parseResume,
     updateParsedItem,
     updateParsedPersonalInfo,
