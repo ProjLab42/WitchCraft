@@ -91,15 +91,6 @@ npm run dev
 - `/src/services`: Business logic services
 - `/src/config`: Configuration files
 
-### Test Structure
-- `/tests`: Main test files for the project
-  - `test-auth-flow.js`: Comprehensive authentication flow tests
-  - `test-user-controller.js`: User controller functionality tests
-  - `test-resume-save.js`: Resume data saving tests
-  - `simple-connectivity-test.js`: Basic connectivity tests
-- `/Backend/tests`: Backend-specific tests
-- `/Frontend/src/tests`: Frontend-specific tests
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

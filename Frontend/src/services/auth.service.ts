@@ -40,7 +40,10 @@ const AuthService = {
       if (response.data.token) {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 7);
-        document.cookie = `authToken=${response.data.token}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
+        const cookieString = `authToken=${response.data.token}; expires=${expiryDate.toUTCString()}; path=/; SameSite=None; Secure`;
+        document.cookie = cookieString;
+        console.log('Set auth cookie:', cookieString);
+        console.log('Current cookies after setting:', document.cookie);
         window.dispatchEvent(new Event('storage'));
       }
       
@@ -64,9 +67,10 @@ const AuthService = {
       if (response.data.token) {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 7);
-        document.cookie = `authToken=${response.data.token}; expires=${expiryDate.toUTCString()}; path=/; SameSite=Lax`;
-        
-        // Trigger storage event for other components to detect the change
+        const cookieString = `authToken=${response.data.token}; expires=${expiryDate.toUTCString()}; path=/; SameSite=None; Secure`;
+        document.cookie = cookieString;
+        console.log('Set auth cookie:', cookieString);
+        console.log('Current cookies after setting:', document.cookie);
         window.dispatchEvent(new Event('storage'));
       }
       
