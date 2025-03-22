@@ -91,6 +91,38 @@ npm run dev
 - `/src/services`: Business logic services
 - `/src/config`: Configuration files
 
+### PDF/DOCX Export System
+
+WitchCraft provides two methods for exporting resumes:
+
+#### Server-Side Generation (Preferred Method)
+- **PDF Generation**: Uses `puppeteer` to render HTML/CSS templates to PDF documents
+  - Located in `Backend/src/services/pdf.service.js`
+  - Creates ATS-friendly PDFs with selectable text
+  - Supports custom templates with proper formatting
+  - Accessible via `GET /resume/download/:id/pdf?template=TemplateName`
+
+- **DOCX Generation**: Uses `docx` library to create structured Word documents
+  - Located in `Backend/src/services/document.service.js`
+  - Creates clean, professional Word documents
+  - Accessible via `GET /resume/download/:id/docx`
+
+#### Client-Side Generation (Fallback Method)
+- **PDF Generation**: Uses `html2canvas` and `jspdf` 
+  - Located in `Frontend/src/components/resume-editor/utils.ts`
+  - Renders what's visible on screen
+  - Limited ATS compatibility (creates image-based PDFs)
+
+- **DOCX Generation**: Uses the `docx` library on the client side
+  - Also in `Frontend/src/components/resume-editor/utils.ts`
+  - Creates structured Word documents directly in the browser
+
+The system attempts to use server-side generation first, falling back to client-side methods if there's an error or if the resume hasn't been saved to the database.
+
+**Dependencies:**
+- Server-side: `puppeteer`, `handlebars`, `pdf-lib`, `docx`
+- Client-side: `html2canvas`, `jspdf`, `docx`, `file-saver`
+
 ### Test Structure
 - `/tests`: Main test files for the project
   - `test-auth-flow.js`: Comprehensive authentication flow tests
