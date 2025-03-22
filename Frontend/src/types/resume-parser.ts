@@ -1,4 +1,5 @@
 import { ATSScoreResult } from "@/services/ats-scorer.service";
+import { RawATSAnalysisResult } from "@/services/ats-industry-standard.service";
 
 // import { BulletPoint } from "@/components/resume-editor/ResumeContext";
 
@@ -101,6 +102,7 @@ export interface ResumeParserContextType {
   parsedResume: ParsedResume | null;
   parsingStatus: ParsingStatus;
   atsScore: ATSScoreResult | null;
+  atsRawAnalysis: RawATSAnalysisResult | null;
   parseResume: (file: File) => Promise<void>;
   updateParsedItem: <T extends keyof ParsedResume>(
     section: T,
