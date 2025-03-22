@@ -23,6 +23,7 @@ const resumeRoutes = require('./routes/resume.routes');
 const templateRoutes = require('./routes/template.routes');
 const userRoutes = require('./routes/user.routes');
 const uploadRoutes = require('./routes/upload.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
@@ -68,11 +69,6 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Add an /api/health endpoint as well (for frontend connection testing)
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -87,6 +83,7 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/template", templateRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Log registered routes
 console.log('Registered routes:');
@@ -95,6 +92,7 @@ console.log('- /api/resume');
 console.log('- /api/template');
 console.log('- /api/user');
 console.log('- /api/upload');
+console.log('- /api/ai');
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -108,6 +106,21 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5003;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Add error handling for port already in use
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    // Try a different port if 5003 is busy
+    const newPort = PORT + 1;
+    console.log(`Port ${PORT} is already in use, trying port ${newPort} instead...`);
+    app.listen(newPort, () => {
+      console.log(`Server running on alternate port ${newPort}`);
+    });
+  } else {
+    console.error('Error starting server:', err);
+  }
+});
 
 module.exports = app;
