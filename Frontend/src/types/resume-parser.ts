@@ -1,4 +1,12 @@
-import { BulletPoint } from "@/components/resume-editor/ResumeContext";
+import { ATSScoreResult } from "@/services/ats-scorer.service";
+
+// import { BulletPoint } from "@/components/resume-editor/ResumeContext";
+
+// Define BulletPoint interface here instead of importing it
+export interface BulletPoint {
+  id: string;
+  text: string;
+}
 
 // Parsed resume data structure
 export interface ParsedResume {
@@ -92,11 +100,12 @@ export enum ParsingStatus {
 export interface ResumeParserContextType {
   parsedResume: ParsedResume | null;
   parsingStatus: ParsingStatus;
+  atsScore: ATSScoreResult | null;
   parseResume: (file: File) => Promise<void>;
   updateParsedItem: <T extends keyof ParsedResume>(
     section: T,
     index: number,
-    updates: Partial<ParsedResume[T][0]>
+    updates: Partial<ParsedResume[T] extends Array<infer U> ? U : never>
   ) => void;
   updateParsedPersonalInfo: (updates: Partial<ParsedPersonalInfo>) => void;
   selectAllItems: () => void;
