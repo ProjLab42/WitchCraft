@@ -19,8 +19,8 @@ Backend Variables:
 ✓ FRONTEND_URL: http://localhost:5173
 
 Frontend Variables:
-✓ VITE_Backend_URL: http://localhost:5000
-✓ VITE_API_URL: http://localhost:5000/api
+✓ VITE_Backend_URL: http://localhost:5003
+✓ VITE_API_URL: http://localhost:5003/api
 ```
 
 ### Backend Connectivity

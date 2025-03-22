@@ -180,7 +180,7 @@ function runFrontendTests() {
     
     async function testBackendConnection() {
       try {
-        const response = await axios.get('http://localhost:5000/health');
+        const response = await axios.get('http://localhost:5003/health');
         console.log('✅ Successfully connected to backend health endpoint');
         console.log(\`✅ Status: \${response.status}\`);
         console.log(\`✅ Data: \${JSON.stringify(response.data)}\`);

@@ -16,7 +16,7 @@ const bcrypt = require('bcryptjs');
 dotenv.config();
 
 // Test configuration
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = 'http://127.0.0.1:5003';
 const API_ENDPOINT = `${API_URL}/api`;
 
 // Test user credentials

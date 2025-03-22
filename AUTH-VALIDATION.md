@@ -105,10 +105,10 @@ The easiest way to run all tests is to use the test runner script:
 
 ```bash
 # Make the script executable (if not already)
-chmod +x test-auth-flow.js
+chmod +x tests/test-auth-flow.js
 
 # Run the test suite
-./test-auth-flow.js
+./tests/test-auth-flow.js
 ```
 
 This will run both the backend and frontend tests and generate a comprehensive report.
@@ -149,15 +149,15 @@ Ensure that the following environment variables are set:
 ```
 PORT=5000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/witchcraft
+MONGODB_URI=mongodb://localhost:27017/cv_management
 JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:8080
 ```
 
 #### Frontend (.env)
 ```
-VITE_Backend_URL=http://localhost:5000
-VITE_API_URL=http://localhost:5000/api
+VITE_Backend_URL=http://localhost:5003
+VITE_API_URL=http://localhost:5003/api
 ```
 
 ### CORS Issues

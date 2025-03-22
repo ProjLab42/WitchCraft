@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create an axios instance with default config
 const api = axios.create({
   // Explicitly set the URL for now to help debug
-  baseURL: 'http://localhost:5000', // Try hardcoding this temporarily to test
+  baseURL: 'http://localhost:5003', // Try hardcoding this temporarily to test
   headers: {
     'Content-Type': 'application/json',
   },

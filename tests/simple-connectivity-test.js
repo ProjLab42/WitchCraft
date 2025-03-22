@@ -10,7 +10,7 @@ const axios = require('axios');
 async function testBackendHealth() {
   console.log('Testing backend health endpoint...');
   try {
-    const response = await axios.get('http://localhost:5000/health');
+    const response = await axios.get('http://localhost:5003/health');
     console.log('✅ Backend health endpoint is working');
     console.log(`✅ Status: ${response.status}`);
     console.log(`✅ Data: ${JSON.stringify(response.data)}`);
@@ -25,7 +25,7 @@ async function testBackendHealth() {
 async function testBackendApiHealth() {
   console.log('\nTesting backend API health endpoint...');
   try {
-    const response = await axios.get('http://localhost:5000/api/health');
+    const response = await axios.get('http://localhost:5003/api/health');
     console.log('✅ Backend API health endpoint is working');
     console.log(`✅ Status: ${response.status}`);
     console.log(`✅ Data: ${JSON.stringify(response.data)}`);
@@ -40,7 +40,7 @@ async function testBackendApiHealth() {
 async function testCorsConfiguration() {
   console.log('\nTesting CORS configuration...');
   try {
-    const response = await axios.options('http://localhost:5000/api/auth/login', {
+    const response = await axios.options('http://localhost:5003/api/auth/login', {
       headers: {
         'Origin': 'http://localhost:5173',
         'Access-Control-Request-Method': 'POST',
@@ -81,7 +81,7 @@ async function testCorsConfiguration() {
 async function testLogin() {
   console.log('\nTesting login with test user...');
   try {
-    const response = await axios.post('http://localhost:5000/api/auth/login', {
+    const response = await axios.post('http://localhost:5003/api/auth/login', {
       email: 'test@example.com',
       password: 'password123'
     });
@@ -111,7 +111,7 @@ async function testUserProfile(token) {
   
   console.log('\nTesting user profile access with token...');
   try {
-    const response = await axios.get('http://localhost:5000/api/user/profile', {
+    const response = await axios.get('http://localhost:5003/api/user/profile', {
       headers: {
         Authorization: `Bearer ${token}`
       }

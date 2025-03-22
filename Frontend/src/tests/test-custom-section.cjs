@@ -2,7 +2,7 @@ const axios = require('axios');
 
 // Create a simple API client
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'http://localhost:5003/api',
   withCredentials: true
 });
 

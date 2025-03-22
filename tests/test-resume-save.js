@@ -71,7 +71,7 @@ async function testSaveResumeData() {
     console.log('Testing resume data saving endpoint...');
     
     // Get token from login
-    const loginResponse = await axios.post('http://localhost:5000/api/auth/login', {
+    const loginResponse = await axios.post('http://localhost:5003/api/auth/login', {
       email: 'test@example.com',
       password: 'password123'
     });
@@ -81,49 +81,8 @@ async function testSaveResumeData() {
     
     // Save resume data
     const saveResponse = await axios.post(
-      'http://localhost:5000/api/user/profile/resume-data',
+      'http://localhost:5003/api/user/profile/resume-data',
       testData,
       {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    console.log('Resume data saved successfully!');
-    console.log('Response:', saveResponse.data);
-    
-    return true;
-  } catch (error) {
-    console.error('Error saving resume data:');
-    
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error('No response received from server');
-      console.error('Request:', error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error('Error message:', error.message);
-    }
-    
-    return false;
-  }
-}
-
-// Run the test
-testSaveResumeData()
-  .then(success => {
-    console.log('Test completed:', success ? 'PASSED' : 'FAILED');
-    process.exit(success ? 0 : 1);
-  })
-  .catch(error => {
-    console.error('Unexpected error:', error);
-    process.exit(1);
-  }); 
+          'Authorization': `

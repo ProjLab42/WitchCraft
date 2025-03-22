@@ -1,7 +1,7 @@
 // Simple script to test the connection from the frontend to the backend
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://localhost:5003/api';
 
 async function testConnection() {
   try {
