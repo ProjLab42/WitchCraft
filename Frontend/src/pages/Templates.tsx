@@ -42,7 +42,13 @@ export default function Templates() {
   // Filter templates by category
   const filteredTemplates = selectedCategory === "all" 
     ? templates 
-    : templates.filter(template => template.category === selectedCategory);
+    : templates.filter(template => {
+        // Special case for Modern Professional to appear in both tabs
+        if (template.name === "Modern Professional") {
+          return selectedCategory === "Modern" || selectedCategory === "Professional";
+        }
+        return template.category === selectedCategory;
+      });
   
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplate(id);
@@ -54,6 +60,29 @@ export default function Templates() {
     } else {
       toast.error("Please select a template to continue");
     }
+  };
+  
+  // Helper function to get template description
+  const getTemplateDescription = (template: TemplateMetadata) => {
+    // TemplateMetadata doesn't have description property, so we use only our predefined descriptions
+    
+    // Fallback descriptions based on template name
+    const descriptions: Record<string, string> = {
+      "Classic Professional": "Traditional layout with formal styling for corporate settings",
+      "Modern Professional": "Contemporary design with clean layout and professional appearance",
+      "Modern Student": "Optimized for students with focus on education and projects",
+      "Creative Professional": "Distinctive design for creative industries with visual appeal",
+      "Executive": "Sophisticated layout emphasizing leadership and achievements",
+      "Minimal": "Clean, simple design with focus on content over styling",
+      "ATS-Optimized": "Formatted specifically for easy parsing by Applicant Tracking Systems",
+      "Technical": "Structured to highlight technical skills and programming expertise",
+      "Graduate": "Designed for recent graduates entering the professional workforce",
+      "Chronological": "Traditional timeline-based format showing career progression",
+      "Functional": "Skills-focused format that emphasizes capabilities over work history",
+      "Combination": "Blends chronological and functional styles for versatile presentation"
+    };
+    
+    return descriptions[template.name] || "Professional resume template";
   };
   
   return (
@@ -118,8 +147,11 @@ export default function Templates() {
                     className={`cursor-pointer transition-all hover:shadow-md ${selectedTemplate === template.id ? 'border-primary ring-2 ring-primary ring-opacity-50' : ''}`}
                     onClick={() => handleSelectTemplate(template.id)}
                   >
-                    <CardHeader>
+                    <CardHeader className="pb-2">
                       <CardTitle>{template.name}</CardTitle>
+                      <CardDescription className="text-sm mt-1">
+                        {getTemplateDescription(template)}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md border mb-3">
@@ -145,6 +177,12 @@ export default function Templates() {
                           <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                             {template.category}
                           </span>
+                          {/* For Modern Professional, show both categories */}
+                          {template.name === "Modern Professional" && template.category === "Modern" && (
+                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                              Professional
+                            </span>
+                          )}
                         </div>
                       )}
                     </CardFooter>
