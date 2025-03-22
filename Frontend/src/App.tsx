@@ -16,6 +16,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Templates from "./pages/Templates";
 import Test from "./pages/Test";
+import AIFeatures from "./pages/AIFeatures";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/test" element={<Test />} />
+          <Route path="/ai-features" element={<AIFeatures />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
