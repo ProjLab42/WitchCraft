@@ -33,6 +33,12 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
     return "bg-red-500";
   };
 
+  const getBadgeColor = (score: number) => {
+    if (score >= 80) return "bg-green-500 text-white";
+    if (score >= 60) return "bg-amber-500 text-white";
+    return "bg-red-500 text-white";
+  };
+
   const getScoreLabel = (score: number) => {
     if (score >= 80) return "Excellent";
     if (score >= 60) return "Average";
@@ -59,38 +65,81 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
   };
 
   const getFeedbackIcon = (feedback: string) => {
-    if (feedback.includes("Missing") || 
-        feedback.includes("invalid") || 
-        feedback.includes("lacks") || 
-        feedback.includes("could use more") ||
-        feedback.includes("Use") || 
-        feedback.includes("Include") || 
-        feedback.includes("Inconsistent") || 
-        feedback.toLowerCase().includes("poor") ||
-        feedback.toLowerCase().includes("improve") ||
-        feedback.toLowerCase().includes("avoid") ||
-        feedback.toLowerCase().includes("reduce") ||
-        feedback.toLowerCase().includes("remove") ||
-        feedback.toLowerCase().includes("consider") ||
-        feedback.toLowerCase().includes("should") ||
-        feedback.toLowerCase().includes("fix") ||
-        feedback.toLowerCase().includes("error")) {
+    // Specific issue phrases that should always show warning triangles
+    const specificIssues = [
+      "Headers detected",
+      "Some bullet points appear too brief",
+      "Limited skills keywords detected",
+      "Some special characters detected",
+      "Document tracking/revision marks detected",
+      "Complex section breaks detected",
+      "headers detected",
+      "bullet points appear too brief",
+      "skills keywords detected",
+      "special characters detected",
+      "tracking/revision marks detected",
+      "section breaks detected"
+    ];
+    
+    // Check for specific issues first
+    if (specificIssues.some(issue => feedback.includes(issue))) {
+      return <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
+    }
+
+    // More comprehensive check for negative feedback
+    const negativePhrases = [
+      "missing", "invalid", "lacks", "could use more", "use", "include", "inconsistent", 
+      "poor", "improve", "avoid", "reduce", "remove", "consider", "should", "fix", 
+      "error", "too many", "too few", "excessive", "insufficient", "problem", 
+      "issue", "detected", "warning", "not recommended", "unclear", "confusing", 
+      "complex", "difficult", "hard to", "challenging", "ineffective"
+    ];
+    
+    // Check if feedback contains any negative phrases
+    const isNegative = negativePhrases.some(phrase => 
+      feedback.toLowerCase().includes(phrase)
+    );
+    
+    // Special case adjustments
+    const isPositive = 
+      feedback.toLowerCase().includes("excellent") || 
+      feedback.toLowerCase().includes("good use of") ||
+      feedback.toLowerCase().includes("well-organized") || 
+      feedback.toLowerCase().includes("clear") ||
+      feedback.toLowerCase().includes("properly") ||
+      feedback.toLowerCase().includes("effective") ||
+      (feedback.toLowerCase().includes("detected") && 
+       !feedback.toLowerCase().includes("issue") && 
+       !feedback.toLowerCase().includes("header") && 
+       !feedback.toLowerCase().includes("footer") &&
+       !feedback.toLowerCase().includes("character") &&
+       !feedback.toLowerCase().includes("tracking") &&
+       !feedback.toLowerCase().includes("break")) ||
+      feedback.toLowerCase().includes("all essential");
+    
+    // Final determination, with specific positive phrases overriding negative ones
+    if (isNegative && !isPositive) {
       return <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />;
     }
     return <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />;
   };
 
   // Helper function to render feedback items in a consistent style
-  const renderFeedbackItems = (items: string[]) => (
-    <div className="space-y-2 mt-3">
-      {items.map((item, idx) => (
-        <div key={idx} className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded-md">
-          {getFeedbackIcon(item)}
-          <span className="text-sm">{item}</span>
-        </div>
-      ))}
-    </div>
-  );
+  const renderFeedbackItems = (items: string[]) => {
+    // Filter out duplicate items
+    const uniqueItems = [...new Set(items)];
+    
+    return (
+      <div className="space-y-2 mt-3">
+        {uniqueItems.map((item, idx) => (
+          <div key={idx} className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded-md">
+            {getFeedbackIcon(item)}
+            <span className="text-sm">{item}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // Helper function to render explanation box for a section
   const renderExplanation = (section: keyof typeof ATSSectionDefinitions) => {
@@ -172,10 +221,10 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
             <div className={`text-3xl font-bold ${getScoreColor(analysisResult.overall)}`}>
               {analysisResult.overall}%
             </div>
-            <div className="text-sm text-muted-foreground flex items-center">
+            <div className="text-sm text-muted-foreground">
               {getScoreLabel(analysisResult.overall)}
               {analysisResult.scanTime && (
-                <span className="ml-2 flex items-center text-xs bg-slate-100 px-2 py-0.5 rounded-full">
+                <span className="ml-2 text-xs bg-slate-100 px-2 py-0.5 rounded whitespace-nowrap inline-flex items-center">
                   <Clock className="h-3 w-3 mr-1" />
                   {analysisResult.scanTime}s scan time
                 </span>
@@ -309,7 +358,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.fileFormat.score)}
                   <h3 className="font-medium">Format Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.fileFormat.score)}>
                   {analysisResult.fileFormat.score}%
                 </Badge>
               </div>
@@ -343,7 +392,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.documentStructure.score)}
                   <h3 className="font-medium">Structure Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.documentStructure.score)}>
                   {analysisResult.documentStructure.score}%
                 </Badge>
               </div>
@@ -401,7 +450,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.contentQuality.score)}
                   <h3 className="font-medium">Content Quality Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.contentQuality.score)}>
                   {analysisResult.contentQuality.score}%
                 </Badge>
               </div>
@@ -463,7 +512,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.keywords.score)}
                   <h3 className="font-medium">Keyword Optimization Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.keywords.score)}>
                   {analysisResult.keywords.score}%
                 </Badge>
               </div>
@@ -539,7 +588,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.textContent.score)}
                   <h3 className="font-medium">Readability Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.textContent.score)}>
                   {analysisResult.textContent.score}%
                 </Badge>
               </div>
@@ -596,7 +645,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
                   {getScoreIcon(analysisResult.metadata.score)}
                   <h3 className="font-medium">Metadata Score</h3>
                 </div>
-                <Badge className="bg-slate-800 text-white font-medium">
+                <Badge className={getBadgeColor(analysisResult.metadata.score)}>
                   {analysisResult.metadata.score}%
                 </Badge>
               </div>
@@ -631,7 +680,7 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
           </TabsContent>
         </Tabs>
         
-        {/* Pro Tips section */}
+        {/* Pro Tips section with replaced content */}
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="tips" className="border rounded-lg overflow-hidden">
             <AccordionTrigger className="px-4 py-3 hover:no-underline">
@@ -641,11 +690,25 @@ export const ATSIndustryStandardDisplay: React.FC<ATSIndustryStandardDisplayProp
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
-              <div className="space-y-2 text-sm">
-                <ul className="list-disc pl-5 space-y-2">
-                  {analysisResult.recommendations.map((tip, idx) => (
-                    <li key={idx} className="p-1">{tip}</li>
-                  ))}
+              <div className="space-y-3">
+                <p className="text-sm mb-2">
+                  Follow these best practices to maximize your resume's compatibility with Applicant Tracking Systems:
+                </p>
+                <ul className="list-disc pl-5 space-y-2 text-sm">
+                  <li>Use a clean, single-column layout for optimal ATS compatibility</li>
+                  <li>Submit in PDF or DOCX format (avoid scanned documents)</li>
+                  <li>Include a skills section with relevant technical and soft skills</li>
+                  <li>Match keywords from the job description where appropriate</li>
+                  <li>Use standard section headings (Experience, Education, Skills, etc.)</li>
+                  <li>Avoid text in headers, footers, or graphics that may be missed</li>
+                  <li>Use standard fonts like Arial, Calibri, or Times New Roman</li>
+                  <li>Keep formatting simple - avoid tables, columns, and excessive styling</li>
+                  <li>Ensure proper spelling and grammar throughout your resume</li>
+                  <li>Use bullet points to highlight achievements and responsibilities</li>
+                  <li>Include measurable results and quantifiable achievements where possible</li>
+                  <li>Don't use images, icons, or graphics that ATS systems can't read</li>
+                  <li>Use conventional file naming (FirstName_LastName_Resume.pdf)</li>
+                  <li>Test your resume with multiple ATS systems before submitting</li>
                 </ul>
               </div>
             </AccordionContent>
