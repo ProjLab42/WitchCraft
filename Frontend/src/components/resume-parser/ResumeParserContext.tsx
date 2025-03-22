@@ -6,7 +6,13 @@ import {
   ResumeParserContextType 
 } from '@/types/resume-parser';
 import { parseResumeFile, saveParsedResumeToProfile } from '@/services/resume-parser.service';
-import { scoreResumeForATS, ATSScoreResult } from '@/services/ats-scorer.service';
+import { 
+  evaluateDocumentForATS, 
+  RawATSAnalysisResult, 
+  convertToStandardATSResult,
+  evaluateResumeContent
+} from '@/services/ats-industry-standard.service';
+import { ATSScoreResult } from '@/services/ats-scorer.service';
 import { toast } from 'sonner';
 
 // Create the context with a default undefined value
@@ -25,34 +31,63 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   const [parsingStatus, setParsingStatus] = useState<ParsingStatus>(ParsingStatus.IDLE);
   // State for ATS score
   const [atsScore, setAtsScore] = useState<ATSScoreResult | null>(null);
+  // State for industry-standard ATS analysis
+  const [atsRawAnalysis, setAtsRawAnalysis] = useState<RawATSAnalysisResult | null>(null);
 
   // Parse a resume file
   const parseResume = async (file: File): Promise<void> => {
     try {
       setParsingStatus(ParsingStatus.UPLOADING);
       
+      // Reset previous state
+      setParsedResume(null);
+      setAtsScore(null);
+      setAtsRawAnalysis(null);
+      
       // Short delay to show uploading state
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      try {
+        // Analyze the document for ATS compatibility using the industry standard service
+        console.log('Analyzing document for industry-standard ATS compatibility...');
+        const rawATSAnalysis = await evaluateDocumentForATS(file);
+        setAtsRawAnalysis(rawATSAnalysis);
+        
+        // Extract and analyze content directly using industry standard approach
+        console.log('Extracting and analyzing content...');
+        const contentAnalysis = await evaluateResumeContent(file, rawATSAnalysis);
+        setAtsRawAnalysis(contentAnalysis);
+        
+        // Convert the complete analysis to standard ATS score format for UI display
+        const standardAtsScore = convertToStandardATSResult(contentAnalysis);
+        setAtsScore(standardAtsScore);
+      } catch (atsError) {
+        console.error('Error during ATS analysis:', atsError);
+        // Continue with parsing even if ATS analysis fails
+      }
+      
+      // Now start the actual parsing for our application
       setParsingStatus(ParsingStatus.PARSING);
       
-      // Call the resume parser service
-      const parsedData = await parseResumeFile(file);
-      
-      // Update state with parsed data
-      setParsedResume(parsedData);
-
-      // Generate ATS score
-      const atsScoreResult = scoreResumeForATS(parsedData);
-      setAtsScore(atsScoreResult);
-      
-      setParsingStatus(ParsingStatus.COMPLETED);
-      
-      toast.success('Resume parsed successfully!');
+      try {
+        // Call the resume parser service
+        console.log('Starting resume parsing process...');
+        const parsedData = await parseResumeFile(file);
+        
+        // Update state with parsed data
+        setParsedResume(parsedData);
+        setParsingStatus(ParsingStatus.COMPLETED);
+        
+        toast.success('Resume parsed successfully!');
+      } catch (parseError) {
+        console.error('Error during resume parsing:', parseError);
+        setParsingStatus(ParsingStatus.ERROR);
+        toast.error('Error parsing resume content. We still analyzed your document for ATS compatibility.');
+      }
     } catch (error) {
-      console.error('Error parsing resume:', error);
+      console.error('Error in overall resume processing:', error);
       setParsingStatus(ParsingStatus.ERROR);
-      toast.error('Failed to parse resume. Please try again.');
+      toast.error('Failed to process resume. Please try again with a different file.');
     }
   };
 
@@ -64,121 +99,112 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   ): void => {
     if (!parsedResume) return;
 
-    setParsedResume(prev => {
-      if (!prev) return prev;
+    setParsedResume(prevState => {
+      if (!prevState) return prevState;
 
-      const sectionItems = [...prev[section]];
-      sectionItems[index] = { ...sectionItems[index], ...updates };
-
-      const updatedResume = {
-        ...prev,
-        [section]: sectionItems
+      // Create deep copy of the section
+      const updatedSection = [...(prevState[section] as any)];
+      
+      // Apply updates to the specific item
+      updatedSection[index] = {
+        ...updatedSection[index],
+        ...updates
       };
 
-      // Recalculate ATS score when parsed resume is updated
-      const newAtsScore = scoreResumeForATS(updatedResume);
-      setAtsScore(newAtsScore);
-
-      return updatedResume;
+      // Return updated state
+      return {
+        ...prevState,
+        [section]: updatedSection
+      };
     });
   };
 
-  // Update parsed personal info
+  // Update personal info section
   const updateParsedPersonalInfo = (updates: Partial<ParsedPersonalInfo>): void => {
     if (!parsedResume) return;
-
-    setParsedResume(prev => {
-      if (!prev) return prev;
-
-      const updatedResume = {
-        ...prev,
+    
+    setParsedResume(prevState => {
+      if (!prevState) return prevState;
+      
+      return {
+        ...prevState,
         personalInfo: {
-          ...prev.personalInfo,
+          ...prevState.personalInfo,
           ...updates
         }
       };
+    });
+  };
 
-      // Recalculate ATS score when personal info is updated
-      const newAtsScore = scoreResumeForATS(updatedResume);
-      setAtsScore(newAtsScore);
-
-      return updatedResume;
+  // Select/deselect all items in a section
+  const toggleSectionSelection = (section: keyof ParsedResume, selected: boolean): void => {
+    if (!parsedResume) return;
+    
+    setParsedResume(prevState => {
+      if (!prevState) return prevState;
+      
+      const sectionData = prevState[section];
+      if (!Array.isArray(sectionData)) return prevState;
+      
+      // Map through the section and update the selected state for each item
+      const updatedSection = sectionData.map(item => ({
+        ...item,
+        selected
+      }));
+      
+      return {
+        ...prevState,
+        [section]: updatedSection
+      };
     });
   };
 
   // Select all items in all sections
   const selectAllItems = (): void => {
     if (!parsedResume) return;
-
-    setParsedResume(prev => {
-      if (!prev) return prev;
-
-      return {
-        ...prev,
-        personalInfo: { ...prev.personalInfo, selected: true },
-        experience: prev.experience.map(item => ({ ...item, selected: true })),
-        education: prev.education.map(item => ({ ...item, selected: true })),
-        skills: prev.skills.map(item => ({ ...item, selected: true })),
-        projects: prev.projects.map(item => ({ ...item, selected: true })),
-        certifications: prev.certifications.map(item => ({ ...item, selected: true }))
-      };
+    
+    // Sections that have selectable items
+    const selectableSections = ['experience', 'education', 'skills', 'projects', 'certifications'];
+    
+    // Select all items in each section
+    selectableSections.forEach(section => {
+      toggleSectionSelection(section as keyof ParsedResume, true);
     });
   };
 
   // Deselect all items in all sections
   const deselectAllItems = (): void => {
     if (!parsedResume) return;
-
-    setParsedResume(prev => {
-      if (!prev) return prev;
-
-      return {
-        ...prev,
-        personalInfo: { ...prev.personalInfo, selected: false },
-        experience: prev.experience.map(item => ({ ...item, selected: false })),
-        education: prev.education.map(item => ({ ...item, selected: false })),
-        skills: prev.skills.map(item => ({ ...item, selected: false })),
-        projects: prev.projects.map(item => ({ ...item, selected: false })),
-        certifications: prev.certifications.map(item => ({ ...item, selected: false }))
-      };
+    
+    // Sections that have selectable items
+    const selectableSections = ['experience', 'education', 'skills', 'projects', 'certifications'];
+    
+    // Deselect all items in each section
+    selectableSections.forEach(section => {
+      toggleSectionSelection(section as keyof ParsedResume, false);
     });
   };
 
-  // Save selected items to user profile
+  // Save the selected items to the user profile
   const saveSelectedItems = async (): Promise<boolean> => {
-    if (!parsedResume) {
-      toast.error('No parsed resume data to save');
-      return false;
-    }
-
+    if (!parsedResume) return false;
+    
     try {
-      // Filter out unselected items
-      const selectedData: Partial<ParsedResume> = {
-        personalInfo: parsedResume.personalInfo.selected ? parsedResume.personalInfo : undefined,
-        experience: parsedResume.experience.filter(item => item.selected),
-        education: parsedResume.education.filter(item => item.selected),
-        skills: parsedResume.skills.filter(item => item.selected),
-        projects: parsedResume.projects.filter(item => item.selected),
-        certifications: parsedResume.certifications.filter(item => item.selected)
-      };
-
-      // Save to profile
-      await saveParsedResumeToProfile(selectedData);
-      
-      toast.success('Resume data saved to your profile!');
+      await saveParsedResumeToProfile(parsedResume);
       return true;
     } catch (error) {
       console.error('Error saving resume data:', error);
-      toast.error('Failed to save resume data to profile. Please try again.');
+      toast.error('Failed to save resume data. Please try again.');
       return false;
     }
   };
 
-  // Context value
-  const value: ResumeParserContextType = {
+  // Provide the context value
+  const contextValue: ResumeParserContextType = {
     parsedResume,
     parsingStatus,
     atsScore,
+    atsRawAnalysis,
     parseResume,
     updateParsedItem,
     updateParsedPersonalInfo,
@@ -188,7 +214,7 @@ export const ResumeParserProvider: React.FC<ResumeParserProviderProps> = ({ chil
   };
 
   return (
-    <ResumeParserContext.Provider value={value}>
+    <ResumeParserContext.Provider value={contextValue}>
       {children}
     </ResumeParserContext.Provider>
   );

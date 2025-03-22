@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ChevronRight, ChevronDown, FileType } from 'lucide-react';
 import { ParsingStatus } from '@/types/resume-parser';
 import { ParsedPersonalInfoSection } from './sections/ParsedPersonalInfoSection';
 import { ParsedExperienceSection } from './sections/ParsedExperienceSection';
@@ -13,10 +13,11 @@ import { ParsedEducationSection } from './sections/ParsedEducationSection';
 import { ParsedSkillsSection } from './sections/ParsedSkillsSection';
 import { ParsedProjectsSection } from './sections/ParsedProjectsSection';
 import { ParsedCertificationsSection } from './sections/ParsedCertificationsSection';
-import { ATSScoreDisplay } from './ATSScoreDisplay';
+import { ATSIndustryStandardDisplay } from './ATSIndustryStandardDisplay';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ParsedResumeReviewProps {
   onComplete: () => void;
@@ -29,14 +30,15 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
     selectAllItems, 
     deselectAllItems, 
     saveSelectedItems,
-    atsScore 
+    atsScore,
+    atsRawAnalysis
   } = useResumeParser();
   
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState('personal-info');
   const [saving, setSaving] = React.useState(false);
   const [showCompletionOptions, setShowCompletionOptions] = React.useState(false);
-
+  
   // Handle save and complete
   const handleSaveAndComplete = async () => {
     setSaving(true);
@@ -90,17 +92,23 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
           <CardTitle>Processing Your Resume</CardTitle>
           <CardDescription>
             {parsingStatus === ParsingStatus.UPLOADING 
-              ? 'Uploading your resume...' 
-              : 'Analyzing and extracting information...'}
+              ? 'Uploading and analyzing document format...' 
+              : 'Extracting content and evaluating ATS compatibility...'}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center py-10">
           <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">
             {parsingStatus === ParsingStatus.UPLOADING 
-              ? 'Your file is being uploaded' 
+              ? 'Your file is being analyzed for ATS compatibility' 
               : 'Our AI is extracting information from your resume'}
           </p>
+          {atsRawAnalysis && (
+            <div className="mt-6 text-center">
+              <p className="font-medium">Document format analysis complete!</p>
+              <p className="text-sm text-muted-foreground">Now extracting resume content...</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -122,6 +130,14 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
             Please try uploading your resume again or use a different file format
           </p>
           <Button onClick={onComplete}>Try Again</Button>
+          
+          {/* Show format analysis even if content parsing failed */}
+          {atsRawAnalysis && (
+            <div className="mt-6 w-full max-w-3xl">
+              <p className="font-medium text-center mb-4">Document Format Analysis Results:</p>
+              <ATSIndustryStandardDisplay analysisResult={atsRawAnalysis} />
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -143,6 +159,14 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
             Please upload a resume to continue
           </p>
           <Button onClick={onComplete}>Back to Upload</Button>
+          
+          {/* Show format analysis even if content parsing failed */}
+          {atsRawAnalysis && (
+            <div className="mt-6 w-full max-w-3xl">
+              <p className="font-medium text-center mb-4">Document Format Analysis Results:</p>
+              <ATSIndustryStandardDisplay analysisResult={atsRawAnalysis} />
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -226,82 +250,90 @@ export const ParsedResumeReview: React.FC<ParsedResumeReviewProps> = ({ onComple
         </div>
       </CardHeader>
       <CardContent>
-        {/* Display ATS Score if available */}
-        {atsScore && <ATSScoreDisplay scoreResult={atsScore} />}
+        {/* ATS Evaluation Section */}
+        <div className="mb-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-4">
+              <TabsTrigger value="personal-info" className="relative">
+                Personal Info
+                {parsedResume.personalInfo.selected && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
+                    <CheckCircle2 className="h-3 w-3" />
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="experience" className="relative">
+                Experience
+                {selectedCounts.experience > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2">
+                    {selectedCounts.experience}/{totalCounts.experience}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="education" className="relative">
+                Education
+                {selectedCounts.education > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2">
+                    {selectedCounts.education}/{totalCounts.education}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="skills" className="relative">
+                Skills
+                {selectedCounts.skills > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2">
+                    {selectedCounts.skills}/{totalCounts.skills}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="projects" className="relative">
+                Projects
+                {selectedCounts.projects > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2">
+                    {selectedCounts.projects}/{totalCounts.projects}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="certifications" className="relative">
+                Certifications
+                {selectedCounts.certifications > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2">
+                    {selectedCounts.certifications}/{totalCounts.certifications}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="border rounded-md p-4 mb-4">
+              <TabsContent value="personal-info" className="mt-0">
+                <ParsedPersonalInfoSection />
+              </TabsContent>
+              <TabsContent value="experience" className="mt-0">
+                <ParsedExperienceSection />
+              </TabsContent>
+              <TabsContent value="education" className="mt-0">
+                <ParsedEducationSection />
+              </TabsContent>
+              <TabsContent value="skills" className="mt-0">
+                <ParsedSkillsSection />
+              </TabsContent>
+              <TabsContent value="projects" className="mt-0">
+                <ParsedProjectsSection />
+              </TabsContent>
+              <TabsContent value="certifications" className="mt-0">
+                <ParsedCertificationsSection />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-4">
-            <TabsTrigger value="personal-info" className="relative">
-              Personal Info
-              {parsedResume.personalInfo.selected && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                  <CheckCircle2 className="h-3 w-3" />
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="experience" className="relative">
-              Experience
-              {selectedCounts.experience > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2">
-                  {selectedCounts.experience}/{totalCounts.experience}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="education" className="relative">
-              Education
-              {selectedCounts.education > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2">
-                  {selectedCounts.education}/{totalCounts.education}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="skills" className="relative">
-              Skills
-              {selectedCounts.skills > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2">
-                  {selectedCounts.skills}/{totalCounts.skills}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="projects" className="relative">
-              Projects
-              {selectedCounts.projects > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2">
-                  {selectedCounts.projects}/{totalCounts.projects}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="certifications" className="relative">
-              Certifications
-              {selectedCounts.certifications > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2">
-                  {selectedCounts.certifications}/{totalCounts.certifications}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <div className="border rounded-md p-4 mb-4">
-            <TabsContent value="personal-info" className="mt-0">
-              <ParsedPersonalInfoSection />
-            </TabsContent>
-            <TabsContent value="experience" className="mt-0">
-              <ParsedExperienceSection />
-            </TabsContent>
-            <TabsContent value="education" className="mt-0">
-              <ParsedEducationSection />
-            </TabsContent>
-            <TabsContent value="skills" className="mt-0">
-              <ParsedSkillsSection />
-            </TabsContent>
-            <TabsContent value="projects" className="mt-0">
-              <ParsedProjectsSection />
-            </TabsContent>
-            <TabsContent value="certifications" className="mt-0">
-              <ParsedCertificationsSection />
-            </TabsContent>
+        {/* ATS Score section */}
+        {parsedResume.personalInfo && (
+          <div>
+            <h3 className="font-semibold text-lg mb-4">ATS Compatibility Analysis</h3>
+            {atsRawAnalysis && <ATSIndustryStandardDisplay analysisResult={atsRawAnalysis} />}
           </div>
-        </Tabs>
+        )}
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={onComplete}>
