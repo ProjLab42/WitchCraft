@@ -89,10 +89,19 @@ export const cvAPI = {
       const formData = new FormData();
       formData.append('file', file);
       
-      console.log('Sending resume to API for parsing...');
+      // Check if user is logged in by looking for auth token
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('authToken='))
+        ?.split('=')[1];
+      
+      // Determine which endpoint to use based on authentication status
+      const endpoint = token ? '/upload/resume' : '/upload/public/resume';
+      
+      console.log(`Sending resume to ${token ? 'private' : 'public'} API endpoint for parsing...`);
       
       // Call the API
-      const response = await api.post('/upload/resume', formData, {
+      const response = await api.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -103,7 +112,8 @@ export const cvAPI = {
       console.log('Resume parsing response received:', {
         status: response.status,
         hasData: !!response.data,
-        hasDataProperty: !!response.data?.data
+        hasDataProperty: !!response.data?.data,
+        endpoint: endpoint
       });
       
       if (!response.data || !response.data.data) {

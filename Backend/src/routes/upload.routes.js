@@ -57,12 +57,20 @@ const conditionalAuth = (req, res, next) => {
   authMiddleware(req, res, next);
 };
 
-// Apply conditional auth middleware
+// PUBLIC ENDPOINT: Upload and parse resume without authentication
+router.post('/public/resume', upload.single('file'), handleMulterErrors, (req, res, next) => {
+  console.log('Public resume upload endpoint hit - no auth required');
+  // Set a flag to indicate this is a public request (no auth)
+  req.isPublicRequest = true;
+  uploadController.uploadResume(req, res, next);
+});
+
+// Apply conditional auth middleware for protected routes
 router.use(conditionalAuth);
 
-// Upload and parse resume
+// PROTECTED ENDPOINT: Upload and parse resume (requires authentication)
 router.post('/resume', upload.single('file'), handleMulterErrors, (req, res, next) => {
-  console.log('Resume upload endpoint hit');
+  console.log('Protected resume upload endpoint hit - auth required');
   uploadController.uploadResume(req, res, next);
 });
 
