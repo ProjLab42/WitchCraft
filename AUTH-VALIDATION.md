@@ -105,10 +105,10 @@ The easiest way to run all tests is to use the test runner script:
 
 ```bash
 # Make the script executable (if not already)
-chmod +x tests/test-auth-flow.js
+chmod +x test-auth-flow.js
 
 # Run the test suite
-./tests/test-auth-flow.js
+./test-auth-flow.js
 ```
 
 This will run both the backend and frontend tests and generate a comprehensive report.
