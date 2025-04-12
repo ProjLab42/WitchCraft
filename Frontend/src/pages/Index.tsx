@@ -41,7 +41,7 @@ export default function Index() {
                 </Link>
               </Button>
 
-              <Button asChild variant="secondary" size="lg" className="gap-2">
+              <Button asChild variant="outline" size="lg" className="gap-2">
                 <Link to="/ai-features">
                   <Sparkles className="h-5 w-5" />
                   <span>AI Resume Tools</span>
@@ -143,7 +143,7 @@ export default function Index() {
                 </Link>
               </Button>
               
-              <Button asChild size="lg" variant="secondary" className="gap-2">
+              <Button asChild size="lg" variant="outline" className="gap-2">
                 <Link to="/ai-features">
                   <Sparkles className="h-5 w-5" />
                   <span>Try AI Resume Tools</span>
