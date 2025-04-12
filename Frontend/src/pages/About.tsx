@@ -116,7 +116,7 @@ const About = () => {
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Nuh Al-Sharafi</h3>
-                <p className="text-primary mb-3">Lead Developer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
                 Developer with experience in Python, Java, and JavaScript, having worked on projects ranging from data analysis to backend development.
         
@@ -141,7 +141,7 @@ const About = () => {
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Musab Ahmed Khan</h3>
-                <p className="text-primary mb-3">UI/UX Designer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Developer with a focus on web development using Java/JavaScript and machine learning using Python. Experienced in backend development for web applications.
                 </p>
@@ -165,7 +165,7 @@ const About = () => {
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Raamiz Khan Niazi</h3>
-                <p className="text-primary mb-3">Backend Developer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
                 Developer with experience in Python, currently exploring areas like artificial intelligence, data science, cloud computing, and cybersecurity.
                 </p>
