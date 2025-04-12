@@ -5,6 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Github } from "lucide-react";
 
+// Function to get GitHub profile photo URL from GitHub username
+const getGithubProfilePhoto = (githubUrl: string) => {
+  // Extract username from GitHub URL
+  const username = githubUrl.split('/').pop();
+  
+  // Return GitHub avatar URL
+  return `https://github.com/${username}.png`;
+};
+
 const About = () => {
   return (
     <div className="min-h-screen flex flex-col">
@@ -101,16 +110,16 @@ const About = () => {
               <div className="bg-card rounded-lg p-6 text-center shadow-sm">
                 <div className="w-24 h-24 mx-auto mb-4 overflow-hidden rounded-full">
                   <img
-                    src="https://api.dicebear.com/7.x/personas/svg?seed=john"
+                    src={getGithubProfilePhoto("https://github.com/N-alsharafi")}
                     alt="Nuh Al-Sharafi"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Nuh Al-Sharafi</h3>
-                <p className="text-primary mb-3">Lead Developer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Full-stack developer with expertise in React, TypeScript, and UI/UX design.
-                  Founded WitchCraft to streamline resume creation for job seekers.
+                Developer with experience in Python, Java, and JavaScript, having worked on projects ranging from data analysis to backend development.
+        
                 </p>
                 <div className="flex justify-center space-x-3">
                   <a href="https://www.linkedin.com/in/nuh-al-sharafi-9762ab222/" className="text-muted-foreground hover:text-primary">
@@ -126,16 +135,15 @@ const About = () => {
               <div className="bg-card rounded-lg p-6 text-center shadow-sm">
                 <div className="w-24 h-24 mx-auto mb-4 overflow-hidden rounded-full">
                   <img
-                    src="https://api.dicebear.com/7.x/personas/svg?seed=sarah"
+                    src={getGithubProfilePhoto("https://github.com/MAKhan22")}
                     alt="Musab Ahmed Khan"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Musab Ahmed Khan</h3>
-                <p className="text-primary mb-3">UI/UX Designer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Designer with background in human-computer interaction. Passionate about creating 
-                  intuitive interfaces that make complex tasks feel simple.
+                  Developer with a focus on web development using Java/JavaScript and machine learning using Python. Experienced in backend development for web applications.
                 </p>
                 <div className="flex justify-center space-x-3">
                   <a href="https://www.linkedin.com/in/musab-ahmed-khan/" className="text-muted-foreground hover:text-primary">
@@ -151,16 +159,15 @@ const About = () => {
               <div className="bg-card rounded-lg p-6 text-center shadow-sm">
                 <div className="w-24 h-24 mx-auto mb-4 overflow-hidden rounded-full">
                   <img
-                    src="https://api.dicebear.com/7.x/personas/svg?seed=michael"
+                    src={getGithubProfilePhoto("https://github.com/Raamizkn")}
                     alt="Raamiz Khan Niazi"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <h3 className="font-bold text-xl mb-1">Raamiz Khan Niazi</h3>
-                <p className="text-primary mb-3">Backend Developer</p>
+                <p className="text-primary mb-3">Developer</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Specialized in cloud infrastructure and API development. Experienced with Node.js,
-                  databases, and scalable system design.
+                Developer with experience in Python, currently exploring areas like artificial intelligence, data science, cloud computing, and cybersecurity.
                 </p>
                 <div className="flex justify-center space-x-3">
                   <a href="https://www.linkedin.com/in/raamiz-khan-niazi-b77a43233/" className="text-muted-foreground hover:text-primary">

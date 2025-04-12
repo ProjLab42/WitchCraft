@@ -7,6 +7,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 
 // Import our new components
@@ -50,6 +51,8 @@ function EditorContent() {
     setEditedPersonalInfo,
     zoomLevel,
     setZoomLevel,
+    autoScalingEnabled,
+    setAutoScalingEnabled,
     pageFormat,
     setPageFormat,
     isExportDialogOpen,
@@ -1057,6 +1060,10 @@ function EditorContent() {
     setZoomLevel(1);
   };
 
+  const handleToggleAutoScaling = (enabled: boolean) => {
+    setAutoScalingEnabled(enabled);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -1256,12 +1263,14 @@ function EditorContent() {
           
           {/* Right side - Resume preview */}
           <div className="flex flex-col overflow-y-auto max-h-[calc(100vh-180px)] overflow-x-visible">
-            <div className="flex justify-end mb-4">
-              <ZoomControls
+            <div className="w-full flex flex-col md:flex-row justify-between items-center mb-4">
+              <ZoomControls 
                 zoomLevel={zoomLevel}
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onResetZoom={handleResetZoom}
+                autoScalingEnabled={autoScalingEnabled}
+                onToggleAutoScaling={handleToggleAutoScaling}
               />
             </div>
             
