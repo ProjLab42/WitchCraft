@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -29,6 +29,7 @@ function EditorContent() {
   // Get URL parameters
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
+  const location = useLocation();
   
   // Template state
   const [template, setTemplate] = useState<Template | null>(null);
@@ -137,6 +138,49 @@ function EditorContent() {
       toast.success(`Template "${templateParam}" applied`);
     }
   }, [templateParam, selectedTemplate, setSelectedTemplate]);
+
+  // Handle generated resume data from AI
+  useEffect(() => {
+    if (location.state?.generatedResume) {
+      const { generatedResume } = location.state;
+      
+      // Convert AI-generated resume data to editor format
+      const newResumeContent = {
+        personalInfo: {
+          name: userData.name || '',
+          title: userData.title || '',
+          email: userData.email || '',
+          location: userData.location || '',
+          links: userData.links || {}
+        },
+        sections: [
+          ...(generatedResume.resumeData.sections.experience || []).map(exp => ({
+            ...exp,
+            itemType: 'experience'
+          })),
+          ...(generatedResume.resumeData.sections.education || []).map(edu => ({
+            ...edu,
+            itemType: 'education'
+          })),
+          ...(generatedResume.resumeData.sections.projects || []).map(proj => ({
+            ...proj,
+            itemType: 'projects'
+          })),
+          ...(generatedResume.resumeData.sections.certifications || []).map(cert => ({
+            ...cert,
+            itemType: 'certifications'
+          }))
+        ],
+        selectedSkills: generatedResume.resumeData.sections.skills || [],
+        sectionOrder: ['experience', 'education', 'skills', 'projects', 'certifications']
+      };
+
+      setResumeContent(newResumeContent);
+      
+      // Clear the state to prevent re-processing on re-renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, setResumeContent, userData]);
 
   // Function to clean up existing duplicates
   const cleanupDuplicates = () => {

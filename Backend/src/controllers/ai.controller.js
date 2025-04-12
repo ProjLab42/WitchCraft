@@ -82,7 +82,7 @@ exports.generateResumeFromProfile = async (req, res) => {
     ${JSON.stringify(userProfile, null, 2)}
     
     Please create a professional resume that highlights my relevant skills and experiences
-    for this specific job. You MUST include ALL sections that exist in my profile, including:
+    for this specific job. You MUST include ALL **sections** that exist in my profile, including:
     - experience
     - education
     - skills
@@ -96,6 +96,8 @@ exports.generateResumeFromProfile = async (req, res) => {
     - Make sure to include CERTIFICATIONS section with proper array format
     - Check for and preserve any CUSTOM SECTIONS from my profile
     - We are limited to a one page resume, so only select the important and relevant information to include
+    - Only select the important entries from each section, refine the information to be relevant to the job description, but not in a way that makes it a lie
+    - DO NOT make up skills (even if they are required by the job description), select the relevant ones from my profile
     
     The response must be in a valid JSON format with the following structure that EXACTLY matches my profile structure:
     {
