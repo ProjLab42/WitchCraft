@@ -37,7 +37,7 @@ export function Footer() {
               <span className="sr-only">GitHub</span>
             </a>
             <a
-              href="https://www.google.com/search?q=witchcraft"
+              href="https://www.google.com/search?q=extreme+go+horse"
               target="_blank"
               rel="noreferrer"
               className="text-muted-foreground hover:text-foreground transition-colors"
