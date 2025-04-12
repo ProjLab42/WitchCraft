@@ -294,8 +294,8 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         certifications: fetchedData.sections?.certifications || mockUser.sections.certifications,
       },
       
-      // Skills
-      skills: fetchedData.skills || mockUser.skills,
+      // Skills - check both locations where skills might be stored
+      skills: fetchedData.sections?.skills || fetchedData.skills || mockUser.skills,
     };
     
     return mergedData as UserData;

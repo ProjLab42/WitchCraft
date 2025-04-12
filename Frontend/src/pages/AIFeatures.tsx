@@ -105,10 +105,19 @@ export default function AIFeatures() {
       
       setGeneratedResume(generatedData);
       
+      // Navigate to the editor with the generated resume data
+      navigate('/editor', { 
+        state: { 
+          generatedResume: generatedData,
+          isNewResume: true
+        } 
+      });
+      
       toast({
         title: "Success!",
-        description: "Resume generated successfully. You can now save it to your account.",
+        description: "Resume generated successfully. You can now edit it in the editor.",
       });
+      
     } catch (error: any) {
       console.error('Error generating resume:', error);
       
