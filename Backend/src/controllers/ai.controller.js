@@ -82,7 +82,7 @@ exports.generateResumeFromProfile = async (req, res) => {
     ${JSON.stringify(userProfile, null, 2)}
     
     Please create a professional resume that highlights my relevant skills and experiences
-    for this specific job. You MUST include ALL **sections** that exist in my profile, including:
+    for this specific job. You MUST include MOST **sections** that exist in my profile, including:
     - experience
     - education
     - skills
@@ -91,7 +91,7 @@ exports.generateResumeFromProfile = async (req, res) => {
     - Any custom sections that may be present
     
     IMPORTANT EMPHASIS:
-    - Do NOT omit any section from my profile
+    - The final resume MUST include Experience, Education, Projects and Skills, other sections should be included if they are relevant to the job description, otherwise exclude them
     - Make sure to include PROJECTS section with proper array format
     - Make sure to include CERTIFICATIONS section with proper array format
     - Check for and preserve any CUSTOM SECTIONS from my profile
