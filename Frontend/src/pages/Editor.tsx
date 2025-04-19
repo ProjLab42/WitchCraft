@@ -272,10 +272,13 @@ function EditorContent() {
     const [removed] = newOrder.splice(sourceIndex, 1);
     newOrder.splice(destinationIndex, 0, removed);
     
-    setResumeContent(prev => ({
-      ...prev,
-      sectionOrder: newOrder
-    }));
+    setResumeContent(prev => {
+      console.log("[Editor.tsx] Updating sectionOrder from:", prev.sectionOrder, "to:", newOrder);
+      return {
+        ...prev,
+        sectionOrder: newOrder
+      };
+    });
   };
   
   // Handle dropping an item onto the resume
@@ -811,25 +814,78 @@ function EditorContent() {
   const reorderSectionItems = (sectionType, sourceIndex, destinationIndex) => {
     setResumeContent(prev => {
       // Get all items of this section type
-      const sectionItems = prev.sections.filter(
-        section => section.itemType === sectionType
-      );
+      let itemsToReorder;
+      let keyToUpdate;
+      
+      if (sectionType === 'skills') {
+        itemsToReorder = [...prev.selectedSkills];
+        keyToUpdate = 'selectedSkills';
+      } else {
+        itemsToReorder = prev.sections.filter(
+          section => section.itemType === sectionType
+        );
+        keyToUpdate = 'sections';
+      }
       
       // Reorder the items
-      const newSectionItems = [...sectionItems];
-      const [removed] = newSectionItems.splice(sourceIndex, 1);
-      newSectionItems.splice(destinationIndex, 0, removed);
+      const [removed] = itemsToReorder.splice(sourceIndex, 1);
+      itemsToReorder.splice(destinationIndex, 0, removed);
       
-      // Create a new sections array with the reordered items
-      const otherSections = prev.sections.filter(
-        section => section.itemType !== sectionType
-      );
-      
-      return {
-        ...prev,
-        sections: [...otherSections, ...newSectionItems]
-      };
+      // Create the updated state
+      if (keyToUpdate === 'sections') {
+        const otherSections = prev.sections.filter(
+          section => section.itemType !== sectionType
+        );
+        return {
+          ...prev,
+          sections: [...otherSections, ...itemsToReorder]
+        };
+      } else {
+        return {
+          ...prev,
+          selectedSkills: itemsToReorder
+        };
+      }
     });
+  };
+
+  // Move section up
+  const moveSectionUp = (index) => {
+    console.log("Moving section UP, index:", index);
+    if (index > 0) {
+      reorderSections(index, index - 1);
+    }
+  };
+
+  // Move section down
+  const moveSectionDown = (index) => {
+    console.log("Moving section DOWN, index:", index);
+    if (index < resumeContent.sectionOrder.length - 1) {
+      reorderSections(index, index + 1);
+    }
+  };
+
+  // Move item up within a section
+  const moveItemUp = (sectionType, index) => {
+    console.log("Moving item UP, type:", sectionType, "index:", index);
+    if (index > 0) {
+      reorderSectionItems(sectionType, index, index - 1);
+    }
+  };
+
+  // Move item down within a section
+  const moveItemDown = (sectionType, index) => {
+    console.log("Moving item DOWN, type:", sectionType, "index:", index);
+    let itemCount;
+    if (sectionType === 'skills') {
+      itemCount = resumeContent.selectedSkills.length;
+    } else {
+      itemCount = resumeContent.sections.filter(s => s.itemType === sectionType).length;
+    }
+    
+    if (index < itemCount - 1) {
+      reorderSectionItems(sectionType, index, index + 1);
+    }
   };
   
   // Delete a skill
@@ -901,6 +957,9 @@ function EditorContent() {
           ...(resumeContent.personalInfo.summary && { summary: resumeContent.personalInfo.summary }),
           ...(resumeContent.personalInfo.location && { location: resumeContent.personalInfo.location })
         },
+        
+        // Include the section order
+        sectionOrder: resumeContent.sectionOrder || [],
         
         // Format sections according to backend schema
         sections: {
@@ -1274,17 +1333,25 @@ function EditorContent() {
               />
             </div>
             
-            <HybridResumeEditor
-              onDrop={handleDrop}
-              resumeContent={resumeContent}
-              removeSection={removeSection}
-              reorderSections={reorderSections}
-              reorderSectionItems={reorderSectionItems}
-              setResumeContent={setResumeContent}
-              resumeRef={resumeRef}
-              zoomLevel={zoomLevel}
-              selectedTemplate={template}
-            />
+            {templateLoading ? (
+              <p>Loading template...</p>
+            ) : templateError ? (
+              <p className="text-red-500">{templateError}</p>
+            ) : (
+              <HybridResumeEditor
+                onDrop={handleDrop}
+                resumeContent={resumeContent}
+                removeSection={removeSection}
+                moveSectionUp={moveSectionUp}
+                moveSectionDown={moveSectionDown}
+                moveItemUp={moveItemUp}
+                moveItemDown={moveItemDown}
+                setResumeContent={setResumeContent}
+                resumeRef={resumeRef}
+                zoomLevel={zoomLevel}
+                selectedTemplate={template}
+              />
+            )}
           </div>
         </div>
       </main>
