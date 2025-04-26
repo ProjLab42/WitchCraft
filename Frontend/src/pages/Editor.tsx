@@ -21,7 +21,7 @@ import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
-import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-editor/utils";
+import { exportAsPDF, exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
 import { resumeAPI } from "@/services/api.service";
 
@@ -1012,19 +1012,22 @@ function EditorContent() {
     const loadingToast = toast.loading("Exporting resume as PDF...");
     
     try {
-      console.log("Starting PDF export process");
-      // First save the current resume state to get an ID
-      console.log("Current resume content:", resumeContent);
-      const savedResume = await saveResumeState();
-      console.log("Save resume result:", savedResume);
+      // First try to save the resume state to have a backup
+      console.log("Saving resume state first...");
+      await saveResumeState();
       
-      if (savedResume && savedResume._id) {
-        // Use server-side PDF generation
-        console.log("Using server-side PDF generation with resume ID:", savedResume._id);
-        success = await resumeAPI.downloadResume(
-          savedResume._id, 
-          'pdf',
-          template?.name // Pass current template name
+      // Use client-side PDF generation
+      if (resumeRef.current) {
+        console.log("Starting client-side PDF generation");
+        
+        // The ID of the resume container element
+        const resumeElementId = resumeRef.current.id || 'resume-preview';
+        
+        // Export to PDF using our new utility function
+        success = await exportToPDF(
+          resumeElementId,
+          `${resumeContent.personalInfo.name || 'resume'}.pdf`,
+          pageFormat.toLowerCase() // Convert A4/Letter to lowercase for jsPDF
         );
         
         if (success) {
@@ -1034,7 +1037,7 @@ function EditorContent() {
           toast.error("Failed to export PDF. Please try again.");
         }
       } else {
-        toast.error("Failed to save resume. Please try again.");
+        toast.error("Resume content not ready. Please try again.");
       }
     } catch (error) {
       console.error("PDF export error:", error);

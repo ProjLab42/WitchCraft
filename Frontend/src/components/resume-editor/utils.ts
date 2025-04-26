@@ -803,4 +803,93 @@ export const applyContentScaling = (
     // Preserve some minimal spacing between sections
     element.style.marginBottom = `${Math.max(16 * scalingFactor, 10)}px`;
   });
-}; 
+};
+
+// Import jsPDF and additional plugins
+import 'jspdf/dist/polyfills.es.js';
+// You may need to add this to your package.json: "jspdf": "^2.5.1"
+
+/**
+ * Exports an HTML element to a PDF with selectable text and preserved styling
+ * @param elementId ID of the HTML element to convert
+ * @param filename Name of the PDF file to download
+ * @param format PDF page format (e.g., 'a4', 'letter')
+ * @returns Promise<boolean> indicating success or failure
+ */
+export const exportToPDF = async (
+  elementId: string,
+  filename = 'resume.pdf',
+  format = 'a4'
+): Promise<boolean> => {
+  try {
+    // Get the HTML element to convert
+    const element = document.getElementById(elementId);
+    if (!element) {
+      console.error(`Element with ID "${elementId}" not found`);
+      return false;
+    }
+
+    // Get the computed style of the element
+    const computedStyle = window.getComputedStyle(element);
+    
+    // Create a new jsPDF instance with the specified format
+    const orientation = 'portrait';
+    const unit = 'mm';
+    const doc = new jsPDF({
+      orientation,
+      unit,
+      format,
+    });
+
+    // Set reasonable margins (in mm)
+    const margin = 10;
+
+    // Calculate available width and height with margins
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    // Calculate proper scaling factor
+    // We'll use the ratio of page width to element width to maintain proportions
+    const elementWidth = element.offsetWidth;
+    const elementHeight = element.offsetHeight;
+    
+    // Calculate the content width and height with margins
+    const contentWidth = pageWidth - (margin * 2);
+    
+    // Calculate scaling - this is key to fixing the size issue
+    // We want to scale down to fit within the page width
+    const scale = contentWidth / elementWidth;
+    
+    // Wait for any pending renders/images to be ready
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Use the html method to convert the element to PDF with proper scaling
+    await doc.html(element, {
+      callback: function(pdf) {
+        // Save the PDF
+        pdf.save(filename);
+      },
+      x: margin,
+      y: margin,
+      width: contentWidth, // Set width to available content width
+      windowWidth: elementWidth, // Use actual element width
+      autoPaging: true,
+      margin: [margin, margin, margin, margin],
+      html2canvas: {
+        // Use proper scaling
+        scale: scale * 0.95, // Slightly reduce scale to avoid edge bleeding
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+        allowTaint: true, // Allow cross-origin images
+        foreignObjectRendering: false, // Set to false for better compatibility
+        // Ensure we're using the proper font rendering
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error('PDF export error:', error);
+    return false;
+  }
+};

@@ -595,7 +595,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     <div className="relative w-full h-full flex flex-col items-center py-4 overflow-auto bg-slate-50 dark:bg-slate-900">
       {/* Resume container with A4 dimensions */}
       <div 
-        id="resume-container"
+        id="resume-preview" // Add this ID for the PDF export function to target
         ref={node => {
           drop(node);
           if (resumeRef && typeof resumeRef === 'object') {
@@ -839,4 +839,4 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       </div>
     </div>
   );
-}; 
+};
