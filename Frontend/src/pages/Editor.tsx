@@ -21,7 +21,7 @@ import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
-import { exportAsPDF, exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
+import { exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
 import { resumeAPI, ApiResumeData } from "@/services/api.service";
 import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
@@ -1088,11 +1088,11 @@ function EditorContent() {
   };
   
   // Function to handle PDF export
-  const handleExportPDF = async (): Promise<boolean> => {
+  const handleExportPDF = async (customFilename?: string): Promise<boolean> => {
     setIsExporting(true);
     try {
-      // Get resumeTitle from currentResumeTitle or fallback to name in personal info
-      let resumeTitle = currentResumeTitle;
+      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
+      let resumeTitle = customFilename || currentResumeTitle;
       if (!resumeTitle || resumeTitle.trim() === '') {
         if (resumeData?.title) {
           resumeTitle = resumeData.title;
@@ -1102,53 +1102,46 @@ function EditorContent() {
           resumeTitle = 'resume';
         }
       }
-      console.log(`Attempting server-side PDF download for resume ID: ${resumeId} with title: ${resumeTitle}`);
-
-      if (!resumeId) {
-        throw new Error("Resume ID is required for export. Please save your resume first.");
+      
+      // Create a safe filename for file download (replace spaces with underscores)
+      const safeFilename = resumeTitle.replace(/\s+/g, '_');
+      
+      // Make sure resumeRef has a current value
+      if (!resumeRef.current) {
+        throw new Error("Resume content not available. Please try again.");
       }
-
-      // Call API to download PDF
-      const pdfBlob = await resumeAPI.downloadResume(
-        resumeId, 
-        'pdf',
-        template?.name,
-        resumeTitle
+      
+      // Get the ID of the resume container element or assign a temporary one
+      let resumeElementId = resumeRef.current.id;
+      if (!resumeElementId) {
+        resumeElementId = 'temp-resume-export-id';
+        resumeRef.current.id = resumeElementId;
+      }
+      
+      // Always use the exportToPDF function for consistent results
+      console.log(`Generating PDF with title: ${resumeTitle}`);
+      const success = await exportToPDF(
+        resumeElementId,
+        `${safeFilename}.pdf`,
+        pageFormat.toLowerCase()
       );
       
-      console.log("PDF blob received:", {
-        type: pdfBlob.type,
-        size: pdfBlob.size,
-        isBlob: pdfBlob instanceof Blob
-      });
-      
-      if (!pdfBlob || pdfBlob.size === 0) {
-        throw new Error("Received empty PDF data from server");
+      // Remove temporary ID if we added one
+      if (resumeElementId === 'temp-resume-export-id') {
+        resumeRef.current.removeAttribute('id');
       }
       
-      // Create a download link and trigger it
-      const url = window.URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${resumeTitle.replace(/\s+/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (!success) {
+        throw new Error("Failed to export PDF. Please try again.");
+      }
+      
       toast.success('PDF downloaded successfully!');
       return true;
     } catch (error: any) {
       console.error('Error exporting PDF:', error);
-      // Provide more specific error message based on the error
       let errorMessage = 'Failed to export PDF. Please try again.';
       if (error?.message) {
-        if (error.message.includes("Resume ID")) {
-          errorMessage = error.message;
-        } else if (error.message.includes("empty PDF data")) {
-          errorMessage = "Server returned empty PDF data. Please try again or contact support.";
-        } else if (error.response?.status === 404) {
-          errorMessage = "Resume not found. Please save your resume before exporting.";
-        }
+        errorMessage = error.message;
       }
       toast.error(errorMessage);
       return false;
@@ -1158,11 +1151,11 @@ function EditorContent() {
   };
 
   // Function to handle DOCX export
-  const handleExportDOCX = async (): Promise<boolean> => {
+  const handleExportDOCX = async (customFilename?: string): Promise<boolean> => {
     setIsExporting(true);
     try {
-      // Get resumeTitle from currentResumeTitle or fallback to name in personal info
-      let resumeTitle = currentResumeTitle;
+      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
+      let resumeTitle = customFilename || currentResumeTitle;
       if (!resumeTitle || resumeTitle.trim() === '') {
         if (resumeData?.title) {
           resumeTitle = resumeData.title;
@@ -1172,53 +1165,31 @@ function EditorContent() {
           resumeTitle = 'resume';
         }
       }
-      console.log(`Attempting server-side DOCX download for resume ID: ${resumeId} with title: ${resumeTitle}`);
-
-      if (!resumeId) {
-        throw new Error("Resume ID is required for export. Please save your resume first.");
-      }
-
-      // Call API to download DOCX
-      const docxBlob = await resumeAPI.downloadResume(
-        resumeId, 
-        'docx',
-        template?.name,
-        resumeTitle
+      
+      // Create a safe filename for file download (replace spaces with underscores)
+      const safeFilename = resumeTitle.replace(/\s+/g, '_');
+      
+      // Always use client-side export for DOCX
+      console.log(`Generating DOCX with title: ${resumeTitle}`);
+      
+      // For DOCX we need the actual content rather than the HTML
+      const success = await exportAsDOCX(
+        resumeContent,  // Pass resumeContent directly
+        pageFormat,     // Pass the page format
+        safeFilename    // Pass the safe filename
       );
       
-      console.log("DOCX blob received:", {
-        type: docxBlob.type,
-        size: docxBlob.size,
-        isBlob: docxBlob instanceof Blob
-      });
-      
-      if (!docxBlob || docxBlob.size === 0) {
-        throw new Error("Received empty DOCX data from server");
+      if (!success) {
+        throw new Error("Failed to export DOCX. Please try again.");
       }
       
-      // Create a download link and trigger it
-      const url = window.URL.createObjectURL(docxBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${resumeTitle.replace(/\s+/g, '_')}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
       toast.success('DOCX downloaded successfully!');
       return true;
     } catch (error: any) {
       console.error('Error exporting DOCX:', error);
-      // Provide more specific error message based on the error
       let errorMessage = 'Failed to export DOCX. Please try again.';
       if (error?.message) {
-        if (error.message.includes("Resume ID")) {
-          errorMessage = error.message;
-        } else if (error.message.includes("empty DOCX data")) {
-          errorMessage = "Server returned empty DOCX data. Please try again or contact support.";
-        } else if (error.response?.status === 404) {
-          errorMessage = "Resume not found. Please save your resume before exporting.";
-        }
+        errorMessage = error.message;
       }
       toast.error(errorMessage);
       return false;
@@ -1518,6 +1489,7 @@ function EditorContent() {
         onPageFormatChange={handlePageFormatChange}
         onExportPDF={handleExportPDF}
         onExportDOCX={handleExportDOCX}
+        defaultFilename={currentResumeTitle}
       />
       
       {/* Render the Save Dialog */}

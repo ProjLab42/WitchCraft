@@ -128,9 +128,55 @@ exports.generatePdf = async (resume) => {
         });
         yPosition -= lineHeight;
         
+        // Process description - check for bullet points (list items)
+        let description = exp.description || '';
+        
+        // Check if description contains HTML bullet points
+        if (description.includes('<li>')) {
+          // Extract list items
+          const listItemRegex = /<li>(.*?)<\/li>/g;
+          const matches = [...description.matchAll(listItemRegex)];
+          
+          if (matches.length > 0) {
+            for (const match of matches) {
+              const listItemText = match[1].replace(/<[^>]*>/g, ''); // Remove any nested HTML
+              
+              // Draw bullet point
+              page.drawText('•', {
+                x: leftMargin + 10,
+                y: yPosition,
+                size: 10,
+                font
+              });
+              
+              // Draw list item text with indent
+              const maxCharsPerLine = 75; // Slightly shorter for bullet points to account for indent
+              const listLines = splitTextToLines(listItemText, maxCharsPerLine);
+              for (let i = 0; i < listLines.length; i++) {
+                const line = listLines[i];
+                const xPos = i === 0 ? leftMargin + 25 : leftMargin + 25; // Indent for bullet points
+                
+                page.drawText(line, {
+                  x: xPos,
+                  y: yPosition,
+                  size: 10,
+                  font
+                });
+                yPosition -= lineHeight;
+                
+                if (yPosition < 100) {
+                  page = pdfDoc.addPage();
+                  yPosition = height - 50;
+                }
+              }
+            }
+            continue; // Skip the regular text processing
+          }
+        }
+        
+        // If no bullets detected, process as normal text
         // Split description into lines to avoid text overflow
         const maxCharsPerLine = 80;
-        let description = exp.description || '';
         while (description.length > 0 && yPosition > 100) {
           const lineText = description.substring(0, maxCharsPerLine);
           page.drawText(lineText, {
@@ -280,15 +326,40 @@ exports.generateDocx = async (resume) => {
           })
         );
         
-        sections.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: exp.description || ''
-              })
-            ]
-          })
-        );
+        // Check if description contains bullet points
+        const description = exp.description || '';
+        if (description.includes('<li>')) {
+          // Extract list items
+          const listItemRegex = /<li>(.*?)<\/li>/g;
+          const matches = [...description.matchAll(listItemRegex)];
+          
+          if (matches.length > 0) {
+            for (const match of matches) {
+              const listItemText = match[1].replace(/<[^>]*>/g, ''); // Remove any nested HTML
+              
+              sections.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: '• ' }),
+                    new TextRun({ text: listItemText })
+                  ],
+                  indent: { left: 720 } // 0.5 inch indent (720 = 0.5 inch in twips)
+                })
+              );
+            }
+          }
+        } else {
+          // Regular description without bullet points
+          sections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: description
+                })
+              ]
+            })
+          );
+        }
         
         // Add a spacer
         sections.push(new Paragraph({}));
@@ -312,16 +383,17 @@ exports.generateDocx = async (resume) => {
 };
 
 // Helper function to split text into lines that fit within a given width
-function splitTextToLines(text, font, fontSize, maxWidth) {
+function splitTextToLines(text, maxChars) {
+  if (!text) return [];
+  
   const words = text.split(' ');
   const lines = [];
   let currentLine = '';
   
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
-    const width = font.widthOfTextAtSize(testLine, fontSize);
     
-    if (width <= maxWidth) {
+    if (testLine.length <= maxChars || currentLine === '') {
       currentLine = testLine;
     } else {
       lines.push(currentLine);

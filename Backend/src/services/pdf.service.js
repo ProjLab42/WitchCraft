@@ -22,6 +22,11 @@ handlebars.registerHelper('eq', function(a, b) {
   return a === b;
 });
 
+// Add helper to safely output HTML
+handlebars.registerHelper('safe', function(text) {
+  return new handlebars.SafeString(text || '');
+});
+
 // Add a helper to check if a value is an array
 handlebars.registerHelper('isArray', function(value, options) {
   if (Array.isArray(value)) {
@@ -234,7 +239,7 @@ const generateHTML = async (cv, template) => {
             <div>${exp.period || ''}</div>
           </div>
           <div class="position-degree">${exp.title || ''}</div>
-          <div>${exp.description || ''}</div>
+          <div class="description">${new handlebars.SafeString(exp.description || '')}</div>
         </div>
       `).join('')}` : ''}
     
@@ -242,13 +247,13 @@ const generateHTML = async (cv, template) => {
     ${cv.sections?.education && cv.sections.education.length > 0 ? 
       `<div class="section-title" style="border: none;">Education</div>
       ${cv.sections.education.map(edu => `
-        <div class="education-item">
+        <div class="experience-item">
           <div class="company-school">
             <div>${edu.institution || ''}</div>
             <div>${edu.period || ''}</div>
           </div>
           <div class="position-degree">${edu.degree || ''}</div>
-          <div>${edu.description || ''}</div>
+          <div class="description">${new handlebars.SafeString(edu.description || '')}</div>
         </div>
       `).join('')}` : ''}
     
@@ -271,7 +276,7 @@ const generateHTML = async (cv, template) => {
             <div>${project.period || ''}</div>
           </div>
           ${project.role ? `<div class="project-role">${project.role}</div>` : ''}
-          ${project.description ? `<div class="project-details">${project.description}</div>` : ''}
+          ${project.description ? `<div class="project-details">${new handlebars.SafeString(project.description)}</div>` : ''}
           ${project.technologies ? `<div class="project-details"><strong>Technologies:</strong> ${project.technologies}</div>` : ''}
           ${project.url ? `<div class="project-details"><strong>URL:</strong> <a href="${project.url}" target="_blank">${project.url}</a></div>` : ''}
           ${project.github ? `<div class="project-details"><strong>GitHub:</strong> <a href="${project.github}" target="_blank">${project.github}</a></div>` : ''}
@@ -288,7 +293,7 @@ const generateHTML = async (cv, template) => {
             <div>${cert.date || ''}</div>
           </div>
           <div class="position-degree">${cert.issuer || ''}</div>
-          <div>${cert.description || ''}</div>
+          <div class="description">${new handlebars.SafeString(cert.description || '')}</div>
         </div>
       `).join('')}` : ''}
   </div>
@@ -584,7 +589,7 @@ const defaultTemplate = `
             <div class="item-date">{{this.period}}</div>
           </div>
           <div class="item-subtitle">{{this.title}}</div>
-          <div class="item-content">{{this.description}}</div>
+          <div class="item-content">{{{this.description}}}</div>
         </div>
       {{/each}}
     </section>
@@ -600,7 +605,7 @@ const defaultTemplate = `
             <div class="item-date">{{this.period}}</div>
           </div>
           <div class="item-subtitle">{{this.degree}}</div>
-          <div class="item-content">{{this.description}}</div>
+          <div class="item-content">{{{this.description}}}</div>
         </div>
       {{/each}}
     </section>
@@ -619,7 +624,7 @@ const defaultTemplate = `
             <div class="project-role">{{this.role}}</div>
           {{/if}}
           {{#if this.description}}
-            <div class="project-details">{{this.description}}</div>
+            <div class="project-details">{{{this.description}}}</div>
           {{/if}}
           {{#if this.technologies}}
             <div class="project-details"><strong>Technologies:</strong> {{this.technologies}}</div>
@@ -645,7 +650,7 @@ const defaultTemplate = `
             <div class="item-date">{{this.date}}</div>
           </div>
           <div class="item-subtitle">{{this.issuer}}</div>
-          <div class="item-content">{{this.description}}</div>
+          <div class="item-content">{{{this.description}}}</div>
         </div>
       {{/each}}
     </section>
