@@ -126,29 +126,99 @@ export const profileAPI = {
   }
 };
 
+// --- Define Resume API Types --- 
+
+// Basic info for listing resumes
+export interface ResumeStub {
+  _id: string;
+  title: string;
+  updatedAt: string;
+}
+
+// Structure matching backend resume.model.js for GET/POST/PUT
+// (Moved from Editor.tsx and refined)
+export interface ApiResumeData {
+  _id: string;
+  title: string;
+  template: string;
+  data: { 
+    name?: string;
+    jobTitle?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    website?: string; // Corresponds to PersonalInfo.links.portfolio
+    location?: string;
+    summary?: string;
+  };
+  sections: { 
+    experience?: any[]; // TODO: Define specific item types later if needed
+    education?: any[];
+    skills?: { name: string }[]; // Expecting only name from backend
+    projects?: any[];
+    certifications?: any[];
+    customSections?: Record<string, any>;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+  // sectionOrder?: string[]; // Add if backend supports saving/loading order
+}
+
+// Structure for data sent when creating/updating
+export interface ResumeSaveData {
+  title: string;
+  template: string;
+  data: { 
+    name?: string;
+    jobTitle?: string;
+    email?: string;
+    phone?: string;
+    linkedin?: string;
+    website?: string; // Frontend PersonalInfo.links.portfolio maps to this
+    location?: string;
+    summary?: string;
+  };
+  sections: { 
+    experience?: any[];
+    education?: any[];
+    skills?: { name: string }[]; // Send only name
+    projects?: any[];
+    certifications?: any[];
+    // customSections?: Record<string, any>;
+  };
+  // sectionOrder?: string[]; // Add if needed
+}
+
+// --- End Resume API Types ---
+
 // Resume API calls
 export const resumeAPI = {
-  getResumes: async () => {
-    const response = await api.get('/resume/get');
+  // Returns a list of basic resume info
+  getResumes: async (): Promise<ResumeStub[]> => {
+    const response = await api.get<ResumeStub[]>('/resume/get');
     return response.data;
   },
   
-  getResumeById: async (id: string) => {
-    const response = await api.get(`/resume/get/${id}`);
+  // Returns the full data for a specific resume
+  getResumeById: async (id: string): Promise<ApiResumeData> => {
+    const response = await api.get<ApiResumeData>(`/resume/get/${id}`);
     return response.data;
   },
   
-  createResume: async (resumeData: any) => {
-    const response = await api.post('/resume/create', resumeData);
+  // Creates a new resume, returns the full created object
+  createResume: async (resumeData: ResumeSaveData): Promise<ApiResumeData> => {
+    const response = await api.post<ApiResumeData>('/resume/create', resumeData);
     return response.data;
   },
   
-  updateResume: async (id: string, resumeData: any) => {
-    const response = await api.put(`/resume/update/${id}`, resumeData);
+  // Updates an existing resume, returns the updated object
+  updateResume: async (id: string, resumeData: ResumeSaveData): Promise<ApiResumeData> => {
+    const response = await api.put<ApiResumeData>(`/resume/update/${id}`, resumeData);
     return response.data;
   },
   
-  deleteResume: async (id: string) => {
+  // Deletes a resume, likely returns a success message or status
+  deleteResume: async (id: string): Promise<any> => { // Return type might be different (e.g., { message: string })
     const response = await api.delete(`/resume/delete/${id}`);
     return response.data;
   },
