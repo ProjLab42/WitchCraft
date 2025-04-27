@@ -94,7 +94,7 @@ const MyResumes: React.FC = () => {
   }, []);
 
   const handleSelectResume = (id: string) => {
-    navigate(`/editor/${id}`);
+    navigate(`/editor?resumeId=${id}`);
   };
   
   const handleCreateNew = () => {
