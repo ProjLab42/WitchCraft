@@ -224,7 +224,7 @@ export const resumeAPI = {
   },
   
   // Server-side PDF/DOCX download
-  downloadResume: async (id: string, format: 'pdf' | 'docx', template?: string) => {
+  downloadResume: async (id: string, format: 'pdf' | 'docx', template?: string, resumeTitle?: string): Promise<Blob> => {
     try {
       console.log(`Requesting download format=${format}, template=${template}, resumeId=${id}`);
       
@@ -241,41 +241,44 @@ export const resumeAPI = {
       // Check if we received a valid blob (PDF/DOCX)
       if (!response.data || response.data.size === 0) {
         console.error('Empty response received from server');
-        return false;
+        throw new Error('Empty response received from server');
       }
       
       // Log response details for debugging
       console.log('Download response received:', { 
         contentType: response.data.type,
         size: response.data.size,
-        statusCode: response.status
+        statusCode: response.status,
+        headers: response.headers
       });
       
       // Verify content type
       const contentType = response.headers['content-type'] || 
         (format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       
-      // Create file name
-      const fileName = `resume.${format}`;
+      // Get filename from Content-Disposition header if available
+      let fileName = `resume.${format}`;
       
-      // Create blob URL and trigger download (using a more robust approach)
-      const blob = new Blob([response.data], { type: contentType });
-      const downloadUrl = window.URL.createObjectURL(blob);
+      // Try to extract filename from Content-Disposition header
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+?)"/i);
+        if (filenameMatch && filenameMatch[1]) {
+          fileName = filenameMatch[1];
+          console.log('Using filename from Content-Disposition:', fileName);
+        }
+      }
       
-      // Create and trigger download link
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
+      // If we have a resumeTitle parameter and couldn't get filename from headers
+      if (resumeTitle && fileName === `resume.${format}`) {
+        // Create a filename-safe version of the title (replace spaces with underscores)
+        const safeTitle = resumeTitle.replace(/\s+/g, '_').replace(/[^\w\-\.]/g, '');
+        fileName = `${safeTitle}.${format}`;
+        console.log('Using filename from resumeTitle parameter:', fileName);
+      }
       
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(downloadUrl);
-      }, 100);
-      
-      return true;
+      // Return the blob directly instead of creating download link here
+      return new Blob([response.data], { type: contentType });
     } catch (error) {
       console.error('Error downloading resume:', error);
       console.error('Error details:', {
@@ -284,7 +287,7 @@ export const resumeAPI = {
         stack: error.stack,
         response: error.response?.data
       });
-      return false;
+      throw error; // Re-throw the error to be handled by the caller
     }
   },
   

@@ -73,7 +73,9 @@ function EditorContent() {
   const [resumeId, setResumeId] = useState<string | null>(null);
   const [isLoadingResume, setIsLoadingResume] = useState<boolean>(false); // Loading state for resume fetch
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false); // State for save dialog
-  const [currentResumeTitle, setCurrentResumeTitle] = useState<string>(''); // State to hold title for dialog
+  const [currentResumeTitle, setCurrentResumeTitle] = useState<string>('');
+  const [resumeData, setResumeData] = useState<ApiResumeData | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // --- Effect to Load Resume Data --- 
   useEffect(() => {
@@ -94,6 +96,13 @@ function EditorContent() {
           // --- Populate Context State --- 
           setResumeId(loadedResume._id);
           setSelectedTemplate(loadedResume.template);
+          
+          // Store the full resume data
+          setResumeData(loadedResume);
+          
+          // Set the current resume title
+          setCurrentResumeTitle(loadedResume.title);
+          console.log(`Set current resume title to: ${loadedResume.title}`);
 
           // Populate user data (only fields available in UserData type)
           // NOTE: This might overwrite profile data if resume data is sparse.
@@ -1078,77 +1087,144 @@ function EditorContent() {
     }
   };
   
-  // Export as PDF
-  const handleExportPDF = async () => {
-    let success = false;
-    const loadingToast = toast.loading("Exporting resume as PDF...");
-    
+  // Function to handle PDF export
+  const handleExportPDF = async (): Promise<boolean> => {
+    setIsExporting(true);
     try {
-      if (resumeRef.current) {
-        console.log("Starting client-side PDF generation");
-        const resumeElementId = resumeRef.current.id || 'resume-preview';
-        
-        success = await exportToPDF(
-          resumeElementId,
-          `${resumeContent.personalInfo.name || 'resume'}.pdf`,
-          pageFormat.toLowerCase()
-        );
-        
-        if (success) {
-          toast.success("Resume exported as PDF");
-          closeExportDialog();
+      // Get resumeTitle from currentResumeTitle or fallback to name in personal info
+      let resumeTitle = currentResumeTitle;
+      if (!resumeTitle || resumeTitle.trim() === '') {
+        if (resumeData?.title) {
+          resumeTitle = resumeData.title;
+        } else if (resumeContent.personalInfo?.name) {
+          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
         } else {
-          toast.error("Failed to export PDF. Please try again.");
+          resumeTitle = 'resume';
         }
-      } else {
-        toast.error("Resume content not ready. Please try again.");
       }
-    } catch (error) {
-      console.error("PDF export error:", error);
-      toast.error("Failed to export PDF. Please try again.");
-    } finally {
-      toast.dismiss(loadingToast);
-    }
-    
-    return success;
-  };
-  
-  // Export as DOCX
-  const handleExportDOCX = async () => {
-    let success = false;
-    const loadingToast = toast.loading("Exporting resume as DOCX...");
-    
-    try {
-      if (resumeId) { 
-        console.log(`Attempting server-side DOCX download for resume ID: ${resumeId}`);
-        success = await resumeAPI.downloadResume(
-          resumeId, 
-          'docx',
-          template?.name
-        );
-        if (!success) {
-          console.warn("Server-side DOCX download failed. Falling back to client-side.");
-          success = await exportAsDOCX(resumeContent, pageFormat);
-        }
-      } else {
-        console.warn("Resume not saved. Using client-side DOCX generation.");
-        success = await exportAsDOCX(resumeContent, pageFormat);
+      console.log(`Attempting server-side PDF download for resume ID: ${resumeId} with title: ${resumeTitle}`);
+
+      if (!resumeId) {
+        throw new Error("Resume ID is required for export. Please save your resume first.");
+      }
+
+      // Call API to download PDF
+      const pdfBlob = await resumeAPI.downloadResume(
+        resumeId, 
+        'pdf',
+        template?.name,
+        resumeTitle
+      );
+      
+      console.log("PDF blob received:", {
+        type: pdfBlob.type,
+        size: pdfBlob.size,
+        isBlob: pdfBlob instanceof Blob
+      });
+      
+      if (!pdfBlob || pdfBlob.size === 0) {
+        throw new Error("Received empty PDF data from server");
       }
       
-      if (success) {
-        toast.success("Resume exported as DOCX");
-        closeExportDialog();
-      } else {
-        toast.error("Failed to export DOCX");
+      // Create a download link and trigger it
+      const url = window.URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resumeTitle.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('PDF downloaded successfully!');
+      return true;
+    } catch (error: any) {
+      console.error('Error exporting PDF:', error);
+      // Provide more specific error message based on the error
+      let errorMessage = 'Failed to export PDF. Please try again.';
+      if (error?.message) {
+        if (error.message.includes("Resume ID")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("empty PDF data")) {
+          errorMessage = "Server returned empty PDF data. Please try again or contact support.";
+        } else if (error.response?.status === 404) {
+          errorMessage = "Resume not found. Please save your resume before exporting.";
+        }
       }
-    } catch (error) {
-      console.error("DOCX export error:", error);
-      toast.error("Failed to export DOCX");
+      toast.error(errorMessage);
+      return false;
     } finally {
-      toast.dismiss(loadingToast);
+      setIsExporting(false);
     }
-    
-    return success;
+  };
+
+  // Function to handle DOCX export
+  const handleExportDOCX = async (): Promise<boolean> => {
+    setIsExporting(true);
+    try {
+      // Get resumeTitle from currentResumeTitle or fallback to name in personal info
+      let resumeTitle = currentResumeTitle;
+      if (!resumeTitle || resumeTitle.trim() === '') {
+        if (resumeData?.title) {
+          resumeTitle = resumeData.title;
+        } else if (resumeContent.personalInfo?.name) {
+          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
+        } else {
+          resumeTitle = 'resume';
+        }
+      }
+      console.log(`Attempting server-side DOCX download for resume ID: ${resumeId} with title: ${resumeTitle}`);
+
+      if (!resumeId) {
+        throw new Error("Resume ID is required for export. Please save your resume first.");
+      }
+
+      // Call API to download DOCX
+      const docxBlob = await resumeAPI.downloadResume(
+        resumeId, 
+        'docx',
+        template?.name,
+        resumeTitle
+      );
+      
+      console.log("DOCX blob received:", {
+        type: docxBlob.type,
+        size: docxBlob.size,
+        isBlob: docxBlob instanceof Blob
+      });
+      
+      if (!docxBlob || docxBlob.size === 0) {
+        throw new Error("Received empty DOCX data from server");
+      }
+      
+      // Create a download link and trigger it
+      const url = window.URL.createObjectURL(docxBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${resumeTitle.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('DOCX downloaded successfully!');
+      return true;
+    } catch (error: any) {
+      console.error('Error exporting DOCX:', error);
+      // Provide more specific error message based on the error
+      let errorMessage = 'Failed to export DOCX. Please try again.';
+      if (error?.message) {
+        if (error.message.includes("Resume ID")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("empty DOCX data")) {
+          errorMessage = "Server returned empty DOCX data. Please try again or contact support.";
+        } else if (error.response?.status === 404) {
+          errorMessage = "Resume not found. Please save your resume before exporting.";
+        }
+      }
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   // Zoom controls
