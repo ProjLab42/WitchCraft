@@ -1,11 +1,11 @@
 const Template = require('../models/template.model');
 
 class TemplateService {
-  // Get all active templates (metadata only)
+  // Get all active templates with just thumbnail SVG content for previews
   async getAllTemplates() {
     try {
       return await Template.find({ isActive: true })
-        .select('id name imageSrc thumbnail category version updatedAt')
+        .select('id name thumbnailSvgContent category version updatedAt')
         .lean();
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -189,6 +189,28 @@ class TemplateService {
           }
         ];
         
+        // Read SVG files and add their content
+        for (const template of defaultTemplates) {
+          try {
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Read template SVG
+            const templateSvgPath = path.join(__dirname, '../../../Frontend/public', template.imageSrc);
+            if (fs.existsSync(templateSvgPath)) {
+              template.templateSvgContent = fs.readFileSync(templateSvgPath, 'utf8');
+            }
+            
+            // Read thumbnail SVG
+            const thumbnailSvgPath = path.join(__dirname, '../../../Frontend/public', template.thumbnail);
+            if (fs.existsSync(thumbnailSvgPath)) {
+              template.thumbnailSvgContent = fs.readFileSync(thumbnailSvgPath, 'utf8');
+            }
+          } catch (error) {
+            console.error(`Error reading SVG files for template ${template.id}:`, error);
+          }
+        }
+        
         await Template.insertMany(defaultTemplates);
         console.log('Default templates initialized successfully');
       }
@@ -199,4 +221,4 @@ class TemplateService {
   }
 }
 
-module.exports = new TemplateService(); 
+module.exports = new TemplateService();

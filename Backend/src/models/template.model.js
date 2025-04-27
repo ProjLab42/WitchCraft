@@ -13,11 +13,21 @@ const templateSchema = new mongoose.Schema({
     trim: true
   },
   description: String,
+  // Keep the original paths for backward compatibility
   imageSrc: {
     type: String,
     required: true
   },
   thumbnail: String,
+  // Add new fields for SVG content
+  templateSvgContent: {
+    type: String,
+    // Not required initially to support migration
+  },
+  thumbnailSvgContent: {
+    type: String,
+    // Not required initially to support migration
+  },
   category: {
     type: String,
     enum: ['Professional', 'Creative', 'Academic', 'Simple', 'Modern'],

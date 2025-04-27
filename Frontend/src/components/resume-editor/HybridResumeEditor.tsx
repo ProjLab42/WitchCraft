@@ -96,6 +96,20 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     }),
   }));
 
+  // Render template SVG if available
+  const renderTemplateSvg = () => {
+    if (selectedTemplate?.templateSvgContent) {
+      return (
+        <div 
+          className="absolute inset-0 pointer-events-none z-0"
+          dangerouslySetInnerHTML={{ __html: selectedTemplate.templateSvgContent }}
+        />
+      );
+    }
+    
+    return null;
+  };
+
   // Apply template styles when template changes
   useEffect(() => {
     if (selectedTemplate && selectedTemplate.id !== prevTemplateId.current) {
@@ -690,6 +704,9 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         `}
         style={resumeContainerStyle}
       >
+        {/* Render template SVG content if available */}
+        {renderTemplateSvg()}
+        
         <style dangerouslySetInnerHTML={{
           __html: `
             /* Custom styles for dragging */
@@ -928,4 +945,4 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       </div>
     </div>
   );
-}; 
+};

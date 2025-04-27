@@ -155,11 +155,18 @@ export default function Templates() {
                     </CardHeader>
                     <CardContent>
                       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md border mb-3">
-                        <img
-                          src={template.thumbnail || template.imageSrc}
-                          alt={template.name}
-                          className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-105"
-                        />
+                        {template.thumbnailSvgContent ? (
+                          <div 
+                            className="h-full w-full transition-transform duration-300 hover:scale-105 svg-container"
+                            dangerouslySetInnerHTML={{ __html: template.thumbnailSvgContent }} 
+                          />
+                        ) : (
+                          <img
+                            src={template.thumbnail || template.imageSrc}
+                            alt={template.name}
+                            className="h-full w-full object-cover object-top transition-transform duration-300 hover:scale-105"
+                          />
+                        )}
                         {selectedTemplate === template.id && (
                           <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                             <div className="rounded-full bg-primary p-1.5">
@@ -197,4 +204,4 @@ export default function Templates() {
       <Footer />
     </div>
   );
-} 
+}

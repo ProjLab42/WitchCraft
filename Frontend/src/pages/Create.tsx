@@ -121,7 +121,7 @@ export default function Create() {
                   key={template.id}
                   id={template.id}
                   name={template.name}
-                  imageSrc={template.thumbnail || template.imageSrc}
+                  thumbnailSvgContent={template.thumbnailSvgContent}
                   selected={selectedTemplate === template.id}
                   onSelect={handleSelectTemplate}
                 />

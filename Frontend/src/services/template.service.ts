@@ -30,8 +30,10 @@ export interface Template {
   id: string;  // Template unique identifier
   name: string;
   description?: string;
-  imageSrc: string;
-  thumbnail?: string;
+  imageSrc?: string; // Optional now
+  thumbnail?: string; // Optional now
+  templateSvgContent?: string;
+  thumbnailSvgContent?: string;
   category?: string;
   version: string;
   styles: TemplateStyles;
@@ -47,8 +49,7 @@ export interface TemplateMetadata {
   _id: string;
   id: string;
   name: string;
-  imageSrc: string;
-  thumbnail?: string;
+  thumbnailSvgContent?: string; // Only keep thumbnail SVG content
   category?: string;
   version: string;
   updatedAt: string;
@@ -59,22 +60,16 @@ const defaultTemplates = [
   {
     id: "classic",
     name: "Classic Professional",
-    imageSrc: "/assets/templates/classic-resume-template.svg",
-    thumbnail: "/assets/thumbnails/classic-resume-thumbnail.svg",
     version: "1.0.0"
   },
   {
     id: "modern",
     name: "Modern Professional",
-    imageSrc: "/assets/templates/modern-resume-template.svg",
-    thumbnail: "/assets/thumbnails/modern-resume-thumbnail.svg",
     version: "1.0.0"
   },
   {
     id: "minimal",
     name: "Minimal",
-    imageSrc: "/assets/templates/minimal-resume-template.svg",
-    thumbnail: "/assets/thumbnails/minimal-resume-thumbnail.svg",
     version: "1.0.0"
   }
 ] as TemplateMetadata[];
@@ -86,8 +81,6 @@ const defaultTemplateDefinitions: Record<string, Template> = {
     id: "classic",
     name: "Classic Professional",
     description: "A traditional resume layout with a clean, formal design suitable for most professional settings",
-    imageSrc: "/assets/templates/classic-resume-template.svg",
-    thumbnail: "/assets/thumbnails/classic-resume-thumbnail.svg",
     category: "Professional",
     version: "1.0.0",
     styles: {
@@ -122,8 +115,6 @@ const defaultTemplateDefinitions: Record<string, Template> = {
     id: "modern",
     name: "Modern Professional",
     description: "A contemporary design with a blue accent color and skills section first",
-    imageSrc: "/assets/templates/modern-resume-template.svg",
-    thumbnail: "/assets/thumbnails/modern-resume-thumbnail.svg",
     category: "Modern",
     version: "1.0.0",
     styles: {
@@ -158,8 +149,6 @@ const defaultTemplateDefinitions: Record<string, Template> = {
     id: "minimal",
     name: "Minimal",
     description: "A clean, minimalist design with ample white space and subtle styling",
-    imageSrc: "/assets/templates/minimal-resume-template.svg",
-    thumbnail: "/assets/thumbnails/minimal-resume-thumbnail.svg",
     category: "Simple",
     version: "1.0.0",
     styles: {
@@ -204,7 +193,7 @@ class TemplateService {
     });
   }
   
-  // Get all templates (metadata only)
+  // Get all templates (metadata only with thumbnailSvgContent)
   async getAllTemplates(): Promise<TemplateMetadata[]> {
     // Check if we have a fresh cache
     const now = Date.now();
@@ -269,4 +258,4 @@ class TemplateService {
 }
 
 // Create singleton instance
-export const templateService = new TemplateService(); 
+export const templateService = new TemplateService();
