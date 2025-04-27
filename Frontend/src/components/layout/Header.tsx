@@ -42,6 +42,11 @@ export function Header() {
           <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
             Dashboard
           </Link>
+          {isAuthenticated && (
+            <Link to="/my-resumes" className="text-sm font-medium hover:text-primary transition-colors">
+              My Resumes
+            </Link>
+          )}
           <Link to="/templates" className="text-sm font-medium hover:text-primary transition-colors">
             Templates
           </Link>

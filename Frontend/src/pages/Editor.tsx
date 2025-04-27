@@ -2,13 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Edit, ArrowLeft } from "lucide-react";
+import { Download, Plus, Edit, ArrowLeft, Save } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Link, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useSearchParams, useLocation, useNavigate } from "react-router-dom";
 
 // Import our new components
 import { ResumeProvider, useResumeContext } from "@/components/resume-editor/ResumeContext";
@@ -21,16 +21,19 @@ import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
-import { exportAsPDF, exportAsDOCX, generateId } from "@/components/resume-editor/utils";
+import { exportAsPDF, exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
-import { resumeAPI } from "@/services/api.service";
+import { resumeAPI, ApiResumeData } from "@/services/api.service";
+import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
 
 // Main Editor component
 function EditorContent() {
   // Get URL parameters
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
+  const resumeIdParam = searchParams.get('resumeId'); // Get resumeId from URL
   const location = useLocation();
+  const navigate = useNavigate(); // Add navigate hook
   
   // Template state
   const [template, setTemplate] = useState<Template | null>(null);
@@ -58,7 +61,7 @@ function EditorContent() {
     isExportDialogOpen,
     setIsExportDialogOpen,
     selectedTemplate,
-    setSelectedTemplate
+    setSelectedTemplate,
   } = useResumeContext();
 
   // Local state
@@ -68,61 +71,136 @@ function EditorContent() {
 
   // State for current resume ID (from DB)
   const [resumeId, setResumeId] = useState<string | null>(null);
+  const [isLoadingResume, setIsLoadingResume] = useState<boolean>(false); // Loading state for resume fetch
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false); // State for save dialog
+  const [currentResumeTitle, setCurrentResumeTitle] = useState<string>(''); // State to hold title for dialog
 
-  // Fetch template data when templateParam changes
+  // --- Effect to Load Resume Data --- 
   useEffect(() => {
-    const fetchTemplate = async () => {
-      if (!templateParam) {
-        // If no template is specified, use the first default template
+    const loadResume = async () => {
+      if (resumeIdParam) {
+        console.log(`Loading resume with ID: ${resumeIdParam}`);
+        setIsLoadingResume(true);
         try {
-          const templates = await templateService.getAllTemplates();
-          if (templates && templates.length > 0) {
-            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
-            setTemplate(defaultTemplate);
-            setSelectedTemplate(templates[0].id);
+          const loadedResume: ApiResumeData = await resumeAPI.getResumeById(resumeIdParam);
+          console.log('Loaded Resume Data:', loadedResume);
+
+          if (!loadedResume) {
+            toast.error("Resume not found.");
+            navigate('/my-resumes'); // Redirect if not found
+            return;
           }
+
+          // --- Populate Context State --- 
+          setResumeId(loadedResume._id);
+          setSelectedTemplate(loadedResume.template);
+
+          // Populate user data (only fields available in UserData type)
+          // NOTE: This might overwrite profile data if resume data is sparse.
+          // Consider if merging or only updating specific fields is better.
+          setUserData(prevUserData => ({
+            ...prevUserData, // Preserve existing fields
+            name: loadedResume.data?.name ?? prevUserData.name,
+            title: loadedResume.data?.jobTitle ?? prevUserData.title,
+            email: loadedResume.data?.email ?? prevUserData.email,
+            location: loadedResume.data?.location ?? prevUserData.location,
+            // bio: loadedResume.data?.bio ?? prevUserData.bio, // Bio not in resume data
+            // avatarUrl: loadedResume.data?.avatarUrl ?? prevUserData.avatarUrl, // Avatar not in resume data
+            links: {
+                ...prevUserData.links,
+                linkedin: loadedResume.data?.linkedin ?? prevUserData.links?.linkedin,
+                portfolio: loadedResume.data?.website ?? prevUserData.links?.portfolio, // Map website to portfolio
+            },
+            // sections/skills in UserData are profile-level, don't overwrite from single resume
+          }));
+
+          // Populate resume content state
+          const loadedSections = [
+              ...(loadedResume.sections?.experience?.map(item => ({ ...item, itemType: 'experience' })) ?? []),
+              ...(loadedResume.sections?.education?.map(item => ({ ...item, itemType: 'education' })) ?? []),
+              ...(loadedResume.sections?.projects?.map(item => ({ ...item, itemType: 'projects' })) ?? []),
+              ...(loadedResume.sections?.certifications?.map(item => ({ ...item, itemType: 'certifications' })) ?? []),
+              // ...(custom sections mapping if needed)
+          ];
+          
+          // Derive section order from loaded sections or use a default
+          const derivedSectionOrder = loadedSections.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index);
+          // Or use a fixed default: const defaultOrder = ['experience', 'education', 'skills', 'projects', 'certifications'];
+
+          const newResumeContent = {
+            personalInfo: { // Map to PersonalInfo structure
+               name: loadedResume.data?.name ?? '',
+               title: loadedResume.data?.jobTitle ?? '',
+               email: loadedResume.data?.email ?? '',
+               location: loadedResume.data?.location ?? '',
+               phone: loadedResume.data?.phone ?? undefined, // Add optional phone
+               summary: loadedResume.data?.summary ?? undefined, // Add optional summary
+               links: { // Map links
+                 linkedin: loadedResume.data?.linkedin ?? undefined,
+                 portfolio: loadedResume.data?.website ?? undefined, // Map website to portfolio
+                 additionalLinks: [], // Assuming not saved/loaded per resume
+               }
+            },
+            sections: loadedSections,
+            selectedSkills: loadedResume.sections?.skills?.map(s => ({ 
+                id: s.name, // Use name as ID for now, assuming unique skill names
+                name: s.name,
+                level: 50 // Provide a default level or handle differently
+            })) ?? [], // Map {name} to SkillItem[]
+            sectionOrder: derivedSectionOrder, // Provide the required sectionOrder
+          };
+          setResumeContent(newResumeContent);
+          
+          toast.success(`Resume "${loadedResume.title}" loaded successfully.`);
+
         } catch (error) {
-          console.error('Error fetching default template:', error);
-          setTemplateError('Failed to load default template. Using basic styling.');
+          console.error("Failed to load resume:", error);
+          toast.error("Failed to load resume. Please try again.");
+          // Redirect back if loading fails
+          navigate('/my-resumes'); 
+        } finally {
+          setIsLoadingResume(false);
         }
+      } else {
+        // If no resumeIdParam, ensure local resumeId state is null (for new resumes)
+        setResumeId(null);
+        // Optionally reset context state here if needed when navigating to /editor for a new resume
+        // resetResumeContext(); // Hypothetical function
+      }
+    };
+
+    loadResume();
+  }, [resumeIdParam, setUserData, setResumeContent, setSelectedTemplate, navigate]); // Reduce dependencies - only run when ID changes
+
+  // --- End Load Resume Effect --- 
+
+  // Fetch template data when templateParam or selectedTemplate changes
+  useEffect(() => {
+    const templateIdToFetch = selectedTemplate || templateParam;
+    const fetchTemplate = async () => {
+      if (!templateIdToFetch) {
+        // ... handle default template ...
         return;
       }
-      
       try {
         setTemplateLoading(true);
         setTemplateError(null);
-        
-        console.log('Fetching template with ID:', templateParam);
-        const templateData = await templateService.getTemplateById(templateParam);
-        console.log('Template data received:', templateData);
-        
-        if (!templateData || !templateData.styles) {
+        const fetchedTemplateData = await templateService.getTemplateById(templateIdToFetch);
+        // Fix: Use fetchedTemplateData instead of templateData
+        if (!fetchedTemplateData || !fetchedTemplateData.styles) { 
           throw new Error('Invalid template data received');
         }
-        
-        setTemplate(templateData);
-        setSelectedTemplate(templateParam);
+        setTemplate(fetchedTemplateData); 
       } catch (error) {
         console.error('Error fetching template:', error);
         setTemplateError('Failed to load template. Using default styling.');
-        
-        // Try to load a default template as fallback
-        try {
-          const templates = await templateService.getAllTemplates();
-          if (templates && templates.length > 0) {
-            const defaultTemplate = await templateService.getTemplateById(templates[0].id);
-            setTemplate(defaultTemplate);
-          }
-        } catch (innerError) {
-          console.error('Error fetching fallback template:', innerError);
-        }
+        // ... fallback logic ...
       } finally {
         setTemplateLoading(false);
       }
     };
-    
     fetchTemplate();
-  }, [templateParam, setSelectedTemplate]);
+  }, [templateParam, selectedTemplate]);
 
   // Clean up duplicates on component mount
   useEffect(() => {
@@ -272,10 +350,13 @@ function EditorContent() {
     const [removed] = newOrder.splice(sourceIndex, 1);
     newOrder.splice(destinationIndex, 0, removed);
     
-    setResumeContent(prev => ({
-      ...prev,
-      sectionOrder: newOrder
-    }));
+    setResumeContent(prev => {
+      console.log("[Editor.tsx] Updating sectionOrder from:", prev.sectionOrder, "to:", newOrder);
+      return {
+        ...prev,
+        sectionOrder: newOrder
+      };
+    });
   };
   
   // Handle dropping an item onto the resume
@@ -811,25 +892,78 @@ function EditorContent() {
   const reorderSectionItems = (sectionType, sourceIndex, destinationIndex) => {
     setResumeContent(prev => {
       // Get all items of this section type
-      const sectionItems = prev.sections.filter(
-        section => section.itemType === sectionType
-      );
+      let itemsToReorder;
+      let keyToUpdate;
+      
+      if (sectionType === 'skills') {
+        itemsToReorder = [...prev.selectedSkills];
+        keyToUpdate = 'selectedSkills';
+      } else {
+        itemsToReorder = prev.sections.filter(
+          section => section.itemType === sectionType
+        );
+        keyToUpdate = 'sections';
+      }
       
       // Reorder the items
-      const newSectionItems = [...sectionItems];
-      const [removed] = newSectionItems.splice(sourceIndex, 1);
-      newSectionItems.splice(destinationIndex, 0, removed);
+      const [removed] = itemsToReorder.splice(sourceIndex, 1);
+      itemsToReorder.splice(destinationIndex, 0, removed);
       
-      // Create a new sections array with the reordered items
-      const otherSections = prev.sections.filter(
-        section => section.itemType !== sectionType
-      );
-      
-      return {
-        ...prev,
-        sections: [...otherSections, ...newSectionItems]
-      };
+      // Create the updated state
+      if (keyToUpdate === 'sections') {
+        const otherSections = prev.sections.filter(
+          section => section.itemType !== sectionType
+        );
+        return {
+          ...prev,
+          sections: [...otherSections, ...itemsToReorder]
+        };
+      } else {
+        return {
+          ...prev,
+          selectedSkills: itemsToReorder
+        };
+      }
     });
+  };
+
+  // Move section up
+  const moveSectionUp = (index) => {
+    console.log("Moving section UP, index:", index);
+    if (index > 0) {
+      reorderSections(index, index - 1);
+    }
+  };
+
+  // Move section down
+  const moveSectionDown = (index) => {
+    console.log("Moving section DOWN, index:", index);
+    if (index < resumeContent.sectionOrder.length - 1) {
+      reorderSections(index, index + 1);
+    }
+  };
+
+  // Move item up within a section
+  const moveItemUp = (sectionType, index) => {
+    console.log("Moving item UP, type:", sectionType, "index:", index);
+    if (index > 0) {
+      reorderSectionItems(sectionType, index, index - 1);
+    }
+  };
+
+  // Move item down within a section
+  const moveItemDown = (sectionType, index) => {
+    console.log("Moving item DOWN, type:", sectionType, "index:", index);
+    let itemCount;
+    if (sectionType === 'skills') {
+      itemCount = resumeContent.selectedSkills.length;
+    } else {
+      itemCount = resumeContent.sections.filter(s => s.itemType === sectionType).length;
+    }
+    
+    if (index < itemCount - 1) {
+      reorderSectionItems(sectionType, index, index + 1);
+    }
   };
   
   // Delete a skill
@@ -875,97 +1009,89 @@ function EditorContent() {
     setPageFormat(value);
   };
   
-  // Save the current resume state to the server
-  const saveResumeState = async () => {
+  // Renamed from saveResumeState, now accepts name from dialog
+  const handleConfirmSave = async (newName: string): Promise<ApiResumeData | null> => {
+    console.log("Saving resume state with name:", newName);
+    // Add a loading state for saving if needed
+    const savingToast = toast.loading("Saving project...");
+
+    // Construct data using newName
+    const resumeDataToSave = {
+      title: newName, // Use name from dialog
+      template: selectedTemplate || 'default',
+      data: { 
+        name: resumeContent.personalInfo?.name,
+        jobTitle: resumeContent.personalInfo?.title,
+        email: resumeContent.personalInfo?.email,
+        phone: resumeContent.personalInfo?.phone,
+        linkedin: resumeContent.personalInfo?.links?.linkedin,
+        website: resumeContent.personalInfo?.links?.portfolio,
+        location: resumeContent.personalInfo?.location,
+        summary: resumeContent.personalInfo?.summary,
+      },
+      sections: { 
+        experience: resumeContent.sections.filter(s => s.itemType === 'experience'),
+        education: resumeContent.sections.filter(s => s.itemType === 'education'),
+        skills: resumeContent.selectedSkills?.map(skill => ({ name: skill.name })) ?? [], 
+        projects: resumeContent.sections.filter(s => s.itemType === 'projects'),
+        certifications: resumeContent.sections.filter(s => s.itemType === 'certifications'),
+      },
+    };
+
+    console.log("Data to save:", resumeDataToSave);
+
     try {
-      console.log("Preparing resume data for save...");
-      
-      // Create properly formatted resume data according to backend schema
-      const resumeData = {
-        title: resumeContent.personalInfo.name 
-          ? `${resumeContent.personalInfo.name}'s Resume` 
-          : 'Untitled Resume',
-        template: template?.name || 'default',
-        format: pageFormat || 'A4',
-        lastEdited: new Date(),
-        
-        // Format personal info data according to backend schema
-        data: {
-          name: resumeContent.personalInfo.name || '',
-          jobTitle: resumeContent.personalInfo.title || '',
-          email: resumeContent.personalInfo.email || '',
-          linkedin: resumeContent.personalInfo.links?.linkedin || '',
-          website: resumeContent.personalInfo.links?.portfolio || '',
-          // Only include optional fields if they exist in PersonalInfo
-          ...(resumeContent.personalInfo.phone && { phone: resumeContent.personalInfo.phone }),
-          ...(resumeContent.personalInfo.summary && { summary: resumeContent.personalInfo.summary }),
-          ...(resumeContent.personalInfo.location && { location: resumeContent.personalInfo.location })
-        },
-        
-        // Format sections according to backend schema
-        sections: {
-          experience: resumeContent.sections.filter(s => s.itemType === 'experience') || [],
-          education: resumeContent.sections.filter(s => s.itemType === 'education') || [],
-          skills: resumeContent.selectedSkills || [],
-          projects: resumeContent.sections.filter(s => s.itemType === 'projects') || [],
-          certifications: resumeContent.sections.filter(s => s.itemType === 'certifications') || []
-        }
-      };
-      
-      console.log("Prepared data:", resumeData);
-      
-      let savedResume;
-      
+      let savedResume: ApiResumeData | null = null; 
       if (resumeId) {
-        console.log("Updating existing resume with ID:", resumeId);
-        // Update existing resume
-        savedResume = await resumeAPI.updateResume(resumeId, resumeData);
-        console.log("Resume updated successfully:", savedResume);
+        savedResume = await resumeAPI.updateResume(resumeId, resumeDataToSave);
+        if (savedResume) { 
+          toast.success(`Resume "${savedResume.title}" updated successfully!`);
+          setCurrentResumeTitle(savedResume.title); // Update title state
+        } else {
+          toast.error("Failed to update resume.");
+        }
       } else {
-        console.log("Creating new resume...");
-        // Create new resume
-        savedResume = await resumeAPI.createResume(resumeData);
-        console.log("New resume created:", savedResume);
-        if (savedResume && savedResume._id) {
-          setResumeId(savedResume._id);
+        savedResume = await resumeAPI.createResume(resumeDataToSave);
+        if (savedResume?._id) { 
+          setResumeId(savedResume._id); // Set the new ID
+          setCurrentResumeTitle(savedResume.title); // Update title state
+          toast.success(`Resume "${savedResume.title}" saved successfully!`);
+          // Update URL without reload to reflect new state (optional but good UX)
+          navigate(`/editor?resumeId=${savedResume._id}`, { replace: true });
+        } else {
+           toast.error("Failed to save new resume.");
         }
       }
-      
-      return savedResume;
+      // Close dialog only on success
+      if (savedResume) {
+          setIsSaveDialogOpen(false); 
+          return savedResume; // Return saved data
+      }
+      return null; // Return null if save wasn't fully successful
+
     } catch (error) {
-      console.error('Error saving resume:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      return null;
+      console.error("Failed to save resume:", error);
+      toast.error("Failed to save resume. Please try again.");
+      return null; // Return null on error
+    } finally {
+      toast.dismiss(savingToast);
     }
   };
   
   // Export as PDF
   const handleExportPDF = async () => {
     let success = false;
-    
-    // Show loading toast
     const loadingToast = toast.loading("Exporting resume as PDF...");
     
     try {
-      console.log("Starting PDF export process");
-      // First save the current resume state to get an ID
-      console.log("Current resume content:", resumeContent);
-      const savedResume = await saveResumeState();
-      console.log("Save resume result:", savedResume);
-      
-      if (savedResume && savedResume._id) {
-        // Use server-side PDF generation
-        console.log("Using server-side PDF generation with resume ID:", savedResume._id);
-        success = await resumeAPI.downloadResume(
-          savedResume._id, 
-          'pdf',
-          template?.name // Pass current template name
+      if (resumeRef.current) {
+        console.log("Starting client-side PDF generation");
+        const resumeElementId = resumeRef.current.id || 'resume-preview';
+        
+        success = await exportToPDF(
+          resumeElementId,
+          `${resumeContent.personalInfo.name || 'resume'}.pdf`,
+          pageFormat.toLowerCase()
         );
         
         if (success) {
@@ -975,19 +1101,12 @@ function EditorContent() {
           toast.error("Failed to export PDF. Please try again.");
         }
       } else {
-        toast.error("Failed to save resume. Please try again.");
+        toast.error("Resume content not ready. Please try again.");
       }
     } catch (error) {
       console.error("PDF export error:", error);
-      console.error("Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data
-      });
       toast.error("Failed to export PDF. Please try again.");
     } finally {
-      // Dismiss loading toast
       toast.dismiss(loadingToast);
     }
     
@@ -997,24 +1116,22 @@ function EditorContent() {
   // Export as DOCX
   const handleExportDOCX = async () => {
     let success = false;
-    
-    // Show loading toast
     const loadingToast = toast.loading("Exporting resume as DOCX...");
     
     try {
-      // First try to save the current resume state to get an ID
-      const savedResume = await saveResumeState();
-      
-      if (savedResume && savedResume._id) {
-        // Use server-side DOCX generation
+      if (resumeId) { 
+        console.log(`Attempting server-side DOCX download for resume ID: ${resumeId}`);
         success = await resumeAPI.downloadResume(
-          savedResume._id, 
+          resumeId, 
           'docx',
-          template?.name // Pass current template name
+          template?.name
         );
+        if (!success) {
+          console.warn("Server-side DOCX download failed. Falling back to client-side.");
+          success = await exportAsDOCX(resumeContent, pageFormat);
+        }
       } else {
-        // Fallback to client-side generation if we couldn't save
-        console.warn("Falling back to client-side DOCX generation");
+        console.warn("Resume not saved. Using client-side DOCX generation.");
         success = await exportAsDOCX(resumeContent, pageFormat);
       }
       
@@ -1026,21 +1143,8 @@ function EditorContent() {
       }
     } catch (error) {
       console.error("DOCX export error:", error);
-      // Fallback to client-side generation on error
-      try {
-        success = await exportAsDOCX(resumeContent, pageFormat);
-        if (success) {
-          toast.success("Resume exported as DOCX (fallback method)");
-          closeExportDialog();
-        } else {
-          toast.error("Failed to export DOCX");
-        }
-      } catch (fallbackError) {
-        console.error("Fallback DOCX export error:", fallbackError);
-        toast.error("Failed to export DOCX");
-      }
+      toast.error("Failed to export DOCX");
     } finally {
-      // Dismiss loading toast
       toast.dismiss(loadingToast);
     }
     
@@ -1064,6 +1168,18 @@ function EditorContent() {
     setAutoScalingEnabled(enabled);
   };
 
+  // --- Function to open the save dialog --- 
+  const openSaveDialog = () => {
+     // Pre-fill with current title if it exists (from loaded or previously saved)
+     // Or generate a default title based on personal info name
+     const titleToEdit = currentResumeTitle || 
+                         resumeContent?.personalInfo?.name 
+                         ? `${resumeContent.personalInfo.name}'s Resume` 
+                         : "Untitled Resume"; // Changed default
+     setCurrentResumeTitle(titleToEdit);
+     setIsSaveDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -1071,6 +1187,12 @@ function EditorContent() {
       <main className="container py-8 pb-16">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
+            {/* Add link back to My Resumes if loaded from there */}
+            {resumeIdParam && (
+              <Link to="/my-resumes" className="p-2 rounded-md hover:bg-accent">
+                 <ArrowLeft size={16} />
+              </Link>
+            )}
             <h1 className="text-2xl font-bold">Resume Builder</h1>
             {templateError && (
               <span className="text-sm text-destructive">{templateError}</span>
@@ -1078,17 +1200,23 @@ function EditorContent() {
           </div>
           
           <div className="flex gap-2">
-            <Button onClick={openExportDialog}>
+            {/* Update Save Button onClick to call openSaveDialog */}
+            <Button onClick={openSaveDialog} variant="default">
+              <Save className="mr-2 h-4 w-4" />
+              Save Project
+            </Button>
+            <Button onClick={openExportDialog} variant="outline"> { /* Make export outline */ }
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
             
-            <Link to="/templates">
+            {/* Removed Back to Templates link, added conditional back arrow above */}
+            {/* <Link to="/templates">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Templates
               </Button>
-            </Link>
+            </Link> */}
           </div>
         </div>
         
@@ -1274,17 +1402,25 @@ function EditorContent() {
               />
             </div>
             
-            <HybridResumeEditor
-              onDrop={handleDrop}
-              resumeContent={resumeContent}
-              removeSection={removeSection}
-              reorderSections={reorderSections}
-              reorderSectionItems={reorderSectionItems}
-              setResumeContent={setResumeContent}
-              resumeRef={resumeRef}
-              zoomLevel={zoomLevel}
-              selectedTemplate={template}
-            />
+            {templateLoading ? (
+              <p>Loading template...</p>
+            ) : templateError ? (
+              <p className="text-red-500">{templateError}</p>
+            ) : (
+              <HybridResumeEditor
+                onDrop={handleDrop}
+                resumeContent={resumeContent}
+                removeSection={removeSection}
+                moveSectionUp={moveSectionUp}
+                moveSectionDown={moveSectionDown}
+                moveItemUp={moveItemUp}
+                moveItemDown={moveItemDown}
+                setResumeContent={setResumeContent}
+                resumeRef={resumeRef}
+                zoomLevel={zoomLevel}
+                selectedTemplate={template}
+              />
+            )}
           </div>
         </div>
       </main>
@@ -1306,6 +1442,14 @@ function EditorContent() {
         onPageFormatChange={handlePageFormatChange}
         onExportPDF={handleExportPDF}
         onExportDOCX={handleExportDOCX}
+      />
+      
+      {/* Render the Save Dialog */}
+      <SaveResumeDialog 
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        onSave={handleConfirmSave} // Pass the renamed save handler
+        currentName={currentResumeTitle} 
       />
       
       {/* Add a loading indicator for template loading */}

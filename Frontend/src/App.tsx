@@ -17,6 +17,7 @@ import SignUp from "./pages/SignUp";
 import Templates from "./pages/Templates";
 import Test from "./pages/Test";
 import AIFeatures from "./pages/AIFeatures";
+import MyResumes from "./pages/MyResumes";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/editor" element={<Editor />} />
+          <Route path="/my-resumes" element={<MyResumes />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/templates" element={<Templates />} />
           <Route path="/about" element={<About />} />

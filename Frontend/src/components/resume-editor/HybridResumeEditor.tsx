@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDrop } from 'react-dnd';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Trash, GripVertical } from "lucide-react";
+import { Trash, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResumeContent, SkillItem, useResumeContext } from './ResumeContext';
 import { Template } from '@/services/template.service';
@@ -11,72 +10,29 @@ interface HybridResumeEditorProps {
   onDrop: (item: any) => void;
   resumeContent: ResumeContent;
   removeSection: (id: string) => void;
-  reorderSections: (sourceIndex: number, destinationIndex: number) => void;
-  reorderSectionItems: (sectionType: string, sourceIndex: number, destinationIndex: number) => void;
+  moveSectionUp: (index: number) => void;
+  moveSectionDown: (index: number) => void;
+  moveItemUp: (sectionType: string, index: number) => void;
+  moveItemDown: (sectionType: string, index: number) => void;
   setResumeContent: React.Dispatch<React.SetStateAction<ResumeContent>>;
   resumeRef: React.RefObject<HTMLDivElement>;
   zoomLevel: number;
   selectedTemplate?: Template | null;
 }
 
-// Custom styles for dragging items within sections
-const getItemStyle = (isDragging, draggableStyle) => ({
-  // some basic styles to make the items look a bit nicer
-  userSelect: 'none',
-  
-  // styles we need to apply on draggables
-  ...draggableStyle,
-  
-  // If dragging, we want to ensure it stays in the same horizontal position
-  // and add smooth transitions for a better drop experience
-  ...(isDragging && {
-    transform: draggableStyle.transform,
-    boxShadow: '0 5px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    zIndex: 9999,
-    background: 'white',
-  }),
-  
-  // Add transition for smooth drop animation
-  transition: isDragging 
-    ? draggableStyle.transition 
-    : 'box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease',
-});
-
-// Custom styles for section dragging
-const getSectionStyle = (isDragging, draggableStyle) => ({
-  // basic styles
-  userSelect: 'none',
-  
-  // styles we need to apply on draggables
-  ...draggableStyle,
-  
-  // If dragging, we want to ensure it stays in the same horizontal position
-  // and add smooth transitions for a better drop experience
-  ...(isDragging && {
-    transform: draggableStyle.transform,
-    boxShadow: '0 5px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    zIndex: 9999,
-    background: 'white',
-  }),
-  
-  // Add transition for smooth drop animation
-  transition: isDragging 
-    ? draggableStyle.transition 
-    : 'box-shadow 0.3s ease, transform 0.3s ease, background-color 0.3s ease',
-});
-
 export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({ 
   onDrop, 
   resumeContent, 
   removeSection, 
-  reorderSections, 
-  reorderSectionItems,
+  moveSectionUp,
+  moveSectionDown,
+  moveItemUp,
+  moveItemDown,
   setResumeContent, 
   resumeRef, 
   zoomLevel,
   selectedTemplate 
 }) => {
-  const draggingItemRef = useRef(null);
   const prevTemplateId = useRef<string | null>(null);
   const [isAutoScaled, setIsAutoScaled] = useState(false);
   const [scalingFactor, setScalingFactor] = useState(1);
@@ -211,10 +167,6 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         gap: 2rem;
       }
       
-      .resume-container.use-columns .resume-main {
-        flex: 2;
-      }
-      
       .resume-container.use-columns .resume-sidebar {
         flex: 1;
         border-left: 1px solid var(--accent-color);
@@ -237,64 +189,39 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     return acc;
   }, {} as Record<string, any[]>);
   
-  // Create ordered sections array
-  let allSections = [];
+  // === NEW LOGIC: Build from data, then sort ===
+  // 1. Create array of sections that actually have data
+  let sectionsWithData: [string, any[]][] = Object.entries(groupedSections)
+    .filter(([type, items]) => items && items.length > 0) // Only include sections with items
+    .map(([type, items]): [string, any[]] => [type, items]); // Ensure correct tuple type
   
-  // If we have a custom order, use it
-  if (resumeContent.sectionOrder && resumeContent.sectionOrder.length > 0) {
-    resumeContent.sectionOrder.forEach(sectionType => {
-      if (sectionType === 'skills' && selectedSkills.length > 0) {
-        allSections.push(['skills', selectedSkills]);
-      } else if (groupedSections[sectionType]) {
-        allSections.push([sectionType, groupedSections[sectionType]]);
-      }
-    });
-    
-    // Add any sections that might not be in the order yet
-    Object.entries(groupedSections).forEach(([type, items]) => {
-      if (!resumeContent.sectionOrder.includes(type)) {
-        allSections.push([type, items]);
-      }
-    });
-    
-    // Add skills if not already added
-    if (!resumeContent.sectionOrder.includes('skills') && selectedSkills.length > 0) {
-      allSections.push(['skills', selectedSkills]);
-    }
-  } else {
-    // Default ordering if no custom order exists
-    allSections = [...Object.entries(groupedSections)];
-    if (selectedSkills.length > 0) {
-      allSections.push(['skills', selectedSkills]);
-    }
+  // Add skills if they exist
+  if (selectedSkills.length > 0) {
+    sectionsWithData.push(['skills', selectedSkills]);
   }
-
-  // Handle drag end for reordering sections
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    const { source, destination, type } = result;
-    
-    // Handle section reordering
-    if (type === 'section') {
-      reorderSections(source.index, destination.index);
-      return;
-    }
-    
-    // Handle item reordering within sections
-    if (type.startsWith('section-items-')) {
-      const sectionType = type.replace('section-items-', '');
-      reorderSectionItems(sectionType, source.index, destination.index);
-    }
-    
-    // Reset dragging reference
-    draggingItemRef.current = null;
-  };
   
-  // Handle drag start to track the dragging item
-  const handleDragStart = (event) => {
-    draggingItemRef.current = event.draggableId;
-  };
+  // 2. Sort this array based on resumeContent.sectionOrder
+  const sectionOrderMap = new Map<string, number>();
+  (resumeContent.sectionOrder || []).forEach((type, index) => {
+    sectionOrderMap.set(type, index);
+  });
+  
+  // Sort based on the map, putting sections not in the order at the end
+  const allSections = sectionsWithData.sort((a, b) => {
+    const indexA = sectionOrderMap.get(a[0]);
+    const indexB = sectionOrderMap.get(b[0]);
+
+    if (indexA !== undefined && indexB !== undefined) {
+      return indexA - indexB; // Both in order, sort by order index
+    } else if (indexA !== undefined) {
+      return -1; // A is in order, B is not -> A comes first
+    } else if (indexB !== undefined) {
+      return 1; // B is in order, A is not -> B comes first
+    } else {
+      return 0; // Neither is in order, keep relative order (or sort alphabetically if needed)
+    }
+  });
+  // === END NEW LOGIC ===
 
   // Render section title
   const renderSectionTitle = (type: string) => {
@@ -315,179 +242,175 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   };
 
   // Render section content
-  const renderSectionContent = (type: string, items: any[]) => {
+  const renderSectionContent = (type: string, items: any[], sectionIndex: number) => {
     if (type === 'skills') {
       return (
-        <div className="skills-section">
-          <div className="flex flex-wrap gap-2 mt-2">
-            {items.map((skill: SkillItem) => (
-              <div 
-                key={skill.id} 
-                className="px-3 py-1 bg-muted rounded-full text-sm hover:bg-muted/80 transition-colors skill-item"
-              >
+        <div className={`flex flex-wrap gap-2 mt-2 items-center`}> 
+          {items.map((skill: SkillItem, index) => (
+            <div key={skill.id} className="flex items-center gap-1 p-1 border rounded-md bg-card group">
+              <div className="px-2 py-1 bg-muted rounded-full text-sm">
                 {skill.name}
               </div>
-            ))}
-          </div>
+              {/* Arrow Buttons for Skills */}
+              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-5 w-5"
+                  onClick={() => moveItemUp(type, index)}
+                  disabled={index === 0}
+                  aria-label={`Move ${skill.name} skill up`}
+                >
+                  <ArrowUp size={12} />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-5 w-5"
+                  onClick={() => moveItemDown(type, index)}
+                  disabled={index === items.length - 1}
+                  aria-label={`Move ${skill.name} skill down`}
+                >
+                  <ArrowDown size={12} />
+                </Button>
+              </div>
+              {/* Delete Button for Skills - Assuming deleteSkill exists/is passed */}
+              {/* <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  // deleteSkill(skill.id); // Need deleteSkill function passed or from context
+                }}
+                aria-label={`Delete ${skill.name} skill`}
+              >
+                <Trash size={14} />
+              </Button> */}
+            </div>
+          ))}
         </div>
       );
     }
 
     return (
-      <Droppable 
-        droppableId={`section-${type}`} 
-        type={`section-items-${type}`} 
-        direction="vertical"
-        // Reduce sensitivity of placeholder movement
-        ignoreContainerClipping={false}
-      >
-        {(provided, snapshot) => (
+      <div className="space-y-3 mt-2">
+        {items.map((item, index) => (
           <div
-            {...provided.droppableProps}
-            ref={provided.innerRef}
-            className={`space-y-3 mt-2 ${snapshot.isDraggingOver ? 'bg-muted/30 rounded-md p-2 -mx-2' : ''}`}
-            style={{
-              transition: 'background-color 0.2s ease, padding 0.2s ease, margin 0.2s ease',
-              minHeight: '10px',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
+            key={item.id}
+            className={`p-3 border border-transparent hover:border-border rounded-md bg-card group`} 
+            style={{ maxWidth: '100%' }}
           >
-            {items.map((item, index) => (
-              <Draggable key={item.id} draggableId={item.id} index={index}>
-                {(provided, snapshot) => {
-                  // Fix for horizontal positioning
-                  if (snapshot.isDragging) {
-                    provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
-                  }
-                  
-                  return (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`p-3 border border-transparent hover:border-border rounded-md bg-card group ${snapshot.isDragging ? 'shadow-lg border-primary/20' : 'hover:shadow-md'}`}
-                      style={{
-                        ...getItemStyle(
-                          snapshot.isDragging,
-                          provided.draggableProps.style
-                        ),
-                        zIndex: snapshot.isDragging ? 1000 : 1,
-                        maxWidth: '100%',
-                      }}
-                      data-is-dragging={snapshot.isDragging ? "true" : "false"}
-                    >
-                      {type === 'experience' && (
-                        <div className="experience">
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="font-medium experience-company">{item.company}</h4>
-                              <p className="text-sm italic experience-title">{item.title}</p>
-                              <p className="text-xs text-muted-foreground experience-period">{item.period}</p>
-                            </div>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
-                                <GripVertical size={14} className="text-muted-foreground" />
-                              </div>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6 text-destructive rounded-full"
-                                onClick={() => removeSection(item.id)}
-                              >
-                                <Trash size={14} />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm mt-2 experience-description">{item.description}</p>
-                        </div>
-                      )}
-                      
-                      {type === 'education' && (
-                        <div className="education">
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="font-medium education-institution">{item.institution}</h4>
-                              <p className="text-sm italic education-degree">{item.degree}</p>
-                              <p className="text-xs text-muted-foreground education-period">{item.period}</p>
-                            </div>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
-                                <GripVertical size={14} className="text-muted-foreground" />
-                              </div>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6 text-destructive rounded-full"
-                                onClick={() => removeSection(item.id)}
-                              >
-                                <Trash size={14} />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm mt-2 education-description">{item.description}</p>
-                        </div>
-                      )}
-                      
-                      {type === 'projects' && (
-                        <div className="project">
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="font-medium project-name">{item.name}</h4>
-                              <p className="text-sm italic project-role">{item.role}</p>
-                              <p className="text-xs text-muted-foreground project-period">{item.period}</p>
-                            </div>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
-                                <GripVertical size={14} className="text-muted-foreground" />
-                              </div>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6 text-destructive rounded-full"
-                                onClick={() => removeSection(item.id)}
-                              >
-                                <Trash size={14} />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm mt-2 project-description">{item.description}</p>
-                        </div>
-                      )}
-                      
-                      {type === 'certifications' && (
-                        <div className="certification">
-                          <div className="flex justify-between">
-                            <div>
-                              <h4 className="font-medium certification-name">{item.name}</h4>
-                              <p className="text-sm italic certification-issuer">{item.issuer}</p>
-                              <p className="text-xs text-muted-foreground certification-date">{item.date}</p>
-                            </div>
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mr-1 p-1 hover:bg-muted rounded-full">
-                                <GripVertical size={14} className="text-muted-foreground" />
-                              </div>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6 text-destructive rounded-full"
-                                onClick={() => removeSection(item.id)}
-                              >
-                                <Trash size={14} />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm mt-2 certification-description">{item.description}</p>
-                        </div>
-                      )}
+            <div className="flex justify-between items-start">
+              {/* Main content */}
+              <div className="flex-grow mr-2">
+                {type === 'experience' && (
+                  <div className="experience">
+                    <div className="flex justify-between">
+                      <div>
+                        <h4 className="font-medium experience-company">{item.company}</h4>
+                        <p className="text-sm italic experience-title">{item.title}</p>
+                        <p className="text-xs text-muted-foreground experience-period">{item.period}</p>
+                      </div>
                     </div>
-                  );
-                }}
-              </Draggable>
-            ))}
-            {provided.placeholder}
+                    {item.description && <p className="text-sm mt-2 experience-description whitespace-pre-wrap">{item.description}</p>}
+                    {item.bulletPoints && item.bulletPoints.length > 0 && (
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                        {item.bulletPoints.map((bp, bpIndex) => (
+                          <li key={bp.id || bpIndex}>{bp.text}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                 {type === 'education' && (
+                   <div className="education">
+                    <div className="flex justify-between">
+                      <div>
+                        <h4 className="font-medium education-institution">{item.institution}</h4>
+                        <p className="text-sm italic education-degree">{item.degree}</p>
+                        <p className="text-xs text-muted-foreground education-period">{item.period}</p>
+                      </div>
+                    </div>
+                    {item.description && <p className="text-sm mt-2 education-description whitespace-pre-wrap">{item.description}</p>}
+                   </div>
+                )}
+                {type === 'projects' && (
+                  <div className="project">
+                    <div className="flex justify-between">
+                      <div>
+                        <h4 className="font-medium project-name">{item.name}</h4>
+                        <p className="text-sm italic project-role">{item.role}</p>
+                        <p className="text-xs text-muted-foreground project-period">{item.period}</p>
+                      </div>
+                    </div>
+                    {item.description && <p className="text-sm mt-2 project-description whitespace-pre-wrap">{item.description}</p>}
+                    {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block">Project Link</a>}
+                    {item.bulletPoints && item.bulletPoints.length > 0 && (
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                        {item.bulletPoints.map((bp, bpIndex) => (
+                          <li key={bp.id || bpIndex}>{bp.text}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                {type === 'certifications' && (
+                  <div className="certification">
+                    <div className="flex justify-between">
+                      <div>
+                        <h4 className="font-medium certification-name">{item.name}</h4>
+                        <p className="text-sm italic certification-issuer">{item.issuer}</p>
+                        <p className="text-xs text-muted-foreground certification-date">{item.date}</p>
+                      </div>
+                    </div>
+                    {item.description && <p className="text-sm mt-2 certification-description whitespace-pre-wrap">{item.description}</p>}
+                    {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block">Certificate Link</a>}
+                  </div>
+                )}
+              </div>
+              {/* Action Buttons (Arrows + Trash) - ADDED FOR ALL ITEMS */}
+              <div className="flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"> {/* Added flex-shrink-0 */} 
+                {/* Up Arrow */}
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6"
+                  onClick={() => moveItemUp(type, index)}
+                  disabled={index === 0}
+                  aria-label={`Move ${type} item up`}
+                >
+                  <ArrowUp size={14} />
+                </Button>
+                {/* Down Arrow */}
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6"
+                  onClick={() => moveItemDown(type, index)}
+                  disabled={index === items.length - 1}
+                  aria-label={`Move ${type} item down`}
+                >
+                  <ArrowDown size={14} />
+                </Button>
+                {/* Trash Button */}
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 text-destructive mt-1" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeSection(item.id); // Use the passed removeSection prop
+                  }}
+                  aria-label={`Delete ${type} item`}
+                >
+                  <Trash size={14} />
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
-      </Droppable>
+        ))}
+      </div>
     );
   };
 
@@ -686,7 +609,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     <div className="relative w-full h-full flex flex-col items-center py-4 overflow-auto bg-slate-50 dark:bg-slate-900">
       {/* Resume container with A4 dimensions */}
       <div 
-        id="resume-container"
+        id="resume-preview" // Add this ID for the PDF export function to target
         ref={node => {
           drop(node);
           if (resumeRef && typeof resumeRef === 'object') {
@@ -831,67 +754,55 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         {/* Draggable Sections */}
         <div className="resume-content">
           <div className={selectedTemplate?.styles?.layout?.useColumns ? 'resume-main' : ''}>
-            <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-              <Droppable 
-                droppableId="sections" 
-                type="section" 
-                direction="vertical"
-                ignoreContainerClipping={false}
-              >
-                {(provided, snapshot) => (
+            <div className="space-y-6">
+              {/* Iterate over the derived and sorted allSections array */}
+              {allSections.map(([sectionType, items], index) => {
+                // Content should always render because allSections only contains sections with data
+                const shouldRenderContent = true; // Simplified
+
+                // Find the original index in sectionOrder for the move functions
+                const originalIndex = (resumeContent.sectionOrder || []).indexOf(sectionType);
+
+                return (
                   <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className={`space-y-6 ${snapshot.isDraggingOver ? 'bg-muted/20 p-4 -mx-4 rounded-md' : ''}`}
-                    style={{
-                      transition: 'background-color 0.3s ease, padding 0.3s ease, margin 0.3s ease',
-                      minHeight: '20px',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
+                    key={sectionType} // Use section type from the order as key
+                    className={`pb-4 border-b last:border-b-0 group resume-section ${sectionType}-section`}
+                    style={{ maxWidth: '100%' }}
                   >
-                    {allSections.map(([type, items], index) => (
-                      <Draggable key={type as string} draggableId={type as string} index={index}>
-                        {(provided, snapshot) => {
-                          // Fix for horizontal positioning
-                          if (snapshot.isDragging) {
-                            provided.draggableProps.style.left = provided.draggableProps.style.offsetLeft;
-                          }
-                          
-                          return (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`pb-4 border-b last:border-b-0 group resume-section ${type}-section ${snapshot.isDragging ? 'bg-background/90 rounded-md shadow-lg border border-primary/20' : ''}`}
-                              style={{
-                                ...getSectionStyle(
-                                  snapshot.isDragging,
-                                  provided.draggableProps.style
-                                ),
-                                zIndex: snapshot.isDragging ? 1000 : 1,
-                                maxWidth: '100%',
-                              }}
-                              data-is-dragging={snapshot.isDragging ? "true" : "false"}
-                            >
-                              <div className="flex items-center mb-2">
-                                <h3 className="text-lg font-semibold resume-section-heading">
-                                  {renderSectionTitle(type as string)}
-                                </h3>
-                                <div {...provided.dragHandleProps} className="ml-2 cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <GripVertical size={14} className="text-muted-foreground" />
-                                </div>
-                              </div>
-                              {renderSectionContent(type as string, items)}
-                            </div>
-                          );
-                        }}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold resume-section-heading">
+                        {renderSectionTitle(sectionType)}
+                      </h3>
+                      {/* Add Arrow Buttons for Sections */}
+                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-6 w-6"
+                          onClick={() => moveSectionUp(originalIndex)} 
+                          disabled={originalIndex === 0 || originalIndex === -1} // Disable if first or not found
+                          aria-label={`Move ${renderSectionTitle(sectionType)} section up`}
+                        >
+                          <ArrowUp size={14} />
+                        </Button>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="h-6 w-6"
+                          onClick={() => moveSectionDown(originalIndex)} 
+                          disabled={originalIndex === (resumeContent.sectionOrder || []).length - 1 || originalIndex === -1} // Disable if last or not found
+                          aria-label={`Move ${renderSectionTitle(sectionType)} section down`}
+                        >
+                          <ArrowDown size={14} />
+                        </Button>
+                      </div>
+                    </div>
+                    {/* Conditionally render content ONLY if items exist */}
+                    {shouldRenderContent && renderSectionContent(sectionType, items, index)}
                   </div>
-                )}
-              </Droppable>
-            </DragDropContext>
+                );
+              })}
+            </div>
           </div>
           
           {selectedTemplate?.styles?.layout?.useColumns && (
