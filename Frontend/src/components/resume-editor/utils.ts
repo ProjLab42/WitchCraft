@@ -1,6 +1,5 @@
 import * as docx from 'docx';
 import { saveAs } from 'file-saver';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { toPng } from 'html-to-image';
 import { ResumeContent, SkillItem } from './ResumeContext';
@@ -27,60 +26,34 @@ export const generateId = (prefix: string) => {
 // Export resume as PDF
 export const exportAsPDF = async (
   resumeRef: React.RefObject<HTMLDivElement>,
-  pageFormat: string
+  pageFormat: string,
+  filename = 'resume'
 ) => {
-  if (!resumeRef.current) return;
+  if (!resumeRef.current) return false;
   
   try {
-    const dimensions = getPageDimensions(pageFormat);
-    const scale = 2; // Higher scale for better quality
+    // Get or set an ID for the resume element
+    let elementId = resumeRef.current.id;
+    const needsTempId = !elementId;
     
-    // Create a clone of the resume element to avoid modifying the original
-    const resumeClone = resumeRef.current.cloneNode(true) as HTMLElement;
+    if (needsTempId) {
+      elementId = 'temp-resume-export-id';
+      resumeRef.current.id = elementId;
+    }
     
-    // Set the clone's style to ensure proper rendering
-    resumeClone.style.transform = 'scale(1)';
-    resumeClone.style.width = `${dimensions.width}mm`;
-    resumeClone.style.height = 'auto';
-    resumeClone.style.position = 'absolute';
-    resumeClone.style.top = '0';
-    resumeClone.style.left = '0';
-    resumeClone.style.zIndex = '-9999';
+    // Use the exportToPDF function which has better handling of the PDF generation
+    const success = await exportToPDF(
+      elementId,
+      `${filename}.pdf`,
+      pageFormat.toLowerCase()
+    );
     
-    // Append to body temporarily
-    document.body.appendChild(resumeClone);
+    // Clean up temporary ID if we created one
+    if (needsTempId) {
+      resumeRef.current.removeAttribute('id');
+    }
     
-    // Capture as canvas
-    const canvas = await html2canvas(resumeClone, {
-      scale: scale,
-      useCORS: true,
-      allowTaint: true,
-      scrollX: 0,
-      scrollY: 0,
-    });
-    
-    // Remove the clone
-    document.body.removeChild(resumeClone);
-    
-    // Calculate PDF dimensions
-    const imgWidth = dimensions.width;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    // Create PDF
-    const pdf = new jsPDF({
-      orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
-      unit: 'mm',
-      format: pageFormat,
-    });
-    
-    // Add image to PDF
-    const imgData = canvas.toDataURL('image/png');
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    
-    // Save PDF
-    pdf.save('resume.pdf');
-    
-    return true;
+    return success;
   } catch (error) {
     console.error('Error exporting PDF:', error);
     return false;
@@ -90,7 +63,8 @@ export const exportAsPDF = async (
 // Export resume as DOCX
 export const exportAsDOCX = async (
   resumeContent: ResumeContent,
-  pageFormat: string
+  pageFormat: string,
+  filename = 'resume'
 ) => {
   try {
     // Get page dimensions
@@ -508,7 +482,7 @@ export const exportAsDOCX = async (
     
     // Generate and save document
     docx.Packer.toBlob(doc).then(blob => {
-      saveAs(blob, 'resume.docx');
+      saveAs(blob, `${filename}.docx`);
     });
     
     return true;

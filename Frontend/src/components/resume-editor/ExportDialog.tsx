@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
 import {
@@ -16,14 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ExportDialogProps {
   isOpen: boolean;
   onClose: () => void;
   pageFormat: string;
   onPageFormatChange: (value: string) => void;
-  onExportPDF: () => Promise<boolean>;
-  onExportDOCX: () => Promise<boolean>;
+  onExportPDF: (customFilename?: string) => Promise<boolean>;
+  onExportDOCX: (customFilename?: string) => Promise<boolean>;
+  defaultFilename?: string;
 }
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({
@@ -32,8 +35,21 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   pageFormat,
   onPageFormatChange,
   onExportPDF,
-  onExportDOCX
+  onExportDOCX,
+  defaultFilename = ''
 }) => {
+  const [customFilename, setCustomFilename] = useState(defaultFilename);
+
+  const handleExportPDF = async () => {
+    const success = await onExportPDF(customFilename.trim());
+    if (success) onClose();
+  };
+
+  const handleExportDOCX = async () => {
+    const success = await onExportDOCX(customFilename.trim());
+    if (success) onClose();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[480px] px-8 py-6 overflow-hidden">
@@ -44,7 +60,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="py-4 border-y">
+        <div className="py-4 border-y space-y-4">
           <div className="flex flex-col space-y-2">
             <label htmlFor="page-format" className="text-sm font-medium">
               Page Format
@@ -63,6 +79,21 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="filename" className="text-sm font-medium">
+              Custom Filename (optional)
+            </Label>
+            <Input
+              id="filename"
+              placeholder="Enter custom filename (without extension)"
+              value={customFilename}
+              onChange={(e) => setCustomFilename(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the default filename based on resume title.
+            </p>
+          </div>
         </div>
         
         <DialogFooter className="flex justify-between pt-4">
@@ -71,7 +102,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           </Button>
           <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
             <Button 
-              onClick={onExportDOCX} 
+              onClick={handleExportDOCX} 
               variant="outline" 
               className="w-full sm:w-auto"
             >
@@ -79,7 +110,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               Export as DOCX
             </Button>
             <Button 
-              onClick={onExportPDF}
+              onClick={handleExportPDF}
               className="w-full sm:w-auto"
             >
               <Download className="mr-2 h-4 w-4" />

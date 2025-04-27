@@ -21,7 +21,7 @@ import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
 import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
-import { exportAsPDF, exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
+import { exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
 import { resumeAPI, ApiResumeData } from "@/services/api.service";
 import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
@@ -73,7 +73,9 @@ function EditorContent() {
   const [resumeId, setResumeId] = useState<string | null>(null);
   const [isLoadingResume, setIsLoadingResume] = useState<boolean>(false); // Loading state for resume fetch
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false); // State for save dialog
-  const [currentResumeTitle, setCurrentResumeTitle] = useState<string>(''); // State to hold title for dialog
+  const [currentResumeTitle, setCurrentResumeTitle] = useState<string>('');
+  const [resumeData, setResumeData] = useState<ApiResumeData | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // --- Effect to Load Resume Data --- 
   useEffect(() => {
@@ -94,6 +96,13 @@ function EditorContent() {
           // --- Populate Context State --- 
           setResumeId(loadedResume._id);
           setSelectedTemplate(loadedResume.template);
+          
+          // Store the full resume data
+          setResumeData(loadedResume);
+          
+          // Set the current resume title
+          setCurrentResumeTitle(loadedResume.title);
+          console.log(`Set current resume title to: ${loadedResume.title}`);
 
           // Populate user data (only fields available in UserData type)
           // NOTE: This might overwrite profile data if resume data is sparse.
@@ -1078,77 +1087,115 @@ function EditorContent() {
     }
   };
   
-  // Export as PDF
-  const handleExportPDF = async () => {
-    let success = false;
-    const loadingToast = toast.loading("Exporting resume as PDF...");
-    
+  // Function to handle PDF export
+  const handleExportPDF = async (customFilename?: string): Promise<boolean> => {
+    setIsExporting(true);
     try {
-      if (resumeRef.current) {
-        console.log("Starting client-side PDF generation");
-        const resumeElementId = resumeRef.current.id || 'resume-preview';
-        
-        success = await exportToPDF(
-          resumeElementId,
-          `${resumeContent.personalInfo.name || 'resume'}.pdf`,
-          pageFormat.toLowerCase()
-        );
-        
-        if (success) {
-          toast.success("Resume exported as PDF");
-          closeExportDialog();
+      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
+      let resumeTitle = customFilename || currentResumeTitle;
+      if (!resumeTitle || resumeTitle.trim() === '') {
+        if (resumeData?.title) {
+          resumeTitle = resumeData.title;
+        } else if (resumeContent.personalInfo?.name) {
+          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
         } else {
-          toast.error("Failed to export PDF. Please try again.");
+          resumeTitle = 'resume';
         }
-      } else {
-        toast.error("Resume content not ready. Please try again.");
-      }
-    } catch (error) {
-      console.error("PDF export error:", error);
-      toast.error("Failed to export PDF. Please try again.");
-    } finally {
-      toast.dismiss(loadingToast);
-    }
-    
-    return success;
-  };
-  
-  // Export as DOCX
-  const handleExportDOCX = async () => {
-    let success = false;
-    const loadingToast = toast.loading("Exporting resume as DOCX...");
-    
-    try {
-      if (resumeId) { 
-        console.log(`Attempting server-side DOCX download for resume ID: ${resumeId}`);
-        success = await resumeAPI.downloadResume(
-          resumeId, 
-          'docx',
-          template?.name
-        );
-        if (!success) {
-          console.warn("Server-side DOCX download failed. Falling back to client-side.");
-          success = await exportAsDOCX(resumeContent, pageFormat);
-        }
-      } else {
-        console.warn("Resume not saved. Using client-side DOCX generation.");
-        success = await exportAsDOCX(resumeContent, pageFormat);
       }
       
-      if (success) {
-        toast.success("Resume exported as DOCX");
-        closeExportDialog();
-      } else {
-        toast.error("Failed to export DOCX");
+      // Create a safe filename for file download (replace spaces with underscores)
+      const safeFilename = resumeTitle.replace(/\s+/g, '_');
+      
+      // Make sure resumeRef has a current value
+      if (!resumeRef.current) {
+        throw new Error("Resume content not available. Please try again.");
       }
-    } catch (error) {
-      console.error("DOCX export error:", error);
-      toast.error("Failed to export DOCX");
+      
+      // Get the ID of the resume container element or assign a temporary one
+      let resumeElementId = resumeRef.current.id;
+      if (!resumeElementId) {
+        resumeElementId = 'temp-resume-export-id';
+        resumeRef.current.id = resumeElementId;
+      }
+      
+      // Always use the exportToPDF function for consistent results
+      console.log(`Generating PDF with title: ${resumeTitle}`);
+      const success = await exportToPDF(
+        resumeElementId,
+        `${safeFilename}.pdf`,
+        pageFormat.toLowerCase()
+      );
+      
+      // Remove temporary ID if we added one
+      if (resumeElementId === 'temp-resume-export-id') {
+        resumeRef.current.removeAttribute('id');
+      }
+      
+      if (!success) {
+        throw new Error("Failed to export PDF. Please try again.");
+      }
+      
+      toast.success('PDF downloaded successfully!');
+      return true;
+    } catch (error: any) {
+      console.error('Error exporting PDF:', error);
+      let errorMessage = 'Failed to export PDF. Please try again.';
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
+      return false;
     } finally {
-      toast.dismiss(loadingToast);
+      setIsExporting(false);
     }
-    
-    return success;
+  };
+
+  // Function to handle DOCX export
+  const handleExportDOCX = async (customFilename?: string): Promise<boolean> => {
+    setIsExporting(true);
+    try {
+      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
+      let resumeTitle = customFilename || currentResumeTitle;
+      if (!resumeTitle || resumeTitle.trim() === '') {
+        if (resumeData?.title) {
+          resumeTitle = resumeData.title;
+        } else if (resumeContent.personalInfo?.name) {
+          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
+        } else {
+          resumeTitle = 'resume';
+        }
+      }
+      
+      // Create a safe filename for file download (replace spaces with underscores)
+      const safeFilename = resumeTitle.replace(/\s+/g, '_');
+      
+      // Always use client-side export for DOCX
+      console.log(`Generating DOCX with title: ${resumeTitle}`);
+      
+      // For DOCX we need the actual content rather than the HTML
+      const success = await exportAsDOCX(
+        resumeContent,  // Pass resumeContent directly
+        pageFormat,     // Pass the page format
+        safeFilename    // Pass the safe filename
+      );
+      
+      if (!success) {
+        throw new Error("Failed to export DOCX. Please try again.");
+      }
+      
+      toast.success('DOCX downloaded successfully!');
+      return true;
+    } catch (error: any) {
+      console.error('Error exporting DOCX:', error);
+      let errorMessage = 'Failed to export DOCX. Please try again.';
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setIsExporting(false);
+    }
   };
   
   // Zoom controls
@@ -1442,6 +1489,7 @@ function EditorContent() {
         onPageFormatChange={handlePageFormatChange}
         onExportPDF={handleExportPDF}
         onExportDOCX={handleExportDOCX}
+        defaultFilename={currentResumeTitle}
       />
       
       {/* Render the Save Dialog */}
