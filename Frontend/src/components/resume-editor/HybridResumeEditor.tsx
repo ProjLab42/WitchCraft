@@ -52,20 +52,6 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     }),
   }));
 
-  // Render template SVG if available
-  const renderTemplateSvg = () => {
-    if (selectedTemplate?.templateSvgContent) {
-      return (
-        <div 
-          className="absolute inset-0 pointer-events-none z-0"
-          dangerouslySetInnerHTML={{ __html: selectedTemplate.templateSvgContent }}
-        />
-      );
-    }
-    
-    return null;
-  };
-
   // Apply template styles when template changes
   useEffect(() => {
     if (selectedTemplate && selectedTemplate.id !== prevTemplateId.current) {
@@ -103,13 +89,15 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       document.head.appendChild(styleEl);
     }
     
-    // Get default values for missing styles
+    // Get default values for missing styles - use nullish coalescing to respect "0" values
     const fontFamily = template.styles.fontFamily || { heading: 'Georgia, serif', body: 'Arial, sans-serif' };
     const fontSize = template.styles.fontSize || { name: '24px', sectionHeading: '18px', body: '14px' };
     const layout = template.styles.layout || { headerAlignment: 'left', sectionStyle: 'underlined', useColumns: false };
     const colors = template.styles.colors || { primary: '#333333', secondary: '#666666', accent: '#2563eb' };
     
-    // Create CSS from template styles
+    console.log('Applying template styles:', { fontFamily, fontSize, layout, colors });
+    
+    // Create CSS from template styles - ensure we're properly using the values from the template
     const css = `
       .resume-container {
         --heading-font: ${fontFamily.heading};
@@ -156,8 +144,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       }
       
       .resume-container.section-boxed .resume-section-heading {
-        background-color: #ffffff;
-        color: black;
+        background-color: var(--accent-color);
+        color: white;
         padding: 0.25rem 0.5rem;
       }
       
@@ -627,9 +615,6 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         `}
         style={resumeContainerStyle}
       >
-        {/* Render template SVG content if available */}
-        {renderTemplateSvg()}
-        
         <style dangerouslySetInnerHTML={{
           __html: `
             /* Custom styles for dragging */

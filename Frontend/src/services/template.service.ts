@@ -187,10 +187,8 @@ class TemplateService {
   private lastFetch: number = 0;
   
   constructor() {
-    // Pre-populate cache with default templates
-    Object.values(defaultTemplateDefinitions).forEach(template => {
-      this.cachedTemplates.set(template.id, template);
-    });
+    // Don't pre-populate cache with default templates anymore
+    // We'll fetch them from the API first and only use defaults as fallback
   }
   
   // Get all templates (metadata only with thumbnailSvgContent)
@@ -215,18 +213,26 @@ class TemplateService {
   
   // Get template by ID with caching
   async getTemplateById(id: string): Promise<Template> {
-    // Check cache first
-    if (this.cachedTemplates.has(id)) {
+    // Check cache first, but with proper expiry check
+    const now = Date.now();
+    if (this.cachedTemplates.has(id) && (now - this.lastFetch < this.cacheExpiry)) {
       return this.cachedTemplates.get(id) as Template;
     }
     
     try {
       const response = await api.get<Template>(`/api/template/${id}`);
-      // Store in cache
+      // Store in cache with timestamp
       this.cachedTemplates.set(id, response.data);
+      this.lastFetch = now;
       return response.data;
     } catch (error) {
       console.error(`Error fetching template ${id}:`, error);
+      
+      // If template is in cache but expired, still use it rather than fallback
+      if (this.cachedTemplates.has(id)) {
+        console.log(`Using expired cached template for ${id}`);
+        return this.cachedTemplates.get(id) as Template;
+      }
       
       // Return fallback template if available
       if (defaultTemplateDefinitions[id]) {
@@ -248,11 +254,6 @@ class TemplateService {
     } else {
       this.cachedTemplates.clear();
       this.cachedMetadata = null;
-      
-      // Re-add default templates to cache
-      Object.values(defaultTemplateDefinitions).forEach(template => {
-        this.cachedTemplates.set(template.id, template);
-      });
     }
   }
 }
