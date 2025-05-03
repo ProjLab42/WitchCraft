@@ -4,11 +4,11 @@ import { useNavigate, Link } from 'react-router-dom';
 // Replace placeholder with actual import
 import { resumeAPI } from '@/services/api.service'; 
 import { templateService, TemplateMetadata } from "@/services/template.service";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PlusCircle, ArrowLeft, ImageOff, Trash2, Edit } from 'lucide-react';
+import { PlusCircle, ArrowLeft, ImageOff, Trash2, Edit, Download } from 'lucide-react';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 // Import for dialog
@@ -94,6 +94,7 @@ const MyResumes: React.FC = () => {
   }, []);
 
   const handleSelectResume = (id: string) => {
+    // Navigate using query parameter
     navigate(`/editor?resumeId=${id}`);
   };
   
@@ -268,35 +269,29 @@ const MyResumes: React.FC = () => {
             {Array.isArray(resumes) && resumes.map((resume) => {
               // Find the template metadata for this resume
               const template = templateMetadatas.find(t => t.id === resume.templateId);
-              // Use thumbnailSvgContent instead of thumbnail/imageSrc to fix linter errors
-              const previewSrc = template?.thumbnailSvgContent 
-                ? `data:image/svg+xml;utf8,${encodeURIComponent(template.thumbnailSvgContent)}`
-                : null;
               
               return (
                 <Card 
                   key={resume._id} 
-                  className="hover:shadow-lg transition-shadow flex flex-col justify-between overflow-hidden group"
+                  className="overflow-hidden transition-all hover:shadow-md flex flex-col"
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="bg-muted/30 pb-4">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg truncate" title={resume.title}>{resume.title}</CardTitle>
-                      <div className="flex space-x-1">
-                        {/* Rename button */}
+                      <CardTitle className="text-lg truncate mr-2" title={resume.title}>{resume.title}</CardTitle>
+                      <div className="flex space-x-1 flex-shrink-0">
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 transition-opacity" 
+                          className="h-7 w-7" 
                           onClick={(e) => handleOpenRenameDialog(e, resume)}
                           title="Rename resume"
                         >
                           <Edit className="h-4 w-4 text-muted-foreground" />
                         </Button>
-                        {/* Delete button */}
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 transition-opacity" 
+                          className="h-7 w-7" 
                           onClick={(e) => handleOpenDeleteDialog(e, resume)}
                           title="Delete resume"
                         >
@@ -304,41 +299,24 @@ const MyResumes: React.FC = () => {
                         </Button>
                       </div>
                     </div>
+                    <CardDescription className="mt-1 text-xs"> 
+                      Last updated: {new Date(resume.updatedAt).toLocaleDateString()}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex-grow flex flex-col justify-between pt-0">
-                    {/* Preview Image Section */}
-                    <div 
-                      className="w-full aspect-[16/10] bg-muted rounded-sm overflow-hidden mb-3 border cursor-pointer"
+                  
+                  <CardContent className="pt-4 pb-2 flex-grow flex flex-col justify-end"> 
+                  </CardContent>
+                  
+                  <CardFooter className="border-t bg-muted/10 p-2 gap-1 justify-end"> 
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full justify-center"
                       onClick={() => handleSelectResume(resume._id)}
                     >
-                      {previewSrc ? (
-                        <img 
-                          src={previewSrc} 
-                          alt={`${template?.name || 'Resume'} preview`} 
-                          className="w-full h-full object-cover object-top" 
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <ImageOff size={32}/>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Info and Action Section */}
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Last updated: {new Date(resume.updatedAt).toLocaleDateString()}
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full" 
-                        onClick={() => handleSelectResume(resume._id)}
-                      >
-                        Open
-                      </Button>
-                    </div>
-                  </CardContent>
+                       Open
+                    </Button>
+                  </CardFooter>
                 </Card>
               );
             })}
