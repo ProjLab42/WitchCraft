@@ -4,14 +4,15 @@ const { generatePdf, generateDocx } = require('../services/document.service');
 // Create a new resume
 exports.createResume = async (req, res) => {
   try {
-    const { title, template, data, sections } = req.body;
+    const { title, template, data, sections, sectionOrder } = req.body;
     
     const resume = new Resume({
       user: req.userId, // Note: this must match the property name set in auth middleware
       title,
       template,
       data,
-      sections
+      sections,
+      sectionOrder
     });
     
     await resume.save();
@@ -56,10 +57,31 @@ exports.getResumeById = async (req, res) => {
   }
 };
 
+// Get a public resume by ID (no authentication needed)
+exports.getPublicResumeById = async (req, res) => {
+  try {
+    const resume = await Resume.findById(req.params.id); // Find by ID only
+    
+    if (!resume) {
+      return res.status(404).json({ message: 'Resume not found' });
+    }
+    
+    // Optionally, you might want to omit certain sensitive fields 
+    // before sending, though the current model seems safe.
+    // Example: delete resume.user; 
+    
+    res.json(resume);
+  } catch (error) {
+    console.error('Get public resume error:', error);
+    // Avoid leaking detailed errors for public endpoints
+    res.status(500).json({ message: 'Server error retrieving resume' }); 
+  }
+};
+
 // Update a resume
 exports.updateResume = async (req, res) => {
   try {
-    const { title, template, data, sections } = req.body;
+    const { title, template, data, sections, sectionOrder } = req.body;
     
     const resume = await Resume.findOne({
       _id: req.params.id,
@@ -74,6 +96,7 @@ exports.updateResume = async (req, res) => {
     if (title) resume.title = title;
     if (template) resume.template = template;
     if (data) resume.data = data;
+    if (sectionOrder) resume.sectionOrder = sectionOrder;
     
     // Handle sections update with more granularity
     if (sections) {

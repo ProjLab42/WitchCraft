@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDrag } from 'react-dnd';
 import { Edit, Trash, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,26 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedItem, setEditedItem] = useState<ItemType>({ ...item });
+  const [forceRenderKey, setForceRenderKey] = useState(0);
+  
+  // --- Debugging Log --- 
+  console.log(`[DraggableItem ${item.id} (${type})] Rendering. resumeContent sections:`, 
+    resumeContent?.sections?.map(s => s.id) // Log only IDs for brevity
+  );
   
   // Check if the item is already in the resume
   const isAlreadyInResume = resumeContent?.sections?.some(
     (section: any) => section.id === item.id
   );
+  
+  // --- Debugging Log --- 
+  console.log(`[DraggableItem ${item.id} (${type})] isAlreadyInResume: ${isAlreadyInResume}`);
+  
+  // Effect to force update when resumeContent.sections changes
+  useEffect(() => {
+    console.log(`[DraggableItem ${item.id} (${type})] resumeContent.sections changed, updating forceRenderKey.`);
+    setForceRenderKey(prev => prev + 1);
+  }, [resumeContent?.sections]); // Dependency on the sections array itself
   
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'RESUME_ITEM',
@@ -46,7 +61,7 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
       isDragging: !!monitor.isDragging(),
     }),
     canDrag: !isEditing && !isAlreadyInResume, // Prevent dragging while editing or if already in resume
-  }));
+  }), [item, type, isEditing, isAlreadyInResume, resumeContent, forceRenderKey]);
   
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent drag from starting
@@ -195,11 +210,11 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
               />
             </div>
             <div>
-              <Label htmlFor="period">Period</Label>
+              <Label htmlFor="year">Year</Label>
               <Input 
-                id="period" 
-                value={(editedItem as EducationItem).period} 
-                onChange={(e) => handleChange('period', e.target.value)}
+                id="year"
+                value={(editedItem as EducationItem).year}
+                onChange={(e) => handleChange('year', e.target.value)}
               />
             </div>
             <div>
@@ -225,7 +240,7 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
               <div>
                 <h4 className="font-medium">{(item as EducationItem).institution}</h4>
                 <p className="text-sm text-muted-foreground">{(item as EducationItem).degree}</p>
-                <p className="text-xs text-muted-foreground">{(item as EducationItem).period}</p>
+                <p className="text-xs text-muted-foreground">{(item as EducationItem).year}</p>
               </div>
               <div className="flex space-x-1">
                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleEditClick}>

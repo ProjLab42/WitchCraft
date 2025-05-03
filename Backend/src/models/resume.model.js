@@ -50,11 +50,13 @@ const skillSchema = new mongoose.Schema({
 // Projects schema with bullet points
 const projectSchema = new mongoose.Schema({
   id: {
-    type: String, 
+    type: String,
     default: () => new mongoose.Types.ObjectId().toString()
   },
   name: String,
+  role: String,
   description: String,
+  period: String,
   link: String,
   bulletPoints: [bulletPointSchema]
 });
@@ -157,6 +159,10 @@ const resumeSchema = new mongoose.Schema({
       of: customSectionSchema,
       default: {}
     }
+  },
+  sectionOrder: {
+    type: [String],
+    default: ['experience', 'education', 'skills', 'projects', 'certifications']
   },
   createdAt: {
     type: Date,

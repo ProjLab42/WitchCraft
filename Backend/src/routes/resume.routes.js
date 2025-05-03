@@ -127,6 +127,9 @@ router.get('/test-pdf', async (req, res) => {
   }
 });
 
+// PUBLIC route for getting resume data (NO AUTH)
+router.get('/public/:id', resumeController.getPublicResumeById); 
+
 // Apply auth middleware to all resume routes
 router.use(authMiddleware);
 

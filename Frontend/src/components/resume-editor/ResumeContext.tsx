@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { templateService } from '@/services/template.service';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { templateService, Template } from '@/services/template.service';
 import { useSearchParams } from 'react-router-dom';
 import { profileAPI } from '@/services/api.service';
 import { toast } from "@/components/ui/use-toast";
@@ -39,14 +39,14 @@ const mockUser = {
         id: "edu1",
         institution: "University of Technology",
         degree: "Master of Computer Science",
-        period: "2016 - 2018",
+        year: "2016 - 2018",
         description: "Specialized in Human-Computer Interaction. Graduated with honors.",
       },
       {
         id: "edu2",
         institution: "State University",
         degree: "Bachelor of Science in Computer Science",
-        period: "2012 - 2016",
+        year: "2012 - 2016",
         description: "Dean's List, 3.8 GPA. Participated in ACM programming competitions.",
       },
     ],
@@ -107,7 +107,7 @@ export type EducationItem = {
   id: string;
   institution: string;
   degree: string;
-  period: string;
+  year: string;
   description: string;
   itemType?: string;
 };
@@ -142,6 +142,7 @@ export type ResumeContent = {
   personalInfo: PersonalInfo;
   sections: (ResumeSection & { itemType: string })[];
   selectedSkills: SkillItem[];
+  skillsParagraph: string | null;
   sectionOrder: string[];
 };
 
@@ -166,8 +167,8 @@ export type UserData = {
   skills: SkillItem[];
 };
 
-// Context type
-export interface ResumeContextType {
+// Define the shape of the context data
+interface ResumeContextProps {
   userData: UserData;
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   resumeContent: ResumeContent;
@@ -182,20 +183,16 @@ export interface ResumeContextType {
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   pageFormat: string;
   setPageFormat: React.Dispatch<React.SetStateAction<string>>;
-  isExportDialogOpen: boolean;
-  setIsExportDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTemplate: string | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
-  templateStyles: any;
-  autoScalingEnabled: boolean;
-  setAutoScalingEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  templateStyles: Template['styles'] | null;
 }
 
-// Create context
-const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
+// Create the context
+const ResumeContext = createContext<ResumeContextProps | undefined>(undefined);
 
-// Provider component
-export const ResumeProvider = ({ children }: { children: ReactNode }) => {
+// Create the provider component
+export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [searchParams] = useSearchParams();
   const templateParam = searchParams.get('template');
 
@@ -212,6 +209,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     },
     sections: [],
     selectedSkills: [],
+    skillsParagraph: null,
     sectionOrder: []
   });
   
@@ -350,16 +348,12 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   
   const [zoomLevel, setZoomLevel] = useState(1);
   const [pageFormat, setPageFormat] = useState("A4");
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   // State for selected template
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateParam || 'classic');
   
   // State for template styles
-  const [templateStyles, setTemplateStyles] = useState<any>(null);
-
-  // Auto-scaling toggle
-  const [autoScalingEnabled, setAutoScalingEnabled] = useState(true);
+  const [templateStyles, setTemplateStyles] = useState<Template['styles'] | null>(null);
 
   // Effect to load template styles when selectedTemplate changes
   useEffect(() => {
@@ -386,30 +380,28 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     loadTemplate();
   }, [selectedTemplate]);
 
+  const value = {
+    userData,
+    setUserData,
+    resumeContent,
+    setResumeContent,
+    openSections,
+    setOpenSections,
+    isEditingPersonalInfo,
+    setIsEditingPersonalInfo,
+    editedPersonalInfo,
+    setEditedPersonalInfo,
+    zoomLevel,
+    setZoomLevel,
+    pageFormat,
+    setPageFormat,
+    selectedTemplate,
+    setSelectedTemplate,
+    templateStyles
+  };
+
   return (
-    <ResumeContext.Provider value={{
-      userData,
-      setUserData,
-      resumeContent,
-      setResumeContent,
-      openSections,
-      setOpenSections,
-      isEditingPersonalInfo,
-      setIsEditingPersonalInfo,
-      editedPersonalInfo,
-      setEditedPersonalInfo,
-      zoomLevel,
-      setZoomLevel,
-      pageFormat,
-      setPageFormat,
-      isExportDialogOpen,
-      setIsExportDialogOpen,
-      selectedTemplate,
-      setSelectedTemplate,
-      templateStyles,
-      autoScalingEnabled,
-      setAutoScalingEnabled
-    }}>
+    <ResumeContext.Provider value={value}>
       {children}
     </ResumeContext.Provider>
   );
