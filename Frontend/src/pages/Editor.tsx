@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Edit, ArrowLeft, Save, Eye } from "lucide-react";
+import { Plus, Edit, ArrowLeft, Save, Eye } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
@@ -18,10 +18,9 @@ import { ResumeDropZone } from "@/components/resume-editor/ResumeDropZone";
 import { ReorderableResume } from "@/components/resume-editor/ReorderableResume";
 import { HybridResumeEditor } from "@/components/resume-editor/HybridResumeEditor";
 import { AddSkillDialog } from "@/components/resume-editor/AddSkillDialog";
-import { ExportDialog } from "@/components/resume-editor/ExportDialog";
 import { PersonalInfoEditor } from "@/components/resume-editor/PersonalInfoEditor";
 import { ZoomControls } from "@/components/resume-editor/ZoomControls";
-import { exportAsDOCX, generateId, exportToPDF } from "@/components/resume-editor/utils";
+import { generateId } from "@/components/resume-editor/utils";
 import { templateService, Template } from "@/services/template.service";
 import { resumeAPI, ApiResumeData } from "@/services/api.service";
 import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
@@ -58,8 +57,6 @@ function EditorContent() {
     setZoomLevel,
     pageFormat,
     setPageFormat,
-    isExportDialogOpen,
-    setIsExportDialogOpen,
     selectedTemplate,
     setSelectedTemplate,
     templateStyles
@@ -76,7 +73,6 @@ function EditorContent() {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false); // State for save dialog
   const [currentResumeTitle, setCurrentResumeTitle] = useState<string>('');
   const [resumeData, setResumeData] = useState<ApiResumeData | null>(null);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // --- Effect to Load Resume Data --- 
   useEffect(() => {
@@ -125,25 +121,43 @@ function EditorContent() {
           }));
 
           // Populate resume content state
-          const loadedSections = [
-              ...(loadedResume.sections?.experience?.map(item => ({ ...item, itemType: 'experience' })) ?? []),
-              ...(loadedResume.sections?.education?.map(item => ({ ...item, itemType: 'education' })) ?? []),
-              ...(loadedResume.sections?.projects?.map(item => ({
-                 ...item, 
-                 itemType: 'projects', 
-                 // Explicitly map fields to ensure they are included
-                 name: item.name,
-                 role: item.role, 
-                 period: item.period,
-                 description: item.description,
-                 id: item.id || generateId('proj') // Ensure ID exists
-                })) ?? []),
-              ...(loadedResume.sections?.certifications?.map(item => ({ ...item, itemType: 'certifications' })) ?? []),
-              // ...(custom sections mapping if needed)
-          ];
+          console.log("[loadResume] Raw loadedResume.sections.education:", loadedResume.sections?.education);
           
+          // --- Explicitly build loadedSections --- 
+          let sectionsForState: any[] = [];
+          if (loadedResume.sections?.experience) {
+            sectionsForState = sectionsForState.concat(
+              loadedResume.sections.experience.map(item => ({ ...item, itemType: 'experience' }))
+            );
+          }
+          if (loadedResume.sections?.education) {
+            sectionsForState = sectionsForState.concat(
+              loadedResume.sections.education.map(item => ({ ...item, itemType: 'education' }))
+            );
+          }
+          if (loadedResume.sections?.projects) {
+            sectionsForState = sectionsForState.concat(
+              loadedResume.sections.projects.map(item => ({
+                ...item,
+                itemType: 'projects',
+                name: item.name,
+                role: item.role,
+                period: item.period,
+                description: item.description,
+                id: item.id || generateId('proj')
+              }))
+            );
+          }
+          if (loadedResume.sections?.certifications) {
+            sectionsForState = sectionsForState.concat(
+              loadedResume.sections.certifications.map(item => ({ ...item, itemType: 'certifications' }))
+            );
+          }
+          // Add other standard sections if needed
+          console.log("[loadResume] Final sectionsForState set to resumeContent:", sectionsForState); // Use new variable name in log
+
           // Derive section order from loaded sections or use a default
-          const derivedSectionOrder = loadedSections.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index);
+          const derivedSectionOrder = sectionsForState.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index); // Use sectionsForState
           // Or use a fixed default: const defaultOrder = ['experience', 'education', 'skills', 'projects', 'certifications'];
 
           // --- Use Saved or Derived Section Order --- 
@@ -173,7 +187,7 @@ function EditorContent() {
                  additionalLinks: [], // Assuming not saved/loaded per resume
                }
             },
-            sections: loadedSections,
+            sections: sectionsForState, // Use the explicitly built array
             selectedSkills: loadedSkills, // Use mapped skills
             skillsParagraph: initialSkillsParagraph, // Set initial paragraph
             sectionOrder: loadedSectionOrder, // Use loaded or derived order
@@ -400,7 +414,7 @@ function EditorContent() {
   };
   
   // Handle dropping an item onto the resume
-  const handleDrop = (item) => {
+  const handleDrop = useCallback((item) => {
     console.log("--- handleDrop START ---"); // Log start
     console.log("Dropping item:", item);
     console.log("Current resumeContent.sections IDs BEFORE check:", 
@@ -465,10 +479,10 @@ function EditorContent() {
       toast.success("Item added to resume");
     }
     console.log("--- handleDrop END ---"); // Log end
-  };
+  }, [resumeContent, setResumeContent]);
   
   // Helper function to check if an item is a duplicate
-  const checkForDuplicate = (newItem, existingSections) => {
+  const checkForDuplicate = useCallback((newItem, existingSections) => {
     console.log("Checking for duplicate:", newItem);
     console.log("Against existing sections:", existingSections);
 
@@ -487,6 +501,11 @@ function EditorContent() {
             case 'education':
                 const eduSection = section as any;
                 const eduNewItem = newItem as any;
+                // Log specific fields being compared
+                console.log(`[checkForDuplicate EDU] Comparing:`, 
+                  `\n  Section: Inst=${eduSection.institution}, Deg=${eduSection.degree}, Year=${eduSection.year}`,
+                  `\n  NewItem: Inst=${eduNewItem.institution}, Deg=${eduNewItem.degree}, Year=${eduNewItem.year}`
+                );
                 return eduSection.institution?.toLowerCase() === eduNewItem.institution?.toLowerCase() &&
                        eduSection.degree?.toLowerCase() === eduNewItem.degree?.toLowerCase() &&
                        eduSection.year === eduNewItem.year; // Use year for comparison
@@ -507,10 +526,10 @@ function EditorContent() {
 
     console.log("Duplicate found in resume content:", duplicateInResume);
     return !!duplicateInResume; // Return true if a duplicate based on content exists in the resume
-  };
+  }, []);
   
   // Remove a section from the resume
-  const removeSection = (id) => {
+  const removeSection = useCallback((id) => {
     console.log("Removing section with ID:", id);
     
     // First, find the section to remove to get its type
@@ -547,7 +566,7 @@ function EditorContent() {
     });
     
     toast.success("Item removed from resume");
-  };
+  }, [resumeContent, setResumeContent]);
   
   // Add a new experience item
   const addExperience = () => {
@@ -1009,43 +1028,6 @@ function EditorContent() {
     }
   };
   
-  // Delete a skill
-  const deleteSkill = (skillId) => {
-    setResumeContent(prev => {
-      const selectedSkills = prev.selectedSkills.filter(skill => skill.id !== skillId);
-      
-      let newSectionOrder = [...prev.sectionOrder];
-      if (selectedSkills.length === 0 && newSectionOrder.includes('skills')) {
-        newSectionOrder = newSectionOrder.filter(type => type !== 'skills');
-      }
-      
-      // Update skillsParagraph
-      const newSkillsParagraph = generateSkillsParagraph(selectedSkills);
-      
-      return {
-        ...prev,
-        selectedSkills,
-        skillsParagraph: newSkillsParagraph, // Update paragraph
-        sectionOrder: newSectionOrder
-      };
-    });
-  };
-  
-  // Open export dialog
-  const openExportDialog = () => {
-    setIsExportDialogOpen(true);
-  };
-  
-  // Close export dialog
-  const closeExportDialog = () => {
-    setIsExportDialogOpen(false);
-  };
-  
-  // Handle page format change
-  const handlePageFormatChange = (value) => {
-    setPageFormat(value);
-  };
-  
   // Renamed from saveResumeState, now accepts name from dialog
   const handleConfirmSave = async (newName: string): Promise<ApiResumeData | null> => {
     console.log("Saving resume state with name:", newName);
@@ -1104,6 +1086,9 @@ function EditorContent() {
            })),
       },
     };
+    
+    // --- Debugging Log ---
+    console.log("[handleConfirmSave] Education data being sent to backend:", resumeDataToSave.sections.education);
 
     console.log("Data to save:", resumeDataToSave);
 
@@ -1142,118 +1127,6 @@ function EditorContent() {
       return null; // Return null on error
     } finally {
       toast.dismiss(savingToast);
-    }
-  };
-  
-  // Function to handle PDF export
-  const handleExportPDF = async (customFilename?: string): Promise<boolean> => {
-    setIsExporting(true);
-    try {
-      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
-      let resumeTitle = customFilename || currentResumeTitle;
-      if (!resumeTitle || resumeTitle.trim() === '') {
-        if (resumeData?.title) {
-          resumeTitle = resumeData.title;
-        } else if (resumeContent.personalInfo?.name) {
-          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
-        } else {
-          resumeTitle = 'resume';
-        }
-      }
-      
-      // Create a safe filename for file download (replace spaces with underscores)
-      const safeFilename = resumeTitle.replace(/\s+/g, '_');
-      
-      // Make sure resumeRef has a current value
-      if (!resumeRef.current) {
-        throw new Error("Resume content not available. Please try again.");
-      }
-      
-      // Get the ID of the resume container element or assign a temporary one
-      let resumeElementId = resumeRef.current.id;
-      if (!resumeElementId) {
-        resumeElementId = 'temp-resume-export-id';
-        resumeRef.current.id = resumeElementId;
-      }
-      
-      // Always use the exportToPDF function for consistent results
-      console.log(`Generating PDF with title: ${resumeTitle}`);
-      const success = await exportToPDF(
-        resumeElementId,
-        `${safeFilename}.pdf`,
-        pageFormat.toLowerCase(),
-        templateStyles
-      );
-      
-      // Remove temporary ID if we added one
-      if (resumeElementId === 'temp-resume-export-id') {
-        resumeRef.current.removeAttribute('id');
-      }
-      
-      if (!success) {
-        throw new Error("Failed to export PDF. Please try again.");
-      }
-      
-      toast.success('PDF downloaded successfully!');
-      return true;
-    } catch (error: any) {
-      console.error('Error exporting PDF:', error);
-      let errorMessage = 'Failed to export PDF. Please try again.';
-      if (error?.message) {
-        errorMessage = error.message;
-      }
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // Function to handle DOCX export
-  const handleExportDOCX = async (customFilename?: string): Promise<boolean> => {
-    setIsExporting(true);
-    try {
-      // Get resumeTitle from customFilename, currentResumeTitle, or fallback to name in personal info
-      let resumeTitle = customFilename || currentResumeTitle;
-      if (!resumeTitle || resumeTitle.trim() === '') {
-        if (resumeData?.title) {
-          resumeTitle = resumeData.title;
-        } else if (resumeContent.personalInfo?.name) {
-          resumeTitle = `${resumeContent.personalInfo.name}'s Resume`;
-        } else {
-          resumeTitle = 'resume';
-        }
-      }
-      
-      // Create a safe filename for file download (replace spaces with underscores)
-      const safeFilename = resumeTitle.replace(/\s+/g, '_');
-      
-      // Always use client-side export for DOCX
-      console.log(`Generating DOCX with title: ${resumeTitle}`);
-      
-      // For DOCX we need the actual content rather than the HTML
-      const success = await exportAsDOCX(
-        resumeContent,  // Pass resumeContent directly
-        pageFormat,     // Pass the page format
-        safeFilename    // Pass the safe filename
-      );
-      
-      if (!success) {
-        throw new Error("Failed to export DOCX. Please try again.");
-      }
-      
-      toast.success('DOCX downloaded successfully!');
-      return true;
-    } catch (error: any) {
-      console.error('Error exporting DOCX:', error);
-      let errorMessage = 'Failed to export DOCX. Please try again.';
-      if (error?.message) {
-        errorMessage = error.message;
-      }
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsExporting(false);
     }
   };
   
@@ -1324,13 +1197,6 @@ function EditorContent() {
               <Save className="mr-2 h-4 w-4" />
               Save Project
             </Button>
-            {/* Existing Export Button */}
-            <Button onClick={openExportDialog} variant="outline"> 
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            
-            {/* Removed Back to Templates link */}
           </div>
         </div>
         
@@ -1544,17 +1410,6 @@ function EditorContent() {
         isOpen={isAddSkillDialogOpen}
         onClose={() => setIsAddSkillDialogOpen(false)}
         onAdd={addSkill}
-      />
-      
-      {/* Export Dialog */}
-      <ExportDialog
-        isOpen={isExportDialogOpen}
-        onClose={closeExportDialog}
-        pageFormat={pageFormat}
-        onPageFormatChange={handlePageFormatChange}
-        onExportPDF={handleExportPDF}
-        onExportDOCX={handleExportDOCX}
-        defaultFilename={currentResumeTitle}
       />
       
       {/* Render the Save Dialog */}

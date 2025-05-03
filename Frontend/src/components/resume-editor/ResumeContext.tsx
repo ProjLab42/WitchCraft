@@ -183,8 +183,6 @@ interface ResumeContextProps {
   setZoomLevel: React.Dispatch<React.SetStateAction<number>>;
   pageFormat: string;
   setPageFormat: React.Dispatch<React.SetStateAction<string>>;
-  isExportDialogOpen: boolean;
-  setIsExportDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedTemplate: string | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<string | null>>;
   templateStyles: Template['styles'] | null;
@@ -350,7 +348,6 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   
   const [zoomLevel, setZoomLevel] = useState(1);
   const [pageFormat, setPageFormat] = useState("A4");
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   // State for selected template
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(templateParam || 'classic');
@@ -398,8 +395,6 @@ export const ResumeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setZoomLevel,
     pageFormat,
     setPageFormat,
-    isExportDialogOpen,
-    setIsExportDialogOpen,
     selectedTemplate,
     setSelectedTemplate,
     templateStyles

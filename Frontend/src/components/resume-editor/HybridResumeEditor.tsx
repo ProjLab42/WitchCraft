@@ -40,17 +40,14 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   const [isScalingStabilized, setIsScalingStabilized] = useState(true);
   const contentHeightRef = useRef<number | null>(null);
   const stabilizationTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Get auto-scaling toggle from context
-  // Removed autoScalingEnabled reference
-  
+
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
     drop: (item) => onDrop(item),
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
     }),
-  }));
+  }), [onDrop]);
 
   // Apply template styles when template changes
   useEffect(() => {
