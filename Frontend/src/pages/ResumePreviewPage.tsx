@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { resumeAPI, ApiResumeData } from '@/services/api.service';
 import { ResumePreview } from '@/components/resume/ResumePreview';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // A4 dimensions in mm (approximate for styling)
@@ -100,6 +100,14 @@ const ResumePreviewPage: React.FC = () => {
   return (
     // Main container: Use white background to match page, remove print:bg-white as it's default now
     <div className="preview-page-container bg-white">
+      {/* Add Download Button */}
+      <div className="fixed top-4 right-4 no-print"> 
+        <Button onClick={() => window.print()}> 
+          <Printer className="mr-2 h-4 w-4" />
+          Download / Print
+        </Button>
+      </div>
+
       {/* A4 Page container: Remove shadow and explicit bg-white, keep dimensions and centering */}
       <div 
         className="a4-page mx-auto my-4 print:shadow-none print:m-0" // Removed bg-white, shadow-lg
