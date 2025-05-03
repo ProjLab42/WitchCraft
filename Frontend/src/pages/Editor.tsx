@@ -101,26 +101,66 @@ function EditorContent() {
           setCurrentResumeTitle(loadedResume.title);
           console.log(`Set current resume title to: ${loadedResume.title}`);
 
-          // Populate user data (only fields available in UserData type)
-          // NOTE: This might overwrite profile data if resume data is sparse.
-          // Consider if merging or only updating specific fields is better.
-          setUserData(prevUserData => ({
-            ...prevUserData, // Preserve existing fields
-            name: loadedResume.data?.name ?? prevUserData.name,
-            title: loadedResume.data?.jobTitle ?? prevUserData.title,
-            email: loadedResume.data?.email ?? prevUserData.email,
-            location: loadedResume.data?.location ?? prevUserData.location,
-            // bio: loadedResume.data?.bio ?? prevUserData.bio, // Bio not in resume data
-            // avatarUrl: loadedResume.data?.avatarUrl ?? prevUserData.avatarUrl, // Avatar not in resume data
-            links: {
-                ...prevUserData.links,
-                linkedin: loadedResume.data?.linkedin ?? prevUserData.links?.linkedin,
-                portfolio: loadedResume.data?.website ?? prevUserData.links?.portfolio, // Map website to portfolio
-            },
-            // sections/skills in UserData are profile-level, don't overwrite from single resume
-          }));
+          // --- Merge loaded sections into userData ---
+          setUserData(prevUserData => {
+            const mergedSections = { ...prevUserData.sections };
+            
+            // Helper to update or add loaded items to an existing array
+            const updateOrAdd = (targetArray: any[] = [], loadedItems: any[] = []) => {
+              const targetMap = new Map(targetArray.map(item => [item.id, item]));
+              loadedItems.forEach(loadedItem => {
+                // Add or overwrite item from loaded data
+                targetMap.set(loadedItem.id, loadedItem); 
+              });
+              return Array.from(targetMap.values());
+            };
 
-          // Populate resume content state
+            // Merge loaded Experience into existing
+            mergedSections.experience = updateOrAdd(
+              prevUserData.sections.experience, 
+              loadedResume.sections?.experience
+            );
+             // Merge loaded Education into existing
+            mergedSections.education = updateOrAdd(
+              prevUserData.sections.education, 
+              loadedResume.sections?.education
+            );
+             // Merge loaded Projects into existing
+            mergedSections.projects = updateOrAdd(
+              prevUserData.sections.projects, 
+              loadedResume.sections?.projects
+            );
+              // Merge loaded Certifications into existing
+            mergedSections.certifications = updateOrAdd(
+              prevUserData.sections.certifications, 
+              loadedResume.sections?.certifications
+            );
+              // Merge loaded Skills into existing skills
+            const loadedSkillsAsUserDataFormat = loadedResume.sections?.skills?.map(s => ({ id: s.name, name: s.name, level: 50 })) ?? [];
+            const updatedSkills = updateOrAdd(
+                prevUserData.skills, 
+                loadedSkillsAsUserDataFormat
+            );
+
+            return {
+              ...prevUserData,
+              // Keep existing personal info from prevUserData unless explicitly loaded (optional)
+              name: loadedResume.data?.name ?? prevUserData.name,
+              title: loadedResume.data?.jobTitle ?? prevUserData.title,
+              email: loadedResume.data?.email ?? prevUserData.email,
+              location: loadedResume.data?.location ?? prevUserData.location,
+              links: {
+                  ...prevUserData.links,
+                  linkedin: loadedResume.data?.linkedin ?? prevUserData.links?.linkedin,
+                  portfolio: loadedResume.data?.website ?? prevUserData.links?.portfolio,
+              },
+              sections: mergedSections, // Use the correctly merged sections
+              skills: updatedSkills // Use the correctly merged skills
+            };
+          });
+          // --- End Merge ---
+
+          // Populate resume content state (This remains largely the same)
           console.log("[loadResume] Raw loadedResume.sections.education:", loadedResume.sections?.education);
           
           // --- Explicitly build loadedSections --- 
@@ -220,7 +260,7 @@ function EditorContent() {
     };
 
     loadResume();
-  }, [resumeIdParam, setUserData, setResumeContent, setSelectedTemplate, navigate]); // Reduce dependencies - only run when ID changes
+  }, [resumeIdParam, setUserData, setResumeContent, setSelectedTemplate, navigate]);
 
   // --- End Load Resume Effect --- 
 

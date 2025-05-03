@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { resumeAPI, ApiResumeData } from '@/services/api.service';
 import { ResumePreview } from '@/components/resume/ResumePreview';
-import { Loader2, AlertCircle, Printer } from 'lucide-react';
+import { Loader2, AlertCircle, Printer, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 // A4 dimensions in mm (approximate for styling)
 const A4_WIDTH_MM = 210;
@@ -18,9 +19,10 @@ const ResumePreviewPage: React.FC = () => {
     isLoading, 
     error 
   } = useQuery<ApiResumeData, Error>({
-    queryKey: ['resume', resumeId],
-    queryFn: () => resumeAPI.getResumeById(resumeId!),
+    queryKey: ['publicResume', resumeId],
+    queryFn: () => resumeAPI.getPublicResumeById(resumeId!),
     enabled: !!resumeId,
+    retry: false,
   });
 
   if (isLoading) {
@@ -97,11 +99,29 @@ const ResumePreviewPage: React.FC = () => {
     ? resumeData.sectionOrder
     : ['experience', 'education', 'skills', 'projects', 'certifications']; // Default order
 
+  // --- Function to copy link --- 
+  const handleShareLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy link: ', err);
+      toast.error('Failed to copy link.');
+    }
+  };
+
   return (
     // Main container: Use white background to match page, remove print:bg-white as it's default now
     <div className="preview-page-container bg-white">
-      {/* Add Download Button */}
-      <div className="fixed top-4 right-4 no-print"> 
+      {/* Action Buttons */}
+      <div className="fixed top-4 right-4 no-print flex gap-2"> 
+        {/* Share Button */}
+        <Button variant="outline" onClick={handleShareLink}> 
+          <Share2 className="mr-2 h-4 w-4" />
+          Share Link
+        </Button>
+        {/* Download/Print Button */}
         <Button onClick={() => window.print()}> 
           <Printer className="mr-2 h-4 w-4" />
           Download / Print

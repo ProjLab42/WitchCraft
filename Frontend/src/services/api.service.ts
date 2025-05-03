@@ -310,7 +310,13 @@ export const resumeAPI = {
   addCustomSection: async (resumeId: string, sectionKey: string, sectionData: any) => {
     const response = await api.post(`/resume/create/${resumeId}/custom-section`, { sectionKey, sectionData });
     return response.data;
-  }
+  },
+
+  // --- Get Public Resume by ID (No Auth) ---
+  getPublicResumeById: async (id: string): Promise<ApiResumeData> => {
+    const response = await api.get(`/resume/public/${id}`);
+    return response.data;
+  },
 };
 
 // Export the api instance as default

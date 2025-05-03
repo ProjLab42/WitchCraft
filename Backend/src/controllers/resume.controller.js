@@ -57,6 +57,27 @@ exports.getResumeById = async (req, res) => {
   }
 };
 
+// Get a public resume by ID (no authentication needed)
+exports.getPublicResumeById = async (req, res) => {
+  try {
+    const resume = await Resume.findById(req.params.id); // Find by ID only
+    
+    if (!resume) {
+      return res.status(404).json({ message: 'Resume not found' });
+    }
+    
+    // Optionally, you might want to omit certain sensitive fields 
+    // before sending, though the current model seems safe.
+    // Example: delete resume.user; 
+    
+    res.json(resume);
+  } catch (error) {
+    console.error('Get public resume error:', error);
+    // Avoid leaking detailed errors for public endpoints
+    res.status(500).json({ message: 'Server error retrieving resume' }); 
+  }
+};
+
 // Update a resume
 exports.updateResume = async (req, res) => {
   try {
