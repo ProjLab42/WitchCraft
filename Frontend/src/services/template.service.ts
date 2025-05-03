@@ -71,6 +71,31 @@ const defaultTemplates = [
     id: "minimal",
     name: "Minimal",
     version: "1.0.0"
+  },
+  {
+    id: "executive",
+    name: "Executive",
+    version: "1.0.0"
+  },
+  {
+    id: "creative-modern",
+    name: "Creative Modern",
+    version: "1.0.0"
+  },
+  {
+    id: "technical",
+    name: "Technical",
+    version: "1.0.0"
+  },
+  {
+    id: "academic",
+    name: "Academic",
+    version: "1.0.0"
+  },
+  {
+    id: "modern-two-column",
+    name: "Modern Two-Column",
+    version: "1.0.0"
   }
 ] as TemplateMetadata[];
 
@@ -101,7 +126,7 @@ const defaultTemplateDefinitions: Record<string, Template> = {
       colors: {
         primary: "#333333",
         secondary: "#666666",
-        accent: "#2563eb"
+        accent: "#333333"
       }
     },
     sections: {
@@ -114,7 +139,7 @@ const defaultTemplateDefinitions: Record<string, Template> = {
     _id: "modern",
     id: "modern",
     name: "Modern Professional",
-    description: "A contemporary design with a blue accent color and skills section first",
+    description: "A contemporary design with a clean, minimalist look",
     category: "Modern",
     version: "1.0.0",
     styles: {
@@ -133,9 +158,9 @@ const defaultTemplateDefinitions: Record<string, Template> = {
         useColumns: false
       },
       colors: {
-        primary: "#333333",
-        secondary: "#666666",
-        accent: "#2563eb"
+        primary: "#222222",
+        secondary: "#555555",
+        accent: "#000000"
       }
     },
     sections: {
@@ -174,6 +199,177 @@ const defaultTemplateDefinitions: Record<string, Template> = {
     },
     sections: {
       defaultOrder: ["experience", "education", "skills"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  // New template definitions
+  "executive": {
+    _id: "executive",
+    id: "executive",
+    name: "Executive",
+    description: "A premium, elegant template designed for senior professionals and executives",
+    category: "Professional",
+    version: "1.0.0",
+    styles: {
+      fontFamily: {
+        heading: "Cambria, Georgia, serif",
+        body: "Calibri, Arial, sans-serif"
+      },
+      fontSize: {
+        name: "28px",
+        sectionHeading: "20px",
+        body: "14px"
+      },
+      layout: {
+        headerAlignment: "center",
+        sectionStyle: "underlined",
+        useColumns: false
+      },
+      colors: {
+        primary: "#000000", // Black
+        secondary: "#333333",
+        accent: "#555555"
+      }
+    },
+    sections: {
+      defaultOrder: ["experience", "skills", "education", "projects"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  "creative-modern": {
+    _id: "creative-modern",
+    id: "creative-modern",
+    name: "Creative Modern",
+    description: "A clean, contemporary design ideal for creative professionals",
+    category: "Creative",
+    version: "1.0.0",
+    styles: {
+      fontFamily: {
+        heading: "Montserrat, Helvetica, sans-serif",
+        body: "Roboto, Arial, sans-serif"
+      },
+      fontSize: {
+        name: "26px",
+        sectionHeading: "18px",
+        body: "14px"
+      },
+      layout: {
+        headerAlignment: "center", // Changed from "right" to "center" for consistent header alignment
+        sectionStyle: "boxed",
+        useColumns: false
+      },
+      colors: {
+        primary: "#222222", // Dark gray
+        secondary: "#444444",
+        accent: "#111111"
+      }
+    },
+    sections: {
+      defaultOrder: ["skills", "experience", "projects", "education"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  "technical": {
+    _id: "technical",
+    id: "technical",
+    name: "Technical",
+    description: "Clean, structured layout optimized for technical roles with skills emphasis",
+    category: "Professional",
+    version: "1.0.0",
+    styles: {
+      fontFamily: {
+        heading: "Consolas, monospace",
+        body: "Segoe UI, sans-serif"
+      },
+      fontSize: {
+        name: "22px",
+        sectionHeading: "18px",
+        body: "14px"
+      },
+      layout: {
+        headerAlignment: "left",
+        sectionStyle: "simple",
+        useColumns: true 
+      },
+      colors: {
+        primary: "#111111", // Near black
+        secondary: "#444444",
+        accent: "#222222"
+      }
+    },
+    sections: {
+      defaultOrder: ["skills", "experience", "projects", "education"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  "academic": {
+    _id: "academic",
+    id: "academic",
+    name: "Academic",
+    description: "Formal layout with emphasis on education and publications, ideal for academic positions",
+    category: "Academic",
+    version: "1.0.0",
+    styles: {
+      fontFamily: {
+        heading: "Times New Roman, serif",
+        body: "Garamond, serif"
+      },
+      fontSize: {
+        name: "24px",
+        sectionHeading: "20px",
+        body: "14px"
+      },
+      layout: {
+        headerAlignment: "left",
+        sectionStyle: "underlined",
+        useColumns: false
+      },
+      colors: {
+        primary: "#000000", // Pure black
+        secondary: "#333333",
+        accent: "#555555"
+      }
+    },
+    sections: {
+      defaultOrder: ["education", "experience", "skills", "projects"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  "modern-two-column": {
+    _id: "modern-two-column",
+    id: "modern-two-column",
+    name: "Modern Two-Column",
+    description: "Contemporary two-column layout with a clean sidebar for skills and contact information",
+    category: "Modern",
+    version: "1.0.0",
+    styles: {
+      fontFamily: {
+        heading: "Open Sans, sans-serif",
+        body: "Lato, sans-serif"
+      },
+      fontSize: {
+        name: "26px",
+        sectionHeading: "18px",
+        body: "14px"
+      },
+      layout: {
+        headerAlignment: "center",
+        sectionStyle: "simple",
+        useColumns: true
+      },
+      colors: {
+        primary: "#111111", // Near black
+        secondary: "#444444",
+        accent: "#222222"
+      }
+    },
+    sections: {
+      defaultOrder: ["experience", "education", "skills", "projects"]
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()

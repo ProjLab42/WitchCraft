@@ -530,29 +530,28 @@ export const ResumeDropZone: React.FC<ResumeDropZoneProps> = ({
 
   // Render skills section
   const renderSkills = () => {
-    if (!selectedSkills.length) return null;
+    // Read the pre-generated paragraph from context
+    const skillsText = resumeContent.skillsParagraph;
+
+    // Return null if there's no text (no skills selected)
+    if (!skillsText) return null;
     
-    const skillStyle = templateStyles ? {
-      display: 'inline-block',
-      margin: '0 8px 8px 0',
-      padding: '4px 10px',
-      borderRadius: '16px',
-      fontSize: '12px',
-      backgroundColor: templateStyles.accentColor ? `${templateStyles.accentColor}15` : '#f0f4ff',
-      color: templateStyles.accentColor || '#2563eb',
+    // Apply basic paragraph styling, potentially incorporating some template aspects if needed
+    const paragraphStyle = templateStyles ? {
+      fontSize: templateStyles.bodyTextSize || '12px',
+      color: templateStyles.secondaryColor || '#333333',
       fontFamily: templateStyles.fontFamily || 'Arial, sans-serif',
+      marginTop: '4px', // Add some space below the heading
     } : {};
-    
+
     return (
-      <div className="mb-6">
+      <div className="mb-6 resume-section skills-section">
+        {/* Render the title using the existing function */}
         {renderSectionTitle('skills')}
-        <div className="flex flex-wrap">
-          {selectedSkills.map(skill => (
-            <div key={skill.id} style={skillStyle as React.CSSProperties}>
-              {skill.name}
-            </div>
-          ))}
-        </div>
+        {/* Output the pre-generated paragraph */}
+        <p style={paragraphStyle as React.CSSProperties}>
+          {skillsText}
+        </p>
       </div>
     );
   };

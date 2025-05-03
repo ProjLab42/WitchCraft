@@ -128,11 +128,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         color: var(--secondary-color);
       }
       
-      /* Layout specific styles */
+      /* Layout specific styles 
+
       .resume-container.header-center .resume-header {
         text-align: center;
       }
       
+  
       .resume-container.header-right .resume-header {
         text-align: right;
       }
@@ -143,10 +145,27 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         padding-bottom: 0.25rem;
       }
       
+      /* Modified boxed style to remove the background box */
       .resume-container.section-boxed .resume-section-heading {
+        /* Remove background-color and replace with border-bottom */
+        background-color: transparent;
+        color: var(--primary-color);
+        border-bottom: 2px solid var(--accent-color);
+        padding-bottom: 0.25rem;
+        position: relative;
+      }
+      
+      /* Optional: Add a subtle style indicator for boxed sections */
+      .resume-container.section-boxed .resume-section-heading::before {
+        content: "";
+        position: absolute;
+        left: -0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0.25rem;
+        height: 70%;
         background-color: var(--accent-color);
-        color: white;
-        padding: 0.25rem 0.5rem;
+        border-radius: 1px;
       }
       
       /* Column layout */

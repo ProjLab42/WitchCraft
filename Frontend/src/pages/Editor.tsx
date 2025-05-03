@@ -25,6 +25,7 @@ import { exportAsDOCX, generateId, exportToPDF } from "@/components/resume-edito
 import { templateService, Template } from "@/services/template.service";
 import { resumeAPI, ApiResumeData } from "@/services/api.service";
 import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
+import { SkillItem } from "@/components/resume-editor/ResumeContext"; // Import SkillItem
 
 // Main Editor component
 function EditorContent() {
@@ -62,6 +63,7 @@ function EditorContent() {
     setIsExportDialogOpen,
     selectedTemplate,
     setSelectedTemplate,
+    templateStyles
   } = useResumeContext();
 
   // Local state
@@ -136,6 +138,14 @@ function EditorContent() {
           const derivedSectionOrder = loadedSections.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index);
           // Or use a fixed default: const defaultOrder = ['experience', 'education', 'skills', 'projects', 'certifications'];
 
+          // Map loaded skills and generate initial paragraph
+          const loadedSkills: SkillItem[] = loadedResume.sections?.skills?.map(s => ({ 
+            id: s.name, 
+            name: s.name,
+            level: 50 
+          })) ?? [];
+          const initialSkillsParagraph = generateSkillsParagraph(loadedSkills);
+
           const newResumeContent = {
             personalInfo: { // Map to PersonalInfo structure
                name: loadedResume.data?.name ?? '',
@@ -151,11 +161,8 @@ function EditorContent() {
                }
             },
             sections: loadedSections,
-            selectedSkills: loadedResume.sections?.skills?.map(s => ({ 
-                id: s.name, // Use name as ID for now, assuming unique skill names
-                name: s.name,
-                level: 50 // Provide a default level or handle differently
-            })) ?? [], // Map {name} to SkillItem[]
+            selectedSkills: loadedSkills, // Use mapped skills
+            skillsParagraph: initialSkillsParagraph, // Set initial paragraph
             sectionOrder: derivedSectionOrder, // Provide the required sectionOrder
           };
           setResumeContent(newResumeContent);
@@ -175,6 +182,13 @@ function EditorContent() {
         setResumeId(null);
         // Optionally reset context state here if needed when navigating to /editor for a new resume
         // resetResumeContext(); // Hypothetical function
+        // Ensure skills paragraph is null for new resumes
+        setResumeContent(prev => ({
+          ...prev,
+          selectedSkills: [],
+          skillsParagraph: null,
+          // Reset other fields as necessary
+        }));
       }
     };
 
@@ -235,6 +249,9 @@ function EditorContent() {
       const { generatedResume } = location.state;
       
       // Convert AI-generated resume data to editor format
+      const generatedSkills: SkillItem[] = generatedResume.resumeData.sections.skills || [];
+      const generatedSkillsParagraph = generateSkillsParagraph(generatedSkills);
+      
       const newResumeContent = {
         personalInfo: {
           name: userData.name || '',
@@ -261,7 +278,8 @@ function EditorContent() {
             itemType: 'certifications'
           }))
         ],
-        selectedSkills: generatedResume.resumeData.sections.skills || [],
+        selectedSkills: generatedSkills, // Use generated skills
+        skillsParagraph: generatedSkillsParagraph, // Set generated paragraph
         sectionOrder: ['experience', 'education', 'skills', 'projects', 'certifications']
       };
 
@@ -664,6 +682,15 @@ function EditorContent() {
     toast.success("Item deleted");
   };
   
+  // Helper function to generate comma-separated skills string
+  const generateSkillsParagraph = (skills: SkillItem[]): string | null => {
+    if (!skills || skills.length === 0) {
+      return null;
+    }
+    // Extract names, maintaining the order in the array, and join with ', '
+    return skills.map(skill => skill.name).join(', '); 
+  };
+
   // Toggle a skill selection
   const toggleSkill = (skill) => {
     setResumeContent(prev => {
@@ -680,16 +707,14 @@ function EditorContent() {
         );
         
         if (duplicateSkill) {
-          // Don't add duplicate and show a toast message
           toast.error("This skill is already selected");
-          return prev; // Return previous state unchanged
+          return prev; 
         }
         
         // Add skill
         selectedSkills.push(skill);
       }
       
-      // Update section order if needed
       let newSectionOrder = [...prev.sectionOrder];
       if (selectedSkills.length > 0 && !newSectionOrder.includes('skills')) {
         newSectionOrder.push('skills');
@@ -697,9 +722,13 @@ function EditorContent() {
         newSectionOrder = newSectionOrder.filter(type => type !== 'skills');
       }
       
+      // Update skillsParagraph
+      const newSkillsParagraph = generateSkillsParagraph(selectedSkills);
+      
       return {
         ...prev,
         selectedSkills,
+        skillsParagraph: newSkillsParagraph, // Update paragraph
         sectionOrder: newSectionOrder
       };
     });
@@ -743,16 +772,18 @@ function EditorContent() {
       
       const selectedSkills = [...prev.selectedSkills, newSkill];
       
-      // Update section order if needed
       let newSectionOrder = [...prev.sectionOrder];
       if (!newSectionOrder.includes('skills')) {
         newSectionOrder.push('skills');
       }
       
+      // Update skillsParagraph
+      const newSkillsParagraph = generateSkillsParagraph(selectedSkills);
       
       return {
         ...prev,
         selectedSkills,
+        skillsParagraph: newSkillsParagraph, // Update paragraph
         sectionOrder: newSectionOrder
       };
     });
@@ -900,39 +931,53 @@ function EditorContent() {
   // Reorder items within a section
   const reorderSectionItems = (sectionType, sourceIndex, destinationIndex) => {
     setResumeContent(prev => {
-      // Get all items of this section type
       let itemsToReorder;
       let keyToUpdate;
-      
+      let requiresParagraphUpdate = false; // Flag for skills
+
       if (sectionType === 'skills') {
         itemsToReorder = [...prev.selectedSkills];
         keyToUpdate = 'selectedSkills';
+        requiresParagraphUpdate = true; // Skills are being reordered
       } else {
-        itemsToReorder = prev.sections.filter(
-          section => section.itemType === sectionType
-        );
-        keyToUpdate = 'sections';
+        // Find the correct section array based on itemType
+        const section = prev.sections.find(s => s.itemType === sectionType);
+        if (!section) return prev; // Should not happen
+
+        // Assuming sections store their items directly (adjust if structure differs)
+        // This part needs verification based on actual structure if items aren't direct children
+        itemsToReorder = [...prev.sections.filter(s => s.itemType === sectionType)];
+        keyToUpdate = 'sections'; // We'll need to update the whole sections array
       }
-      
-      // Reorder the items
+
+      if (!itemsToReorder) return prev;
+
       const [removed] = itemsToReorder.splice(sourceIndex, 1);
       itemsToReorder.splice(destinationIndex, 0, removed);
-      
-      // Create the updated state
+
       if (keyToUpdate === 'sections') {
-        const otherSections = prev.sections.filter(
-          section => section.itemType !== sectionType
-        );
-        return {
-          ...prev,
-          sections: [...otherSections, ...itemsToReorder]
-        };
-      } else {
-        return {
-          ...prev,
-          selectedSkills: itemsToReorder
-        };
+        // Rebuild the sections array if we modified a standard section
+        const otherSections = prev.sections.filter(s => s.itemType !== sectionType);
+        const updatedSections = [...otherSections, ...itemsToReorder];
+        
+        // We might need to re-sort updatedSections based on sectionOrder here
+        // For simplicity, assuming direct update works for now.
+
+        return { ...prev, sections: updatedSections };
+      } else if (keyToUpdate === 'selectedSkills') {
+         // Update skillsParagraph if skills were reordered
+         const newSkillsParagraph = requiresParagraphUpdate 
+           ? generateSkillsParagraph(itemsToReorder as SkillItem[]) 
+           : prev.skillsParagraph;
+
+         return { 
+           ...prev, 
+           selectedSkills: itemsToReorder as SkillItem[],
+           skillsParagraph: newSkillsParagraph // Update paragraph
+         };
       }
+      
+      return prev; // Should not reach here ideally
     });
   };
 
@@ -977,30 +1022,24 @@ function EditorContent() {
   
   // Delete a skill
   const deleteSkill = (skillId) => {
-    // Remove from user data
-    setUserData(prev => ({
-      ...prev,
-      skills: prev.skills.filter(skill => skill.id !== skillId)
-    }));
-    
-    // Remove from selected skills if selected
     setResumeContent(prev => {
       const selectedSkills = prev.selectedSkills.filter(skill => skill.id !== skillId);
       
-      // Update section order if needed
       let newSectionOrder = [...prev.sectionOrder];
       if (selectedSkills.length === 0 && newSectionOrder.includes('skills')) {
         newSectionOrder = newSectionOrder.filter(type => type !== 'skills');
       }
       
+      // Update skillsParagraph
+      const newSkillsParagraph = generateSkillsParagraph(selectedSkills);
+      
       return {
         ...prev,
         selectedSkills,
+        skillsParagraph: newSkillsParagraph, // Update paragraph
         sectionOrder: newSectionOrder
       };
     });
-    
-    toast.success("Skill deleted");
   };
   
   // Open export dialog
@@ -1123,7 +1162,8 @@ function EditorContent() {
       const success = await exportToPDF(
         resumeElementId,
         `${safeFilename}.pdf`,
-        pageFormat.toLowerCase()
+        pageFormat.toLowerCase(),
+        templateStyles
       );
       
       // Remove temporary ID if we added one
