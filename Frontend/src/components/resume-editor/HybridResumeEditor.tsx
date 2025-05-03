@@ -128,18 +128,13 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         color: var(--secondary-color);
       }
       
-      /* Layout specific styles - IMPROVED HEADER ALIGNMENT */
-      /* Left alignment (default) */
-      .resume-container.header-left .resume-header {
-        text-align: left;
-      }
-      
-      /* Center alignment */
+      /* Layout specific styles 
+
       .resume-container.header-center .resume-header {
         text-align: center;
       }
       
-      /* Right alignment */
+  
       .resume-container.header-right .resume-header {
         text-align: right;
       }
@@ -177,10 +172,6 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
       .resume-container.use-columns .resume-content {
         display: flex;
         gap: 2rem;
-      }
-      
-      .resume-container.use-columns .resume-main {
-        flex: 2;
       }
       
       .resume-container.use-columns .resume-sidebar {

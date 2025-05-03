@@ -214,7 +214,7 @@ function getDefaultTemplates() {
           body: "14px"
         },
         layout: {
-          headerAlignment: "right",
+          headerAlignment: "center", // Changed from "right" to "center" for consistent alignment
           sectionStyle: "boxed",
           useColumns: false
         },

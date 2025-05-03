@@ -256,7 +256,7 @@ const defaultTemplateDefinitions: Record<string, Template> = {
         body: "14px"
       },
       layout: {
-        headerAlignment: "right",
+        headerAlignment: "center", // Changed from "right" to "center" for consistent header alignment
         sectionStyle: "boxed",
         useColumns: false
       },
