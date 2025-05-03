@@ -42,7 +42,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
   const stabilizationTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Get auto-scaling toggle from context
-  const { autoScalingEnabled } = useResumeContext();
+  // Removed autoScalingEnabled reference
   
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'RESUME_ITEM',
@@ -336,7 +336,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                       <div>
                         <h4 className="font-medium education-institution">{item.institution}</h4>
                         <p className="text-sm italic education-degree">{item.degree}</p>
-                        <p className="text-xs text-muted-foreground education-period">{item.period}</p>
+                        <p className="text-xs text-muted-foreground education-year">{item.year}</p>
                       </div>
                     </div>
                     {item.description && <p className="text-sm mt-2 education-description whitespace-pre-wrap">{item.description}</p>}
@@ -448,8 +448,10 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
 
   // Watch for changes to autoScalingEnabled and reset scaling when turned off
   useEffect(() => {
-    if (!autoScalingEnabled && resumeRef.current) {
-      // Reset scaling when autoscaling is toggled off (whether previously auto-scaled or not)
+    // Always reset scaling if needed (e.g., on template change) 
+    // Removed !autoScalingEnabled check
+    if (resumeRef.current) {
+      // Reset scaling
       const container = resumeRef.current;
       
       // Reset all styling on all elements
@@ -480,96 +482,20 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         }
       }, 50);
     }
-  }, [autoScalingEnabled]);
+  }, [resumeRef]);
 
   // Check for content overflow and apply scaling if needed
   const handleAutoScaling = useCallback(() => {
     if (!resumeRef.current) return;
-    
-    // Skip auto-scaling if it's disabled
-    if (!autoScalingEnabled) {
-      // Just check for overflow
-      const container = resumeRef.current;
-      const contentHeight = container.scrollHeight;
-      const containerHeight = container.clientHeight;
-      setContentOverflowing(contentHeight > containerHeight);
-      return;
-    }
-    
-    // Get container dimensions
+
+    // Auto-scaling logic removed
+    // Just check for overflow
     const container = resumeRef.current;
     const contentHeight = container.scrollHeight;
     const containerHeight = container.clientHeight;
-    
-    // Skip scaling during content stabilization if content height is changing rapidly
-    if (!isScalingStabilized && contentHeightRef.current !== null) {
-      const heightChange = Math.abs(contentHeight - contentHeightRef.current);
-      if (heightChange > 5) {
-        // Content is still changing, update reference and skip this cycle
-        contentHeightRef.current = contentHeight;
-        return;
-      }
-    }
-    
-    // Update content height reference
-    contentHeightRef.current = contentHeight;
-    
-    // Determine if content is overflowing
-    const isOverflowing = contentHeight > containerHeight;
-    
-    // Only update overflow state if it's a significant change to avoid flickering
-    if (Math.abs(contentHeight - containerHeight) > 10) {
-      setContentOverflowing(isOverflowing);
-    }
-    
-    // Apply auto-scaling if enabled and content is overflowing
-    if (autoScalingEnabled && isOverflowing) {
-      // If already auto-scaled and content is still overflowing,
-      // we need a more aggressive scaling factor
-      if (isAutoScaled) {
-        // Calculate a new scaling factor but limit the minimum to 0.8
-        // This prevents text from becoming too small
-        const rawScalingFactor = (scalingFactor * containerHeight) / contentHeight;
-        const newScalingFactor = Math.max(0.8, rawScalingFactor);
-        
-        if (Math.abs(newScalingFactor - scalingFactor) > 0.01) {
-          // Only update if there's a significant difference to avoid fluctuations
-          applyContentScaling(container, newScalingFactor);
-          setScalingFactor(newScalingFactor);
-          markContentStabilizing();
-        }
-      } else {
-        // Initial scaling with a higher minimum
-        const initialScalingFactor = Math.max(0.8, containerHeight / contentHeight);
-        
-        // Apply scaling to content
-        applyContentScaling(container, initialScalingFactor);
-        
-        // Update UI state
-        setIsAutoScaled(true);
-        setScalingFactor(initialScalingFactor);
-        markContentStabilizing();
-      }
-    } else if (!isOverflowing && isAutoScaled) {
-      // Only reset if content is significantly under the container height
-      if (containerHeight - contentHeight > 20) {
-        // Reset scaling if content no longer overflows
-        const elements = container.querySelectorAll('*');
-        elements.forEach(el => {
-          const element = el as HTMLElement;
-          element.style.fontSize = '';
-          element.style.marginBottom = '';
-          element.style.marginTop = '';
-          element.style.paddingBottom = '';
-          element.style.paddingTop = '';
-          element.style.lineHeight = '';
-        });
-        setIsAutoScaled(false);
-        setScalingFactor(1);
-        markContentStabilizing();
-      }
-    }
-  }, [autoScalingEnabled, isAutoScaled, scalingFactor, isScalingStabilized, markContentStabilizing]);
+    setContentOverflowing(contentHeight > containerHeight);
+
+  }, [resumeRef]); // Removed autoScalingEnabled dependency
 
   // Detect content overflow and apply auto-scaling when needed
   useEffect(() => {
@@ -588,7 +514,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     debouncedCheck();
     
     return () => clearTimeout(timer);
-  }, [resumeContent, zoomLevel, autoScalingEnabled, handleAutoScaling]);
+  }, [resumeContent, zoomLevel, handleAutoScaling]);
 
   // Resume container styles with visual cue for stabilization
   const resumeContainerStyle: React.CSSProperties = {
@@ -599,8 +525,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
     margin: '0 auto',
     padding: '1.5cm',
     backgroundColor: 'white',
-    boxShadow: contentOverflowing && !autoScalingEnabled 
-      ? 'rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(255, 0, 0, 0.2) 0px 0px 0px 2px'
+    boxShadow: contentOverflowing && !isAutoScaled ? 'rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(255, 0, 0, 0.2) 0px 0px 0px 2px'
       : 'rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
     borderRadius: '0.375rem',
     overflowY: 'auto',
@@ -630,7 +555,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
             section-${selectedTemplate.styles.layout?.sectionStyle || 'underlined'}
             ${selectedTemplate.styles.layout?.useColumns ? 'use-columns' : ''}
           ` : ''}
-          ${!autoScalingEnabled && contentOverflowing ? 'overflow-indicator' : ''}
+          ${!isAutoScaled && contentOverflowing ? 'overflow-indicator' : ''}
         `}
         style={resumeContainerStyle}
       >
@@ -852,7 +777,7 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
         )}
         
         {/* Content overflow warning when auto-scaling is disabled */}
-        {!autoScalingEnabled && contentOverflowing && isScalingStabilized && (
+        {!isAutoScaled && contentOverflowing && isScalingStabilized && (
           <div className="overflow-warning">
             <span>Content exceeding page - turn on Auto-fit</span>
           </div>

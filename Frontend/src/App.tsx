@@ -18,6 +18,7 @@ import Templates from "./pages/Templates";
 import Test from "./pages/Test";
 import AIFeatures from "./pages/AIFeatures";
 import MyResumes from "./pages/MyResumes";
+import ResumePreviewPage from "./pages/ResumePreviewPage";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/editor" element={<Editor />} />
+          <Route path="/preview/:resumeId" element={<ResumePreviewPage />} />
           <Route path="/my-resumes" element={<MyResumes />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/templates" element={<Templates />} />

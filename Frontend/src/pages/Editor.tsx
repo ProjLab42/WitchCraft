@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Edit, ArrowLeft, Save } from "lucide-react";
+import { Download, Plus, Edit, ArrowLeft, Save, Eye } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { toast } from "sonner";
 import { DndProvider } from "react-dnd";
@@ -26,6 +26,7 @@ import { templateService, Template } from "@/services/template.service";
 import { resumeAPI, ApiResumeData } from "@/services/api.service";
 import { SaveResumeDialog } from "@/components/resume-editor/SaveResumeDialog"; // Import the new dialog
 import { SkillItem } from "@/components/resume-editor/ResumeContext"; // Import SkillItem
+import { ExperienceItem, EducationItem, ProjectItem, CertificationItem } from "@/components/resume-editor/ResumeContext"; // Import specific item types from context or types file
 
 // Main Editor component
 function EditorContent() {
@@ -55,8 +56,6 @@ function EditorContent() {
     setEditedPersonalInfo,
     zoomLevel,
     setZoomLevel,
-    autoScalingEnabled,
-    setAutoScalingEnabled,
     pageFormat,
     setPageFormat,
     isExportDialogOpen,
@@ -129,7 +128,16 @@ function EditorContent() {
           const loadedSections = [
               ...(loadedResume.sections?.experience?.map(item => ({ ...item, itemType: 'experience' })) ?? []),
               ...(loadedResume.sections?.education?.map(item => ({ ...item, itemType: 'education' })) ?? []),
-              ...(loadedResume.sections?.projects?.map(item => ({ ...item, itemType: 'projects' })) ?? []),
+              ...(loadedResume.sections?.projects?.map(item => ({
+                 ...item, 
+                 itemType: 'projects', 
+                 // Explicitly map fields to ensure they are included
+                 name: item.name,
+                 role: item.role, 
+                 period: item.period,
+                 description: item.description,
+                 id: item.id || generateId('proj') // Ensure ID exists
+                })) ?? []),
               ...(loadedResume.sections?.certifications?.map(item => ({ ...item, itemType: 'certifications' })) ?? []),
               // ...(custom sections mapping if needed)
           ];
@@ -137,6 +145,11 @@ function EditorContent() {
           // Derive section order from loaded sections or use a default
           const derivedSectionOrder = loadedSections.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index);
           // Or use a fixed default: const defaultOrder = ['experience', 'education', 'skills', 'projects', 'certifications'];
+
+          // --- Use Saved or Derived Section Order --- 
+          const loadedSectionOrder = loadedResume.sectionOrder && loadedResume.sectionOrder.length > 0
+            ? loadedResume.sectionOrder 
+            : derivedSectionOrder; 
 
           // Map loaded skills and generate initial paragraph
           const loadedSkills: SkillItem[] = loadedResume.sections?.skills?.map(s => ({ 
@@ -163,7 +176,7 @@ function EditorContent() {
             sections: loadedSections,
             selectedSkills: loadedSkills, // Use mapped skills
             skillsParagraph: initialSkillsParagraph, // Set initial paragraph
-            sectionOrder: derivedSectionOrder, // Provide the required sectionOrder
+            sectionOrder: loadedSectionOrder, // Use loaded or derived order
           };
           setResumeContent(newResumeContent);
           
@@ -388,9 +401,12 @@ function EditorContent() {
   
   // Handle dropping an item onto the resume
   const handleDrop = (item) => {
+    console.log("--- handleDrop START ---"); // Log start
     console.log("Dropping item:", item);
-    console.log("Current resumeContent.sections:", resumeContent.sections);
-    
+    console.log("Current resumeContent.sections IDs BEFORE check:", 
+      resumeContent.sections.map(s => s.id) // Log current IDs
+    );
+
     // Check if the item already exists in the resume by ID
     const existingItemIndex = resumeContent.sections.findIndex(
       section => section.id === item.id
@@ -410,10 +426,10 @@ function EditorContent() {
       
       toast.success("Item updated");
     } else {
-      // Check if a similar item already exists in the resume
-      // We'll check based on content similarity rather than just ID
+      // Check if a similar item already exists based on content
+      console.log("Calling checkForDuplicate with:", item, resumeContent.sections.map(s => s.id)); // Log before check
       const isDuplicate = checkForDuplicate(item, resumeContent.sections);
-      
+
       console.log("Is duplicate check result:", isDuplicate);
       
       if (isDuplicate) {
@@ -448,76 +464,49 @@ function EditorContent() {
       
       toast.success("Item added to resume");
     }
+    console.log("--- handleDrop END ---"); // Log end
   };
   
   // Helper function to check if an item is a duplicate
   const checkForDuplicate = (newItem, existingSections) => {
     console.log("Checking for duplicate:", newItem);
     console.log("Against existing sections:", existingSections);
-    
-    // For each section type, we'll define what makes an item a duplicate
-    switch (newItem.itemType) {
-      case 'experience':
-        const expDuplicates = existingSections.filter(section => {
-          if (section.itemType !== 'experience') return false;
-          
-          // Type assertion to access experience-specific properties
-          const expSection = section as any;
-          const expNewItem = newItem as any;
-          
-          return expSection.company?.toLowerCase() === expNewItem.company?.toLowerCase() &&
-                 expSection.title?.toLowerCase() === expNewItem.title?.toLowerCase() &&
-                 expSection.period === expNewItem.period;
-        });
-        console.log("Experience duplicates found:", expDuplicates);
-        return expDuplicates.length > 0;
+
+    // Find if an item with the same CONTENT already exists in the resume preview
+    const duplicateInResume = existingSections.find(section => {
+        if (section.itemType !== newItem.itemType) return false;
         
-      case 'education':
-        const eduDuplicates = existingSections.filter(section => {
-          if (section.itemType !== 'education') return false;
-          
-          // Type assertion to access education-specific properties
-          const eduSection = section as any;
-          const eduNewItem = newItem as any;
-          
-          return eduSection.institution?.toLowerCase() === eduNewItem.institution?.toLowerCase() &&
-                 eduSection.degree?.toLowerCase() === eduNewItem.degree?.toLowerCase() &&
-                 eduSection.period === eduNewItem.period;
-        });
-        console.log("Education duplicates found:", eduDuplicates);
-        return eduDuplicates.length > 0;
-        
-      case 'projects':
-        const projDuplicates = existingSections.filter(section => {
-          if (section.itemType !== 'projects') return false;
-          
-          // Type assertion to access project-specific properties
-          const projSection = section as any;
-          const projNewItem = newItem as any;
-          
-          return projSection.name?.toLowerCase() === projNewItem.name?.toLowerCase() &&
-                 projSection.role?.toLowerCase() === projNewItem.role?.toLowerCase();
-        });
-        console.log("Project duplicates found:", projDuplicates);
-        return projDuplicates.length > 0;
-        
-      case 'certifications':
-        const certDuplicates = existingSections.filter(section => {
-          if (section.itemType !== 'certifications') return false;
-          
-          // Type assertion to access certification-specific properties
-          const certSection = section as any;
-          const certNewItem = newItem as any;
-          
-          return certSection.name?.toLowerCase() === certNewItem.name?.toLowerCase() &&
-                 certSection.issuer?.toLowerCase() === certNewItem.issuer?.toLowerCase();
-        });
-        console.log("Certification duplicates found:", certDuplicates);
-        return certDuplicates.length > 0;
-        
-      default:
-        return false;
-    }
+        // Compare based on content, not ID
+        switch (newItem.itemType) {
+            case 'experience':
+                const expSection = section as any;
+                const expNewItem = newItem as any;
+                return expSection.company?.toLowerCase() === expNewItem.company?.toLowerCase() &&
+                       expSection.title?.toLowerCase() === expNewItem.title?.toLowerCase() &&
+                       expSection.period === expNewItem.period;
+            case 'education':
+                const eduSection = section as any;
+                const eduNewItem = newItem as any;
+                return eduSection.institution?.toLowerCase() === eduNewItem.institution?.toLowerCase() &&
+                       eduSection.degree?.toLowerCase() === eduNewItem.degree?.toLowerCase() &&
+                       eduSection.year === eduNewItem.year; // Use year for comparison
+            case 'projects':
+                const projSection = section as any;
+                const projNewItem = newItem as any;
+                return projSection.name?.toLowerCase() === projNewItem.name?.toLowerCase() &&
+                       projSection.role?.toLowerCase() === projNewItem.role?.toLowerCase();
+            case 'certifications':
+                const certSection = section as any;
+                const certNewItem = newItem as any;
+                return certSection.name?.toLowerCase() === certNewItem.name?.toLowerCase() &&
+                       certSection.issuer?.toLowerCase() === certNewItem.issuer?.toLowerCase();
+            default:
+                return false;
+        }
+    });
+
+    console.log("Duplicate found in resume content:", duplicateInResume);
+    return !!duplicateInResume; // Return true if a duplicate based on content exists in the resume
   };
   
   // Remove a section from the resume
@@ -613,7 +602,7 @@ function EditorContent() {
       id: generateId('edu'),
       institution: "University Name",
       degree: "Degree Name",
-      period: "20XX - 20XX",
+      year: "20XX - 20XX",
       description: "Describe your education, achievements, GPA, etc.",
       itemType: "education"
     };
@@ -622,7 +611,7 @@ function EditorContent() {
     const isDuplicateInUserData = userData.sections.education && userData.sections.education.some(edu => 
       edu.institution.toLowerCase() === newEducation.institution.toLowerCase() &&
       edu.degree.toLowerCase() === newEducation.degree.toLowerCase() &&
-      edu.period === newEducation.period
+      edu.year === newEducation.year
     );
     
     // Also check if it already exists in resumeContent
@@ -634,7 +623,7 @@ function EditorContent() {
       
       return eduSection.institution?.toLowerCase() === newEducation.institution.toLowerCase() &&
              eduSection.degree?.toLowerCase() === newEducation.degree.toLowerCase() &&
-             eduSection.period === newEducation.period;
+             eduSection.year === newEducation.year;
     });
     
     if (isDuplicateInUserData || isDuplicateInResume) {
@@ -1078,11 +1067,41 @@ function EditorContent() {
         summary: resumeContent.personalInfo?.summary,
       },
       sections: { 
-        experience: resumeContent.sections.filter(s => s.itemType === 'experience'),
-        education: resumeContent.sections.filter(s => s.itemType === 'education'),
+        experience: resumeContent.sections
+          .filter(s => s.itemType === 'experience')
+          .map(exp => ({
+            id: (exp as ExperienceItem).id, 
+            title: (exp as ExperienceItem).title, 
+            company: (exp as ExperienceItem).company, 
+            period: (exp as ExperienceItem).period, 
+            description: (exp as ExperienceItem).description,
+          })),
+        education: resumeContent.sections
+          .filter(s => s.itemType === 'education')
+          .map(edu => ({ 
+            id: (edu as EducationItem).id, 
+            institution: (edu as EducationItem).institution, 
+            degree: (edu as EducationItem).degree,
+            year: (edu as EducationItem).year,
+            description: (edu as EducationItem).description,
+          })),
         skills: resumeContent.selectedSkills?.map(skill => ({ name: skill.name })) ?? [], 
-        projects: resumeContent.sections.filter(s => s.itemType === 'projects'),
-        certifications: resumeContent.sections.filter(s => s.itemType === 'certifications'),
+        projects: resumeContent.sections
+          .filter(s => s.itemType === 'projects')
+          .map(proj => ({ 
+            id: (proj as ProjectItem).id, 
+            name: (proj as ProjectItem).name, 
+            description: (proj as ProjectItem).description, 
+            role: (proj as ProjectItem).role,
+          })),
+        certifications: resumeContent.sections
+          .filter(s => s.itemType === 'certifications')
+           .map(cert => ({ 
+             id: (cert as CertificationItem).id, 
+             name: (cert as CertificationItem).name, 
+             issuer: (cert as CertificationItem).issuer, 
+             date: (cert as CertificationItem).date,
+           })),
       },
     };
 
@@ -1251,10 +1270,6 @@ function EditorContent() {
     setZoomLevel(1);
   };
 
-  const handleToggleAutoScaling = (enabled: boolean) => {
-    setAutoScalingEnabled(enabled);
-  };
-
   // --- Function to open the save dialog --- 
   const openSaveDialog = () => {
      // Pre-fill with current title if it exists (from loaded or previously saved)
@@ -1287,23 +1302,35 @@ function EditorContent() {
           </div>
           
           <div className="flex gap-2">
-            {/* Update Save Button onClick to call openSaveDialog */}
+            {/* Add Preview Button Here */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => { 
+                if (resumeId) {
+                  window.open(`/preview/${resumeId}`, '_blank'); 
+                } else {
+                  toast.error("Please save the resume first to enable preview.");
+                }
+              }}
+              disabled={!resumeId || isLoadingResume} 
+              title="Preview in new tab"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            {/* Existing Save Button */}
             <Button onClick={openSaveDialog} variant="default">
               <Save className="mr-2 h-4 w-4" />
               Save Project
             </Button>
-            <Button onClick={openExportDialog} variant="outline"> { /* Make export outline */ }
+            {/* Existing Export Button */}
+            <Button onClick={openExportDialog} variant="outline"> 
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
             
-            {/* Removed Back to Templates link, added conditional back arrow above */}
-            {/* <Link to="/templates">
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Templates
-              </Button>
-            </Link> */}
+            {/* Removed Back to Templates link */}
           </div>
         </div>
         
@@ -1484,8 +1511,6 @@ function EditorContent() {
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onResetZoom={handleResetZoom}
-                autoScalingEnabled={autoScalingEnabled}
-                onToggleAutoScaling={handleToggleAutoScaling}
               />
             </div>
             

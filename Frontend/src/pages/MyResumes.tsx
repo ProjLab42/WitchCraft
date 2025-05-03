@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PlusCircle, ArrowLeft, ImageOff, Trash2, Edit, Download } from 'lucide-react';
+import { PlusCircle, ArrowLeft, ImageOff, Trash2, Edit, Download, Eye } from 'lucide-react';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 // Import for dialog
@@ -279,6 +279,18 @@ const MyResumes: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg truncate mr-2" title={resume.title}>{resume.title}</CardTitle>
                       <div className="flex space-x-1 flex-shrink-0">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7" 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            window.open(`/preview/${resume._id}`, '_blank'); 
+                          }}
+                          title="Preview resume"
+                        >
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 

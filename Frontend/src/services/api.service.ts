@@ -159,9 +159,9 @@ export interface ApiResumeData {
     certifications?: any[];
     customSections?: Record<string, any>;
   };
-  createdAt?: string;
-  updatedAt?: string;
-  // sectionOrder?: string[]; // Add if backend supports saving/loading order
+  sectionOrder?: string[]; // Added sectionOrder
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Structure for data sent when creating/updating

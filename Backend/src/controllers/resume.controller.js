@@ -4,14 +4,15 @@ const { generatePdf, generateDocx } = require('../services/document.service');
 // Create a new resume
 exports.createResume = async (req, res) => {
   try {
-    const { title, template, data, sections } = req.body;
+    const { title, template, data, sections, sectionOrder } = req.body;
     
     const resume = new Resume({
       user: req.userId, // Note: this must match the property name set in auth middleware
       title,
       template,
       data,
-      sections
+      sections,
+      sectionOrder
     });
     
     await resume.save();
@@ -59,7 +60,7 @@ exports.getResumeById = async (req, res) => {
 // Update a resume
 exports.updateResume = async (req, res) => {
   try {
-    const { title, template, data, sections } = req.body;
+    const { title, template, data, sections, sectionOrder } = req.body;
     
     const resume = await Resume.findOne({
       _id: req.params.id,
@@ -74,6 +75,7 @@ exports.updateResume = async (req, res) => {
     if (title) resume.title = title;
     if (template) resume.template = template;
     if (data) resume.data = data;
+    if (sectionOrder) resume.sectionOrder = sectionOrder;
     
     // Handle sections update with more granularity
     if (sections) {

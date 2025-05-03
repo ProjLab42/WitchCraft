@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Plus, Download, Edit, Trash, Upload, PlusCircle, Sparkles, Trash2 } from "lucide-react";
+import { FileText, Plus, Download, Edit, Trash, Upload, PlusCircle, Sparkles, Trash2, Eye } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -295,6 +295,18 @@ export default function Dashboard() {
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg truncate mr-2" title={resume.title}>{resume.title}</CardTitle>
                       <div className="flex space-x-1 flex-shrink-0">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7" 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            window.open(`/preview/${resume._id}`, '_blank'); 
+                          }}
+                          title="Preview resume"
+                        >
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
