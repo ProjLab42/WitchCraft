@@ -142,6 +142,7 @@ export type ResumeContent = {
   personalInfo: PersonalInfo;
   sections: (ResumeSection & { itemType: string })[];
   selectedSkills: SkillItem[];
+  skillsParagraph: string | null;
   sectionOrder: string[];
 };
 
@@ -212,6 +213,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     },
     sections: [],
     selectedSkills: [],
+    skillsParagraph: null,
     sectionOrder: []
   });
   

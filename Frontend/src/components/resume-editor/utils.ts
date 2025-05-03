@@ -182,7 +182,7 @@ export const exportAsDOCX = async (
       const isLastSection = sectionIndex === orderedSections.length - 1;
       
       // Handle skills section
-      if (sectionType === 'skills' && resumeContent.selectedSkills.length > 0) {
+      if (sectionType === 'skills' && resumeContent.skillsParagraph) {
         // Skills section title
         docSections.push(
           new docx.Paragraph({
@@ -198,16 +198,12 @@ export const exportAsDOCX = async (
           })
         );
         
-        // Skills list
-        const skillsText = resumeContent.selectedSkills
-          .map(skill => skill.name)
-          .join(' • ');
-        
+        // Use the pre-generated skills paragraph
         docSections.push(
           new docx.Paragraph({
             children: [
               new docx.TextRun({
-                text: skillsText,
+                text: resumeContent.skillsParagraph,
                 size: 24,
                 font: "Inter",
               }),
@@ -788,12 +784,14 @@ import 'jspdf/dist/polyfills.es.js';
  * @param elementId ID of the HTML element to convert
  * @param filename Name of the PDF file to download
  * @param format PDF page format (e.g., 'a4', 'letter')
+ * @param templateStyles Optional template styles to apply
  * @returns Promise<boolean> indicating success or failure
  */
 export const exportToPDF = async (
   elementId: string,
   filename = 'resume.pdf',
-  format = 'a4'
+  format = 'a4',
+  templateStyles: any = null
 ): Promise<boolean> => {
   try {
     // Get the HTML element to convert
@@ -803,9 +801,66 @@ export const exportToPDF = async (
       return false;
     }
 
-    // Get the computed style of the element
-    const computedStyle = window.getComputedStyle(element);
+    // --- START: HTML Manipulation for Skills Section ---
+    console.log('[PDF Export] Starting HTML manipulation for skills...');
+    const clonedElement = element.cloneNode(true) as HTMLElement;
+    const skillsSection = clonedElement.querySelector('.skills-section');
+    console.log('[PDF Export] Skills section found:', !!skillsSection);
     
+    if (skillsSection) {
+      // Find the container holding the individual skill items/boxes
+      const skillsContainer = skillsSection.querySelector('.flex.flex-wrap');
+      console.log('[PDF Export] Skills container (.flex.flex-wrap) found:', !!skillsContainer);
+
+      if (skillsContainer) {
+        // Try selecting direct DIV children of the container
+        const skillElements = skillsContainer.querySelectorAll<HTMLDivElement>(':scope > div'); 
+        console.log(`[PDF Export] Found ${skillElements.length} direct div children in skills container`);
+        let skills: string[] = [];
+        
+        skillElements.forEach((skillEl, index) => {
+          if (skillEl.textContent) {
+            skills.push(skillEl.textContent.trim());
+            console.log(`[PDF Export] Extracted skill ${index + 1}:`, skillEl.textContent.trim());
+          }
+        });
+
+        if (skills.length > 0) {
+          console.log('[PDF Export] Skills extracted:', skills);
+          const headingElement = skillsSection.querySelector('.resume-section-heading');
+          const headingHTML = headingElement ? headingElement.outerHTML : '<h3 class="resume-section-heading">Skills</h3>'; // Fallback heading
+          
+          // Create the new paragraph with styles
+          const skillsParagraph = document.createElement('p');
+          skillsParagraph.textContent = skills.join(', ');
+          
+          // Apply styles matching item description, prioritizing template values
+          if (templateStyles?.bodyTextSize) {
+            skillsParagraph.style.fontSize = templateStyles.bodyTextSize;
+          } else {
+            // Don't set font size if not in template, allow inheritance
+            skillsParagraph.style.removeProperty('font-size'); 
+          }
+          skillsParagraph.style.fontFamily = templateStyles?.fontFamily || 'Arial, sans-serif';
+          skillsParagraph.style.marginTop = '4px'; 
+          skillsParagraph.style.lineHeight = '1.45'; 
+
+          const paragraphHTML = skillsParagraph.outerHTML;
+
+          // Completely overwrite the skills section innerHTML in the clone
+          skillsSection.innerHTML = headingHTML + paragraphHTML;
+          console.log('[PDF Export] Overwrote skills section innerHTML. New innerHTML:', skillsSection.innerHTML);
+        } else {
+            console.warn('[PDF Export] No skill text extracted from direct div children.');
+        }
+      } else {
+        console.warn('[PDF Export] Skills container (.flex.flex-wrap) not found inside .skills-section');
+      }
+    } else {
+        console.warn('[PDF Export] Skills section (.skills-section) not found.');
+    }
+    // --- END: HTML Manipulation for Skills Section ---
+
     // Create a new jsPDF instance with the specified format
     const orientation = 'portrait';
     const unit = 'mm';
@@ -816,7 +871,7 @@ export const exportToPDF = async (
     });
 
     // Set reasonable margins (in mm)
-    const margin = 10;
+    const margin = 0;
 
     // Calculate available width and height with margins
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -837,27 +892,34 @@ export const exportToPDF = async (
     // Wait for any pending renders/images to be ready
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // Use the html method to convert the element to PDF with proper scaling
-    await doc.html(element, {
+    // Use the html method to convert the MODIFIED CLONED element to PDF
+    await doc.html(clonedElement, {
       callback: function(pdf) {
-        // Save the PDF
         pdf.save(filename);
       },
       x: margin,
       y: margin,
-      width: contentWidth, // Set width to available content width
-      windowWidth: elementWidth, // Use actual element width
+      width: contentWidth, 
+      windowWidth: elementWidth, 
       autoPaging: true,
       margin: [margin, margin, margin, margin],
       html2canvas: {
-        // Use proper scaling
-        scale: scale * 0.95, // Slightly reduce scale to avoid edge bleeding
+        scale: scale * 0.95, 
         useCORS: true,
-        logging: false,
+        logging: true, // Turn logging on for html2canvas
         letterRendering: true,
-        allowTaint: true, // Allow cross-origin images
-        foreignObjectRendering: false, // Set to false for better compatibility
-        // Ensure we're using the proper font rendering
+        allowTaint: true, 
+        foreignObjectRendering: false,
+        // --- Add ignoreElements --- 
+        ignoreElements: (element) => {
+          // Ignore the original skills container if it's still somehow present
+          if (element.matches && element.matches('.skills-section .flex.flex-wrap')) {
+            console.log('[html2canvas] Ignoring element:', element);
+            return true;
+          }
+          return false;
+        }
+        // --- End ignoreElements --- 
       },
     });
 
