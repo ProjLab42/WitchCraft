@@ -58,14 +58,15 @@ const ResumePreviewPage: React.FC = () => {
   const formDataForPreview = {
     ...(resumeData.data),
     // Map experience array
-    experiences: resumeData.sections?.experience?.map(exp => ({
-      ...exp,
-      position: exp.title, // Map title to position
-      // Explicitly include fields ResumePreview expects
-      company: exp.company,
-      period: exp.period,
-      description: exp.description,
-    })),
+    experiences: resumeData.sections?.experience?.map(exp => {
+      return {
+        ...exp, // Pass through all original fields including description and bulletPoints
+        position: exp.title, // Map title to position
+        // Ensure required fields are present even if not in ...exp (though they should be)
+        company: exp.company,
+        period: exp.period,
+      };
+    }),
     // Map education array, ensuring year and description are included
     education: resumeData.sections?.education?.map(edu => ({
       ...edu,
@@ -79,11 +80,11 @@ const ResumePreviewPage: React.FC = () => {
     skills: resumeData.sections?.skills?.map(skill => skill.name).join(', ') || undefined,
     // Map projects array, ensuring all relevant fields are included
     projects: resumeData.sections?.projects?.map(proj => ({
-      ...proj,
+      ...proj, // Pass through all original fields including description and bulletPoints
+      // Map specific fields if needed, ensure bulletPoints comes through
       name: proj.name,
       role: proj.role,
-      period: proj.period, // Added period mapping
-      description: proj.description,
+      period: proj.period,
       url: proj.url,
       github: proj.github,
     })),

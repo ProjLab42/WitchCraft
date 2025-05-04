@@ -25,26 +25,37 @@ export function ResumePreview({ formData, sectionOrder }: ResumePreviewProps) {
         return formData.experiences && formData.experiences.length > 0 && (
           <div key="experience" className="mb-6">
             <h2 className="mb-3 text-lg font-semibold">Experience</h2>
-            {formData.experiences.map((exp: any) => (
-              <div key={exp.id} className="mb-4">
-                {exp.company && (
-                  <div className="flex justify-between">
-                    <h3 className="font-medium">{exp.company}</h3>
-                    {exp.period && (
-                      <div className="text-sm text-gray-500">
-                        {exp.period}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {exp.position && (
-                  <div className="text-gray-600">{exp.position}</div>
-                )}
-                {exp.description && (
-                  <p className="mt-1 text-sm text-gray-700">{exp.description}</p>
-                )}
-              </div>
-            ))}
+            {formData.experiences.map((exp: any, index: number) => {
+              return (
+                <div key={exp.id} className="mb-4">
+                  {exp.company && (
+                    <div className="flex justify-between">
+                      <h3 className="font-medium">{exp.company}</h3>
+                      {exp.period && (
+                        <div className="text-sm text-gray-500">
+                          {exp.period}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {exp.position && (
+                    <div className="text-gray-600">{exp.position}</div>
+                  )}
+                  {exp.description && (
+                    <p className="mt-1 text-sm text-gray-700">
+                      {exp.description}
+                    </p>
+                  )}
+                  {exp.bulletPoints && exp.bulletPoints.length > 0 && (
+                    <ul className="mt-1 list-disc list-inside text-sm text-gray-700">
+                      {exp.bulletPoints.map((bp: any, index: number) => (
+                        <li key={index}>{bp.text || ''}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       case 'education':
@@ -94,6 +105,13 @@ export function ResumePreview({ formData, sectionOrder }: ResumePreviewProps) {
                 )}
                 {proj.description && (
                   <p className="mt-1 text-sm text-gray-700">{proj.description}</p>
+                )}
+                {proj.bulletPoints && proj.bulletPoints.length > 0 && (
+                  <ul className="mt-1 list-disc list-inside text-sm text-gray-700">
+                    {proj.bulletPoints.map((bp: any, index: number) => (
+                      <li key={index}>{bp.text || ''}</li>
+                    ))}
+                  </ul>
                 )}
                 {proj.url && (
                   <a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline block mt-1">Project Link</a>
