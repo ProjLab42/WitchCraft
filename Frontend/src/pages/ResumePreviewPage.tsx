@@ -75,6 +75,7 @@ const ResumePreviewPage: React.FC = () => {
       field: edu.field,
       year: edu.year, // Use year from model
       description: edu.description,
+      bulletPoints: edu.bulletPoints, // Explicitly include bulletPoints
     })),
     // Format skills array to string
     skills: resumeData.sections?.skills?.map(skill => skill.name).join(', ') || undefined,
@@ -88,8 +89,10 @@ const ResumePreviewPage: React.FC = () => {
       url: proj.url,
       github: proj.github,
     })),
-    // Format certifications array to string
-    certificates: resumeData.sections?.certifications?.map(cert => cert.name || 'Unnamed Certificate').join(', ') || undefined,
+    // Pass the full certifications array instead of joining names
+    certifications: resumeData.sections?.certifications?.map(cert => ({
+      ...cert // Pass all fields from the API response
+    })) || undefined, // Changed from certificates to certifications
   };
 
   // Log the final mapped data being passed to ResumePreview

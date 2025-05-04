@@ -82,6 +82,13 @@ export function ResumePreview({ formData, sectionOrder }: ResumePreviewProps) {
                 {edu.description && (
                   <p className="mt-1 text-sm text-gray-700">{edu.description}</p>
                 )}
+                {edu.bulletPoints && edu.bulletPoints.length > 0 && (
+                  <ul className="mt-1 list-disc list-inside text-sm text-gray-700">
+                    {edu.bulletPoints.map((bp: any, index: number) => (
+                      <li key={index}>{bp.text || ''}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -138,10 +145,34 @@ export function ResumePreview({ formData, sectionOrder }: ResumePreviewProps) {
           </div>
         );
       case 'certifications':
-        return formData.certificates && (
+        return formData.certifications && formData.certifications.length > 0 && (
           <div key="certifications" className="mb-6">
-            <h2 className="mb-2 text-lg font-semibold">Certifications</h2>
-            <p className="text-gray-700">{formData.certificates}</p>
+            <h2 className="mb-3 text-lg font-semibold">Certifications</h2>
+            {formData.certifications.map((cert: any) => (
+              <div key={cert.id} className="mb-4">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-medium">{cert.name || "Certificate Name"}</h3>
+                  {cert.date && (
+                     <div className="text-sm text-gray-500 ml-2 flex-shrink-0">
+                       {cert.date}
+                     </div>
+                   )}
+                </div>
+                {cert.issuer && (
+                  <div className="text-gray-600 italic">{cert.issuer}</div>
+                )}
+                {cert.description && (
+                  <p className="mt-1 text-sm text-gray-700">{cert.description}</p>
+                )}
+                {cert.bulletPoints && cert.bulletPoints.length > 0 && (
+                  <ul className="mt-1 list-disc list-inside text-sm text-gray-700">
+                    {cert.bulletPoints.map((bp: any, index: number) => (
+                      <li key={index}>{bp.text || ''}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         );
       default:
@@ -151,7 +182,7 @@ export function ResumePreview({ formData, sectionOrder }: ResumePreviewProps) {
 
   const validSectionOrder = sectionOrder.filter(type => {
       if (type === 'experience') return formData.experiences && formData.experiences.length > 0;
-      if (type === 'certifications') return formData.certificates;
+      if (type === 'certifications') return formData.certifications && formData.certifications.length > 0;
       return formData[type] && (!Array.isArray(formData[type]) || formData[type].length > 0);
   });
 
