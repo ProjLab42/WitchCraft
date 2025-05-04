@@ -72,6 +72,7 @@ const certificationSchema = new mongoose.Schema({
   date: String,
   expirationDate: String,
   credentialId: String,
+  description: String,
   bulletPoints: [bulletPointSchema]
 });
 

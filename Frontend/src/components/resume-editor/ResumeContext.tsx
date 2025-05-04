@@ -41,6 +41,10 @@ const mockUser = {
         degree: "Master of Computer Science",
         year: "2016 - 2018",
         description: "Specialized in Human-Computer Interaction. Graduated with honors.",
+        bulletPoints: [
+          { id: "edu1-point1", text: "Awarded for outstanding academic performance" },
+          { id: "edu1-point2", text: "Participated in multiple research projects" }
+        ]
       },
       {
         id: "edu2",
@@ -48,6 +52,10 @@ const mockUser = {
         degree: "Bachelor of Science in Computer Science",
         year: "2012 - 2016",
         description: "Dean's List, 3.8 GPA. Participated in ACM programming competitions.",
+        bulletPoints: [
+          { id: "edu2-point1", text: "Dean's List recipient" },
+          { id: "edu2-point2", text: "Won first place in the annual coding competition" }
+        ]
       },
     ],
     projects: [
@@ -66,6 +74,10 @@ const mockUser = {
         issuer: "Amazon Web Services",
         date: "2022",
         description: "Professional certification for designing distributed systems on AWS.",
+        bulletPoints: [
+          { id: "cert1-point1", text: "Passed the AWS Certified Solutions Architect - Associate exam" },
+          { id: "cert1-point2", text: "Achieved a score of 90% on the exam" }
+        ]
       },
     ],
   },
@@ -101,6 +113,7 @@ export type ExperienceItem = {
   period: string;
   description: string;
   itemType?: string;
+  bulletPoints?: { id: string; text: string }[];
 };
 
 export type EducationItem = {
@@ -110,6 +123,7 @@ export type EducationItem = {
   year: string;
   description: string;
   itemType?: string;
+  bulletPoints?: { id: string; text: string }[];
 };
 
 export type ProjectItem = {
@@ -119,6 +133,10 @@ export type ProjectItem = {
   period: string;
   description: string;
   itemType?: string;
+  technologies?: string;
+  url?: string;
+  github?: string;
+  bulletPoints?: { id: string; text: string }[];
 };
 
 export type CertificationItem = {
@@ -128,6 +146,7 @@ export type CertificationItem = {
   date: string;
   description: string;
   itemType?: string;
+  bulletPoints?: { id: string; text: string }[];
 };
 
 export type SkillItem = {

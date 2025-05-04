@@ -320,6 +320,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                     {item.description && <p className="text-sm mt-2 experience-description whitespace-pre-wrap">{item.description}</p>}
                     {item.bulletPoints && item.bulletPoints.length > 0 && (
                       <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                        {/* DEBUGGING: Log experience item and its bullet points */}
+                        {console.log(`[Experience Item ${item.id}]:`, item, 'Bullet Points:', item.bulletPoints)}
                         {item.bulletPoints.map((bp, bpIndex) => (
                           <li key={bp.id || bpIndex}>{bp.text}</li>
                         ))}
@@ -337,6 +339,15 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                       </div>
                     </div>
                     {item.description && <p className="text-sm mt-2 education-description whitespace-pre-wrap">{item.description}</p>}
+                    {/* DEBUGGING: Log education item and its bullet points */}
+                    {console.log(`[Education Item ${item.id}]:`, item, 'Bullet Points:', item.bulletPoints)}
+                    {item.bulletPoints && item.bulletPoints.length > 0 && (
+                      <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                        {item.bulletPoints.map((bp, bpIndex) => (
+                          <li key={bp.id || bpIndex}>{bp.text}</li>
+                        ))}
+                      </ul>
+                    )}
                    </div>
                 )}
                 {type === 'projects' && (
@@ -352,6 +363,8 @@ export const HybridResumeEditor: React.FC<HybridResumeEditorProps> = ({
                     {item.link && <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block">Project Link</a>}
                     {item.bulletPoints && item.bulletPoints.length > 0 && (
                       <ul className="list-disc list-inside mt-1 space-y-1 text-sm">
+                        {/* DEBUGGING: Log project item and its bullet points */}
+                        {console.log(`[Project Item ${item.id}]:`, item, 'Bullet Points:', item.bulletPoints)}
                         {item.bulletPoints.map((bp, bpIndex) => (
                           <li key={bp.id || bpIndex}>{bp.text}</li>
                         ))}

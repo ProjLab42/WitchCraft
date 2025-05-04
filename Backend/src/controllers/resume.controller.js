@@ -98,25 +98,14 @@ exports.updateResume = async (req, res) => {
     if (data) resume.data = data;
     if (sectionOrder) resume.sectionOrder = sectionOrder;
     
-    // Handle sections update with more granularity
+    // If the 'sections' object is provided in the request body,
+    // update the entire sections object on the resume document.
+    // Mongoose should handle merging/updating nested arrays like bulletPoints correctly.
     if (sections) {
-      // Update section metadata if provided
-      if (sections.sectionMeta) {
-        resume.sections.sectionMeta = sections.sectionMeta;
-      }
-      
-      // Update individual section arrays if provided
-      const sectionTypes = ['experience', 'education', 'skills', 'projects', 'certifications'];
-      sectionTypes.forEach(sectionType => {
-        if (sections[sectionType]) {
-          resume.sections[sectionType] = sections[sectionType];
-        }
-      });
-      
-      // Handle custom sections if provided
-      if (sections.customSections) {
-        resume.sections.customSections = sections.customSections;
-      }
+      // Make sure to handle potential null or undefined sections object from request
+      // Ensure all expected section types exist, even if empty, to avoid accidental deletion
+      const defaultSectionStructure = { experience: [], education: [], skills: [], projects: [], certifications: [], customSections: resume.sections.customSections || {} };
+      resume.sections = { ...defaultSectionStructure, ...sections };
     }
     
     resume.updatedAt = Date.now();

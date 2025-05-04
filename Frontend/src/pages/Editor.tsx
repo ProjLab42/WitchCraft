@@ -184,7 +184,8 @@ function EditorContent() {
                 role: item.role,
                 period: item.period,
                 description: item.description,
-                id: item.id || generateId('proj')
+                id: item.id || generateId('proj'),
+                bulletPoints: item.bulletPoints || []
               }))
             );
           }
@@ -195,6 +196,8 @@ function EditorContent() {
           }
           // Add other standard sections if needed
           console.log("[loadResume] Final sectionsForState set to resumeContent:", sectionsForState); // Use new variable name in log
+
+          // --- DEBUGGING: Log Experience and Project items in sectionsForState ---\n          const experienceItems = sectionsForState.filter(s => s.itemType === 'experience');\n          const projectItems = sectionsForState.filter(s => s.itemType === 'projects');\n          console.log(\"[loadResume] Experience items being set:\", experienceItems);\n          console.log(\"[loadResume] Project items being set:\", projectItems);\n          // --- END DEBUGGING ---\n
 
           // Derive section order from loaded sections or use a default
           const derivedSectionOrder = sectionsForState.map(s => s.itemType).filter((value, index, self) => self.indexOf(value) === index); // Use sectionsForState
@@ -1097,6 +1100,7 @@ function EditorContent() {
             company: (exp as ExperienceItem).company, 
             period: (exp as ExperienceItem).period, 
             description: (exp as ExperienceItem).description,
+            bulletPoints: (exp as ExperienceItem).bulletPoints || [],
           })),
         education: resumeContent.sections
           .filter(s => s.itemType === 'education')
@@ -1106,6 +1110,7 @@ function EditorContent() {
             degree: (edu as EducationItem).degree,
             year: (edu as EducationItem).year,
             description: (edu as EducationItem).description,
+            bulletPoints: (edu as EducationItem).bulletPoints || [],
           })),
         skills: resumeContent.selectedSkills?.map(skill => ({ name: skill.name })) ?? [], 
         projects: resumeContent.sections
@@ -1115,6 +1120,7 @@ function EditorContent() {
             name: (proj as ProjectItem).name, 
             description: (proj as ProjectItem).description, 
             role: (proj as ProjectItem).role,
+            bulletPoints: (proj as ProjectItem).bulletPoints || [],
           })),
         certifications: resumeContent.sections
           .filter(s => s.itemType === 'certifications')
@@ -1123,6 +1129,8 @@ function EditorContent() {
              name: (cert as CertificationItem).name, 
              issuer: (cert as CertificationItem).issuer, 
              date: (cert as CertificationItem).date,
+             description: (cert as CertificationItem).description,
+             bulletPoints: (cert as CertificationItem).bulletPoints || [],
            })),
       },
     };
