@@ -2,8 +2,9 @@
 
 WitchCraft is a powerful CV management tool that enables quick creation of tailored, professional resumes. Built with modern web technologies, it helps job seekers create ATS-friendly resumes that stand out to employers.
 
-![WitchCraft Dashboard](./Frontend/screenshots/dashboard.png)
-<!-- Add a screenshot of the main dashboard/resume list page here -->
+### Landing Page
+![Landing Page](./Frontend/screenshots/homepage.png)
+*The sleek landing page introduces first-time users to WitchCraft's powerful features, showcasing the benefits of our resume building platform and providing easy access to sign up or log in.*
 
 ## 🌟 Features
 
@@ -21,19 +22,50 @@ WitchCraft is a powerful CV management tool that enables quick creation of tailo
 
 ### Resume Editor
 ![Resume Editor](./Frontend/screenshots/editor.png)
-<!-- Add a screenshot of the resume editor interface here -->
+*The comprehensive resume editor features a dual-panel interface with your content library on the left and real-time preview on the right. Edit sections directly, drag and drop content, and see instant updates to your document.*
+
+![Editor Features](./Frontend/screenshots/editor-features.png)
+*Key editor features include section reordering, auto-scaling content to fit the page, responsive zoom controls, and AI assistance for content optimization. The editor ensures your resume maintains professional formatting while you work.*
 
 ### Template Selection
 ![Template Selection](./Frontend/screenshots/templates.png)
-<!-- Add a screenshot of the template selection page here -->
+*Browse through our collection of professionally designed templates. Each template is ATS-friendly and optimized for different industries and career stages, allowing you to find the perfect style for your resume.*
 
-### Resume Preview
-![Resume Preview](./Frontend/screenshots/preview.png)
-<!-- Add a screenshot of the resume preview here -->
+### Template Preview
+![Resume Preview](./Frontend/screenshots/preview1.png)
+![Resume Preview](./Frontend/screenshots/preview2.png)
+*Get a preview of how your resume will appear when downloaded. Our preview renders font styles, spacing, and formatting similar to what they'll appear in the final document.*
 
 ### My Resumes Dashboard
 ![My Resumes](./Frontend/screenshots/my-resumes.png)
-<!-- Add a screenshot of the my resumes page with preview thumbnails here -->
+*The My Resumes page displays all your saved resumes. Each card shows the last update date of your resume, and even has a preview option, making it easy to identify and manage your different versions.*
+
+### Resume Parser
+![Resume Parser](./Frontend/screenshots/parser1.png)
+![Resume Parser](./Frontend/screenshots/parser2.png)
+*The intelligent resume parser automatically extracts key information from your existing resume files. Upload PDF or DOCX files and watch as WitchCraft identifies your experience, skills, education, and other sections to populate your new resume.*
+
+### ATS Score Analysis
+![ATS Score Analysis](./Frontend/screenshots/ats-score.png)
+![ATS Score Analysis](./Frontend/screenshots/ats-score2.png)
+*Our industry-standard ATS Score Analyzer evaluates how well your resume will perform with automated applicant tracking systems. Get detailed feedback on keyword optimization, formatting compatibility, and content suggestions to maximize your resume's visibility to recruiters.*
+
+### AI Assistant
+![AI Assistant](./Frontend/screenshots/ai-assistant.png)
+*Our comprehensive AI assistant offers three powerful tools to optimize your resume:*
+
+* **Generate Resume from Your Profile**: Create tailored resumes using information from your profile, automatically optimized for specific job descriptions.
+* **Tune Existing Resume**: Select any of your existing resumes and our AI will optimize it for a specific job description, highlighting your most relevant skills and experiences.
+* **Smart Resume Builder**: Our ultimate AI tool combines the best of both worlds - select an existing resume, provide a job description, and our AI will either enhance your existing resume or create a new one based on your profile, whichever produces the best results.
+
+### User Profile
+![User Profile](./Frontend/screenshots/profile.png)
+*The user profile dashboard allows you to manage your account details, update your professional information, and configure preferences that will be used across all your resume projects.*
+
+### PDF Export Example
+![PDF Export](./Frontend/screenshots/export-pdf.png)
+*A sample of how your finished resume looks when exported as a PDF. WitchCraft maintains perfect formatting and professional styling in the final document, ready to be sent to employers.*
+
 
 ## 🚀 Tech Stack
 
@@ -121,9 +153,6 @@ The intuitive resume editor allows you to:
 - Rearrange sections and items with simple controls
 - Auto-scale content to fit the page
 - Adjust zoom level for better editing experience
-
-![Editor Features](./Frontend/screenshots/editor-features.png)
-<!-- Add a screenshot highlighting the editor features here -->
 
 ### Templates
 Choose from multiple professionally designed templates:
